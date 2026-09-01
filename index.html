@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>My Life Hub</title>
+
+  <!-- Main website styles -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Notes styles -->
+  <link rel="stylesheet" href="css/notes.css">
+
+  <!-- Events styles -->
+  <link rel="stylesheet" href="css/events.css">
+
+  <!-- Social styles -->
+  <link rel="stylesheet" href="css/social.css">
+
+  <!-- Program styles -->
+  <link rel="stylesheet" href="css/program.css">
+</head>
+
+<body>
+
+  <!-- ================= HEADER ================= -->
+  <header>
+
+    <h1>My Life</h1>
+
+    <button
+      id="user-profile-btn"
+      type="button"
+      aria-label="Open profile"
+    >
+      <img
+        id="user-avatar-icon"
+        src=""
+        alt="User avatar"
+      >
+
+      <span id="user-name-icon">User 1</span>
+    </button>
+
+  </header>
+
+
+  <!-- ================= MAIN LAYOUT ================= -->
+  <div id="layout">
+
+    <!-- ================= SIDEBAR ================= -->
+    <nav id="sidebar" aria-label="Main navigation">
+
+      <button
+        class="nav-btn"
+        data-target="routine"
+        type="button"
+      >
+        📅 Routine
+      </button>
+
+      <button
+        class="nav-btn"
+        data-target="task"
+        type="button"
+      >
+        ✓ Tasks
+      </button>
+
+      <button
+        class="nav-btn"
+        data-target="completed"
+        type="button"
+      >
+        ✓ Completed
+      </button>
+
+      <button
+        class="nav-btn"
+        data-target="notes"
+        type="button"
+      >
+        📝 Notes
+      </button>
+
+      <button
+        class="nav-btn"
+        data-target="events"
+        type="button"
+      >
+        📅 Events
+      </button>
+
+      <button
+        class="nav-btn"
+        data-target="social"
+        type="button"
+      >
+        🌐 Social
+      </button>
+
+      <button
+        class="nav-btn"
+        data-target="program"
+        type="button"
+      >
+        🚀 Program
+      </button>
+
+    </nav>
+
+
+    <!-- ================= APPLICATION ================= -->
+    <main id="app" aria-live="polite"></main>
+
+  </div>
+
+
+  <!-- ================= JAVASCRIPT ================= -->
+
+  <!-- Core storage -->
+  <script src="js/storage.js"></script>
+
+  <!-- Routine -->
+  <script src="js/week.js"></script>
+  <script src="js/day.js"></script>
+
+  <!-- Tasks -->
+  <script src="js/task.js"></script>
+  <script src="js/completed.js"></script>
+
+  <!-- Notes -->
+  <script src="js/note.js"></script>
+
+  <!-- Events -->
+  <script src="js/events.js"></script>
+
+  <!-- Social -->
+  <script src="js/social.js"></script>
+
+  <!-- Program -->
+  <script src="js/program.js"></script>
+
+  <!-- Profile -->
+  <script src="js/profile.js"></script>
+
+  <!-- Main application -->
+  <script src="js/main.js"></script>
+
+</body>
+</html>
