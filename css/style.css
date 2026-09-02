@@ -187,7 +187,7 @@ h2 { font-size: var(--font-3xl); font-weight: 700; }
 h3 { font-size: var(--font-xl); font-weight: 600; }
 
 /* ========================================
-   HEADER - أزرق مع شفافية عالية (30%)
+   HEADER - أزرق مع شفافية عالية (70%)
    ======================================== */
 
 header {
@@ -195,7 +195,7 @@ header {
   justify-content: space-between;
   align-items: center;
   background-color: rgba(25, 55, 90, 0.70);
-  backdrop-filter: blur(6px); /* ✅ تم التخفيف من 16px إلى 6px */
+  backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   color: var(--text-light);
   padding: var(--spacing-md) var(--spacing-2xl);
@@ -226,7 +226,7 @@ header {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease; /* ✅ تم التعديل من 'all' */
+  transition: background-color 0.3s ease, transform 0.3s ease;
   padding: 6px;
 }
 
@@ -335,7 +335,7 @@ header h1::before {
   gap: var(--spacing-sm);
   padding: var(--spacing-xl) var(--spacing-lg);
   background-color: var(--bg-sidebar);
-  backdrop-filter: blur(4px); /* ✅ تم التخفيف من 8px إلى 4px */
+  backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   border-right: 1px solid var(--border-light);
   min-width: 200px;
@@ -370,7 +370,7 @@ header h1::before {
   font-size: var(--font-lg);
   font-weight: 500;
   text-align: left;
-  transition: background-color 0.25s ease, color 0.25s ease; /* ✅ تم التعديل من 'all' */
+  transition: background-color 0.25s ease, color 0.25s ease;
   color: var(--ink-light);
   position: relative;
   letter-spacing: 0.3px;
@@ -577,15 +577,19 @@ body.dark-mode #back-btn:hover {
   flex-direction: column;
   gap: 2px;
   box-shadow: var(--shadow-sm);
-  transition: var(--transition-base);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, text-shadow 0.2s ease;
   min-height: 55px;
 }
 
+/* ✅ تم نقل تأثير hover من JavaScript إلى CSS */
 .hour-box:hover {
-  background-color: var(--bg-hover);
-  border-color: var(--primary);
-  transform: scale(1.02);
-  box-shadow: var(--shadow-md);
+  transform: scale(1.04);
+  box-shadow: 0 4px 20px rgba(100, 180, 255, 0.25), 0 0 40px rgba(100, 180, 255, 0.1);
+}
+
+/* توهج النص عند hover */
+.hour-box:hover .hour-activity {
+  text-shadow: 0 0 20px rgba(100, 180, 255, 0.7), 0 0 40px rgba(100, 180, 255, 0.3), 0 0 60px rgba(100, 180, 255, 0.15);
 }
 
 .hour-label {
@@ -672,7 +676,7 @@ body.dark-mode #day-for-box {
 
 #hour-modal {
   background: var(--bg-modal);
-  backdrop-filter: blur(6px); /* ✅ تم التخفيف من 12px إلى 6px */
+  backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   border-radius: var(--radius-xl);
   padding: var(--spacing-2xl);

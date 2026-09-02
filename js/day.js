@@ -561,7 +561,7 @@ function openDay(dayName) {
 
   const hoursGrid = document.createElement("div");
   hoursGrid.id = "hours-grid";
-  hoursGrid.dataset.dayName = dayName; // ✅ لتتبع اليوم في Event Delegation
+  hoursGrid.dataset.dayName = dayName;
 
   // ✅ استخدام DocumentFragment لتجميع جميع الساعات
   const fragment = document.createDocumentFragment();
@@ -573,7 +573,7 @@ function openDay(dayName) {
     const label = formatHourRange(i);
     const activity = dayData.hours[i] ? dayData.hours[i] : "";
     
-    // تخزين البيانات في dataset بدلاً من إعادة حسابها لاحقاً
+    // تخزين البيانات في dataset
     hourBox.dataset.hour = i;
     hourBox.dataset.label = label;
     hourBox.dataset.activity = activity;
@@ -587,22 +587,6 @@ function openDay(dayName) {
     hourBox.style.borderColor = textStyle.color === '#ffffff' 
       ? 'rgba(255, 255, 255, 0.15)' 
       : 'rgba(79, 142, 219, 0.2)';
-    hourBox.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-
-    hourBox.addEventListener('mouseenter', function() {
-      this.style.transform = 'scale(1.04)';
-      this.style.boxShadow = '0 4px 20px rgba(100, 180, 255, 0.25), 0 0 40px rgba(100, 180, 255, 0.1)';
-      
-      if (textStyle.color === '#ffffff') {
-        this.style.textShadow = '0 0 20px rgba(100, 180, 255, 0.7), 0 0 40px rgba(100, 180, 255, 0.3), 0 0 60px rgba(100, 180, 255, 0.15)';
-      }
-    });
-
-    hourBox.addEventListener('mouseleave', function() {
-      this.style.transform = 'scale(1)';
-      this.style.boxShadow = 'none';
-      this.style.textShadow = textStyle.textShadow;
-    });
 
     const labelSpan = document.createElement("span");
     labelSpan.className = "hour-label";
@@ -626,6 +610,7 @@ function openDay(dayName) {
   hoursGrid.appendChild(fragment);
   
   // ✅ إضافة Event Delegation واحد فقط على الحاوية
+  // ✅ تم إزالة mouseenter/mouseleave (تم نقلها إلى CSS)
   hoursGrid.addEventListener("click", handleHourClick);
 
   app.appendChild(hoursGrid);
