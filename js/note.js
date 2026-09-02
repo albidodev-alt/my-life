@@ -232,8 +232,8 @@ function renderNotesList(searchTerm = "") {
     countEl.textContent = `${count} note${count !== 1 ? 's' : ''}`;
   }
 
-  // مسح الشبكة
-  grid.innerHTML = "";
+  // ===== ✅ استخدام DocumentFragment لتجميع البطاقات =====
+  const fragment = document.createDocumentFragment();
 
   // حالة عدم وجود ملاحظات
   if (filteredNotes.length === 0) {
@@ -257,15 +257,18 @@ function renderNotesList(searchTerm = "") {
     emptyState.appendChild(icon);
     emptyState.appendChild(title);
     emptyState.appendChild(desc);
-    grid.appendChild(emptyState);
-    return;
+    fragment.appendChild(emptyState);
+  } else {
+    // عرض الملاحظات
+    filteredNotes.forEach(note => {
+      const card = createNoteCard(note);
+      fragment.appendChild(card);
+    });
   }
 
-  // عرض الملاحظات
-  filteredNotes.forEach(note => {
-    const card = createNoteCard(note);
-    grid.appendChild(card);
-  });
+  // ===== ✅ إضافة جميع البطاقات دفعة واحدة =====
+  grid.innerHTML = "";
+  grid.appendChild(fragment);
 }
 
 // ========================================

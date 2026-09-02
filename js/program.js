@@ -380,32 +380,78 @@ function renderProgramPage() {
   html += '    </button>';
   html += '  </div>';
 
+  // ===== ✅ استخدام DocumentFragment للبطاقات =====
+  var fragment = document.createDocumentFragment();
+  var grid = document.createElement("div");
+  grid.className = "program-grid";
+  grid.id = "program-grid";
+
   if (activePrograms.length > 0) {
-    html += '  <div class="program-grid" id="program-grid">';
     for (var j = 0; j < activePrograms.length; j++) {
-      html += renderProgramCard(activePrograms[j]);
+      var cardHTML = renderProgramCard(activePrograms[j]);
+      var tempDiv = document.createElement("div");
+      tempDiv.innerHTML = cardHTML;
+      while (tempDiv.firstChild) {
+        grid.appendChild(tempDiv.firstChild);
+      }
     }
-    html += '  </div>';
+    fragment.appendChild(grid);
   } else {
-    html += '  <div class="program-empty-state">';
-    html += '    <div class="program-empty-icon">📚</div>';
-    html += '    <h3 class="program-empty-title">No programs yet</h3>';
-    html += '    <p class="program-empty-desc">Create your first learning program</p>';
-    html += '  </div>';
+    var emptyHTML = `
+      <div class="program-empty-state">
+        <div class="program-empty-icon">📚</div>
+        <h3 class="program-empty-title">No programs yet</h3>
+        <p class="program-empty-desc">Create your first learning program</p>
+      </div>
+    `;
+    var tempDiv = document.createElement("div");
+    tempDiv.innerHTML = emptyHTML;
+    while (tempDiv.firstChild) {
+      fragment.appendChild(tempDiv.firstChild);
+    }
   }
 
   if (completedPrograms.length > 0) {
-    html += '  <h3 class="program-section-title">✅ Completed Programs</h3>';
-    html += '  <div class="program-section-subgrid">';
+    var sectionTitle = document.createElement("h3");
+    sectionTitle.className = "program-section-title";
+    sectionTitle.textContent = "✅ Completed Programs";
+    fragment.appendChild(sectionTitle);
+
+    var subgrid = document.createElement("div");
+    subgrid.className = "program-section-subgrid";
     for (var k = 0; k < completedPrograms.length; k++) {
-      html += renderCompletedCard(completedPrograms[k]);
+      var cardHTML = renderCompletedCard(completedPrograms[k]);
+      var tempDiv2 = document.createElement("div");
+      tempDiv2.innerHTML = cardHTML;
+      while (tempDiv2.firstChild) {
+        subgrid.appendChild(tempDiv2.firstChild);
+      }
     }
-    html += '  </div>';
+    fragment.appendChild(subgrid);
   }
 
-  html += '</div>';
+  // ===== ✅ إضافة جميع العناصر دفعة واحدة =====
   app.innerHTML = html;
+  var container = document.getElementById("program-container");
+  var existingGrid = document.getElementById("program-grid");
+  var existingEmpty = container.querySelector(".program-empty-state");
+  
+  // إزالة العناصر القديمة
+  var oldGrid = document.getElementById("program-grid");
+  if (oldGrid) oldGrid.remove();
+  var oldEmpty = container.querySelector(".program-empty-state");
+  if (oldEmpty) oldEmpty.remove();
+  var oldSectionTitle = container.querySelector(".program-section-title");
+  if (oldSectionTitle) oldSectionTitle.remove();
+  var oldSubgrid = container.querySelector(".program-section-subgrid");
+  if (oldSubgrid) oldSubgrid.remove();
 
+  // إضافة العناصر الجديدة
+  while (fragment.firstChild) {
+    container.appendChild(fragment.firstChild);
+  }
+
+  // ===== إضافة الأحداث =====
   var addBtn = document.getElementById("program-add-btn");
   if (addBtn) {
     addBtn.addEventListener("click", function() {
@@ -725,7 +771,167 @@ function renderProgramDetail(program) {
 }
 
 // ========================================
-// Overview Tab
+// Steps Tab - مع DocumentFragment
+// ========================================
+
+function renderSteps(container, program) {
+  // ===== ✅ استخدام DocumentFragment =====
+  var fragment = document.createDocumentFragment();
+
+  var wrapper = document.createElement("div");
+  wrapper.className = "program-structure";
+  wrapper.id = "program-steps-container";
+
+  if (!program.steps || program.steps.length === 0) {
+    var emptyMsg = document.createElement("div");
+    emptyMsg.style.cssText = "text-align: center; padding: 30px; color: var(--text-muted);";
+    emptyMsg.innerHTML = "<p>No steps added yet. Add your first step below!</p>";
+    wrapper.appendChild(emptyMsg);
+  } else {
+    for (var i = 0; i < program.steps.length; i++) {
+      var step = program.steps[i];
+      var phaseDiv = document.createElement("div");
+      phaseDiv.className = "program-phase";
+      phaseDiv.dataset.stepId = step.id;
+      phaseDiv.draggable = true;
+
+      var headerDiv = document.createElement("div");
+      headerDiv.className = "program-phase-header";
+
+      var nameSpan = document.createElement("span");
+      nameSpan.className = "program-phase-name";
+      nameSpan.textContent = (step.completed ? '✅' : '⬜') + ' ' + escapeHtml(step.name);
+      headerDiv.appendChild(nameSpan);
+
+      if (step.completed) {
+        var dateSpan = document.createElement("span");
+        dateSpan.style.cssText = "font-size: 12px; color: var(--text-muted);";
+        dateSpan.textContent = formatDate(step.completedAt);
+        headerDiv.appendChild(dateSpan);
+
+        if (step.difficulty) {
+          var diffSpan = document.createElement("span");
+          diffSpan.style.cssText = "font-size: 12px; color: var(--text-muted);";
+          diffSpan.textContent = step.difficulty;
+          headerDiv.appendChild(diffSpan);
+        }
+
+        if (step.rating) {
+          var ratingSpan = document.createElement("span");
+          ratingSpan.style.cssText = "font-size: 12px; color: var(--warning);";
+          ratingSpan.textContent = '⭐ ' + step.rating + '/5';
+          headerDiv.appendChild(ratingSpan);
+        }
+      }
+
+      var actionsDiv = document.createElement("div");
+      actionsDiv.className = "program-phase-actions";
+
+      if (!step.completed) {
+        var editBtn = document.createElement("button");
+        editBtn.className = "program-phase-btn program-edit-step-btn";
+        editBtn.textContent = "✏️";
+        editBtn.dataset.stepId = step.id;
+        actionsDiv.appendChild(editBtn);
+
+        var deleteBtn = document.createElement("button");
+        deleteBtn.className = "program-phase-btn program-phase-btn-danger program-delete-step-btn";
+        deleteBtn.textContent = "✕";
+        deleteBtn.dataset.stepId = step.id;
+        actionsDiv.appendChild(deleteBtn);
+      }
+
+      headerDiv.appendChild(actionsDiv);
+      phaseDiv.appendChild(headerDiv);
+
+      if (step.completed && step.learning) {
+        var learningDiv = document.createElement("div");
+        learningDiv.style.cssText = "font-size: 13px; color: var(--text-secondary); padding: 4px 0 0 24px; font-style: italic;";
+        learningDiv.textContent = '💡 ' + escapeHtml(step.learning);
+        phaseDiv.appendChild(learningDiv);
+      }
+
+      if (step.completed && step.duration) {
+        var durationDiv = document.createElement("div");
+        durationDiv.style.cssText = "font-size: 12px; color: var(--text-muted); padding: 2px 0 0 24px;";
+        durationDiv.textContent = '⏱️ ' + step.duration + ' min';
+        phaseDiv.appendChild(durationDiv);
+      }
+
+      wrapper.appendChild(phaseDiv);
+    }
+  }
+
+  var addBtn = document.createElement("button");
+  addBtn.className = "program-add-phase-btn";
+  addBtn.id = "program-add-step";
+  addBtn.style.marginTop = "12px";
+  addBtn.textContent = "＋ Add Step";
+  wrapper.appendChild(addBtn);
+
+  fragment.appendChild(wrapper);
+
+  // ===== ✅ إضافة جميع العناصر دفعة واحدة =====
+  container.innerHTML = "";
+  container.appendChild(fragment);
+
+  // ===== إضافة الأحداث =====
+  document.getElementById("program-add-step").addEventListener("click", function() {
+    var name = prompt("Enter step name:");
+    if (name && name.trim()) {
+      var result = addStep(program.id, name.trim());
+      if (result) {
+        var updatedProgram = getProgram(program.id);
+        if (updatedProgram) {
+          renderProgramDetail(updatedProgram);
+        }
+      }
+    }
+  });
+
+  var editBtns = document.querySelectorAll(".program-edit-step-btn");
+  for (var e = 0; e < editBtns.length; e++) {
+    editBtns[e].addEventListener("click", function(e) {
+      e.stopPropagation();
+      var stepId = parseFloat(this.dataset.stepId);
+      var newName = prompt("Edit step name:");
+      if (newName && newName.trim()) {
+        var program2 = getProgram(program.id);
+        if (program2) {
+          for (var s = 0; s < program2.steps.length; s++) {
+            if (program2.steps[s].id === stepId) {
+              program2.steps[s].name = newName.trim();
+              program2.updatedAt = new Date().toISOString();
+              updateProgram(program2);
+              renderProgramDetail(program2);
+              break;
+            }
+          }
+        }
+      }
+    });
+  }
+
+  var deleteBtns = document.querySelectorAll(".program-delete-step-btn");
+  for (var d = 0; d < deleteBtns.length; d++) {
+    deleteBtns[d].addEventListener("click", function(e) {
+      e.stopPropagation();
+      var stepId = parseFloat(this.dataset.stepId);
+      if (confirm("Delete this step?")) {
+        deleteStep(program.id, stepId);
+        var updatedProgram = getProgram(program.id);
+        if (updatedProgram) {
+          renderProgramDetail(updatedProgram);
+        }
+      }
+    });
+  }
+
+  setupStepDragAndDrop(program.id);
+}
+
+// ========================================
+// باقي الدوال (غير معدلة)
 // ========================================
 
 function renderOverview(container, program) {
@@ -801,108 +1007,6 @@ function renderOverview(container, program) {
       startSession(program.id);
     });
   }
-}
-
-// ========================================
-// Steps Tab
-// ========================================
-
-function renderSteps(container, program) {
-  var html = '<div class="program-structure" id="program-steps-container">';
-
-  if (!program.steps || program.steps.length === 0) {
-    html += '  <div style="text-align: center; padding: 30px; color: var(--text-muted);">';
-    html += '    <p>No steps added yet. Add your first step below!</p>';
-    html += '  </div>';
-  } else {
-    for (var i = 0; i < program.steps.length; i++) {
-      var step = program.steps[i];
-      html += '<div class="program-phase" data-step-id="' + step.id + '" draggable="true">';
-      html += '  <div class="program-phase-header">';
-      html += '    <span class="program-phase-name">' + (step.completed ? '✅' : '⬜') + ' ' + escapeHtml(step.name) + '</span>';
-      if (step.completed) {
-        html += '    <span style="font-size: 12px; color: var(--text-muted);">' + formatDate(step.completedAt) + '</span>';
-        if (step.difficulty) {
-          html += '    <span style="font-size: 12px; color: var(--text-muted);">' + step.difficulty + '</span>';
-        }
-        if (step.rating) {
-          html += '    <span style="font-size: 12px; color: var(--warning);">⭐ ' + step.rating + '/5</span>';
-        }
-      }
-      html += '    <div class="program-phase-actions">';
-      if (!step.completed) {
-        html += '      <button class="program-phase-btn program-edit-step-btn" data-step-id="' + step.id + '">✏️</button>';
-        html += '      <button class="program-phase-btn program-phase-btn-danger program-delete-step-btn" data-step-id="' + step.id + '">✕</button>';
-      }
-      html += '    </div>';
-      html += '  </div>';
-      if (step.completed && step.learning) {
-        html += '  <div style="font-size: 13px; color: var(--text-secondary); padding: 4px 0 0 24px; font-style: italic;">💡 ' + escapeHtml(step.learning) + '</div>';
-      }
-      if (step.completed && step.duration) {
-        html += '  <div style="font-size: 12px; color: var(--text-muted); padding: 2px 0 0 24px;">⏱️ ' + step.duration + ' min</div>';
-      }
-      html += '</div>';
-    }
-  }
-
-  html += '  <button class="program-add-phase-btn" id="program-add-step" style="margin-top: 12px;">＋ Add Step</button>';
-  html += '</div>';
-
-  container.innerHTML = html;
-
-  document.getElementById("program-add-step").addEventListener("click", function() {
-    var name = prompt("Enter step name:");
-    if (name && name.trim()) {
-      var result = addStep(program.id, name.trim());
-      if (result) {
-        var updatedProgram = getProgram(program.id);
-        if (updatedProgram) {
-          renderProgramDetail(updatedProgram);
-        }
-      }
-    }
-  });
-
-  var editBtns = document.querySelectorAll(".program-edit-step-btn");
-  for (var e = 0; e < editBtns.length; e++) {
-    editBtns[e].addEventListener("click", function(e) {
-      e.stopPropagation();
-      var stepId = parseFloat(this.dataset.stepId);
-      var newName = prompt("Edit step name:");
-      if (newName && newName.trim()) {
-        var program2 = getProgram(program.id);
-        if (program2) {
-          for (var s = 0; s < program2.steps.length; s++) {
-            if (program2.steps[s].id === stepId) {
-              program2.steps[s].name = newName.trim();
-              program2.updatedAt = new Date().toISOString();
-              updateProgram(program2);
-              renderProgramDetail(program2);
-              break;
-            }
-          }
-        }
-      }
-    });
-  }
-
-  var deleteBtns = document.querySelectorAll(".program-delete-step-btn");
-  for (var d = 0; d < deleteBtns.length; d++) {
-    deleteBtns[d].addEventListener("click", function(e) {
-      e.stopPropagation();
-      var stepId = parseFloat(this.dataset.stepId);
-      if (confirm("Delete this step?")) {
-        deleteStep(program.id, stepId);
-        var updatedProgram = getProgram(program.id);
-        if (updatedProgram) {
-          renderProgramDetail(updatedProgram);
-        }
-      }
-    });
-  }
-
-  setupStepDragAndDrop(program.id);
 }
 
 // ========================================

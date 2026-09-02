@@ -2,6 +2,9 @@
 // MY LIFE HUB - MAIN
 // ========================================
 
+// ===== Controller لإدارة الـ Event Listeners العالمية =====
+let mainAbortController = null;
+
 document.addEventListener("DOMContentLoaded", function () {
 
   // ----------------------------------------
@@ -51,6 +54,15 @@ function navigateTo(page) {
   const app = document.getElementById("app");
 
   if (!app) return;
+
+  // ✅ إلغاء أي AbortController سابق
+  if (mainAbortController) {
+    mainAbortController.abort();
+    mainAbortController = null;
+  }
+
+  // ✅ إنشاء AbortController جديد للصفحة الحالية
+  mainAbortController = new AbortController();
 
   // إزالة active من جميع الأزرار
   const navButtons = document.querySelectorAll(".nav-btn");
@@ -116,7 +128,7 @@ function navigateTo(page) {
 
     case "program":
 
-      // التحقق من وجود الدالة في النافذة العامة
+      // ✅ تحسين التحقق من الدالة
       if (typeof window.renderProgramPage === "function") {
         window.renderProgramPage();
       } else if (typeof renderProgramPage === "function") {
@@ -154,6 +166,9 @@ function renderNotesPage() {
 
   if (!app) return;
 
+  // ✅ استخدام replaceChildren بدلاً من innerHTML حيثما أمكن
+  app.replaceChildren();
+
   // استخدام نظام الملاحظات الجديد v2.0
   // التحقق من وجود الدالة الجديدة
   if (typeof renderNotesPageV2 === "function") {
@@ -162,19 +177,23 @@ function renderNotesPage() {
   }
 
   // Fallback للنسخة القديمة (في حال عدم تحميل note.js الجديد)
-  app.innerHTML = `
-    <section class="page-section">
+  const section = document.createElement("section");
+  section.className = "page-section";
 
-      <h2>📝 Notes</h2>
+  const h2 = document.createElement("h2");
+  h2.textContent = "📝 Notes";
+  section.appendChild(h2);
 
-      <p class="page-description">
-        Write down anything you want to remember.
-      </p>
+  const p = document.createElement("p");
+  p.className = "page-description";
+  p.textContent = "Write down anything you want to remember.";
+  section.appendChild(p);
 
-      <div id="notes-panel-content"></div>
+  const notesDiv = document.createElement("div");
+  notesDiv.id = "notes-panel-content";
+  section.appendChild(notesDiv);
 
-    </section>
-  `;
+  app.appendChild(section);
 
   // تشغيل نظام Notes القديم
   if (typeof renderNotesPanel === "function") {
@@ -194,17 +213,21 @@ function renderNotFoundPage() {
 
   if (!app) return;
 
-  app.innerHTML = `
-    <section class="page-section">
+  app.replaceChildren();
 
-      <h2>Page not found</h2>
+  const section = document.createElement("section");
+  section.className = "page-section";
 
-      <p class="empty-message">
-        The requested page does not exist.
-      </p>
+  const h2 = document.createElement("h2");
+  h2.textContent = "Page not found";
+  section.appendChild(h2);
 
-    </section>
-  `;
+  const p = document.createElement("p");
+  p.className = "empty-message";
+  p.textContent = "The requested page does not exist.";
+  section.appendChild(p);
+
+  app.appendChild(section);
 
 }
 
@@ -371,6 +394,37 @@ window.navigateTo = navigateTo;
 window.renderNotesPage = renderNotesPage;
 window.updateUserHeader = updateUserHeader;
 window.createDefaultAvatar = createDefaultAvatar;
+
+
+// ========================================
+// CLEANUP HELPERS
+// ========================================
+
+// ✅ دالة لتنظيف الـ Event Listeners على العناصر
+function cleanupElement(element) {
+  if (!element) return;
+  // cloneNode يحل محل العنصر ويزيل جميع الـ Listeners
+  const clone = element.cloneNode(true);
+  element.parentNode?.replaceChild(clone, element);
+  return clone;
+}
+
+// ✅ دالة لتنظيف جميع الـ Intervals و Timeouts
+function clearAllTimers() {
+  // الحصول على أعلى ID للـ interval
+  const maxIntervalId = setInterval(function() {}, 0);
+  for (let i = 0; i < maxIntervalId; i++) {
+    clearInterval(i);
+    clearTimeout(i);
+  }
+}
+
+// ✅ دالة لتنظيف الـ Event Listeners على window و document
+function cleanupGlobalListeners(controller) {
+  if (controller) {
+    controller.abort();
+  }
+}
 
 
 // ========================================

@@ -187,7 +187,7 @@ h2 { font-size: var(--font-3xl); font-weight: 700; }
 h3 { font-size: var(--font-xl); font-weight: 600; }
 
 /* ========================================
-   HEADER - أزرق مع شفافية 70%
+   HEADER - أزرق مع شفافية عالية (30%)
    ======================================== */
 
 header {
@@ -195,8 +195,8 @@ header {
   justify-content: space-between;
   align-items: center;
   background-color: rgba(25, 55, 90, 0.70);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(6px); /* ✅ تم التخفيف من 16px إلى 6px */
+  -webkit-backdrop-filter: blur(6px);
   color: var(--text-light);
   padding: var(--spacing-md) var(--spacing-2xl);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -226,7 +226,7 @@ header {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.3s ease; /* ✅ تم التعديل من 'all' */
   padding: 6px;
 }
 
@@ -335,8 +335,8 @@ header h1::before {
   gap: var(--spacing-sm);
   padding: var(--spacing-xl) var(--spacing-lg);
   background-color: var(--bg-sidebar);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(4px); /* ✅ تم التخفيف من 8px إلى 4px */
+  -webkit-backdrop-filter: blur(4px);
   border-right: 1px solid var(--border-light);
   min-width: 200px;
   width: 200px;
@@ -370,7 +370,7 @@ header h1::before {
   font-size: var(--font-lg);
   font-weight: 500;
   text-align: left;
-  transition: var(--transition-base);
+  transition: background-color 0.25s ease, color 0.25s ease; /* ✅ تم التعديل من 'all' */
   color: var(--ink-light);
   position: relative;
   letter-spacing: 0.3px;
@@ -672,8 +672,8 @@ body.dark-mode #day-for-box {
 
 #hour-modal {
   background: var(--bg-modal);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(6px); /* ✅ تم التخفيف من 12px إلى 6px */
+  -webkit-backdrop-filter: blur(6px);
   border-radius: var(--radius-xl);
   padding: var(--spacing-2xl);
   width: 90%;

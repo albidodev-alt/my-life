@@ -84,7 +84,6 @@ function renderTasks() {
 function renderTaskList(filter = "all") {
   const taskList = document.getElementById("task-list");
   if (!taskList) return;
-  taskList.innerHTML = "";
 
   let tasks = getAllTasks().filter(function (t) { return !t.completed; });
 
@@ -99,112 +98,118 @@ function renderTaskList(filter = "all") {
     return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
 
+  // ===== ✅ استخدام DocumentFragment لتجميع العناصر =====
+  const fragment = document.createDocumentFragment();
+
   if (tasks.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty-message";
     empty.textContent = filter === "all" ? "No tasks yet. Add one!" : "No tasks with this priority.";
-    taskList.appendChild(empty);
-    return;
+    fragment.appendChild(empty);
+  } else {
+    tasks.forEach(function (task) {
+      const item = document.createElement("div");
+      item.className = "task-item priority-" + task.priority;
+
+      // ===== الجانب الأيسر (دائرة + نص) =====
+      const leftDiv = document.createElement("div");
+      leftDiv.style.display = "flex";
+      leftDiv.style.alignItems = "center";
+      leftDiv.style.gap = "12px";
+      leftDiv.style.flex = "1";
+
+      const circleBtn = document.createElement("button");
+      circleBtn.className = "task-circle";
+      circleBtn.title = "Mark as completed";
+      circleBtn.addEventListener("click", function () {
+        openCompleteTaskModal(task);
+      });
+
+      const textDiv = document.createElement("div");
+      textDiv.style.display = "flex";
+      textDiv.style.flexDirection = "column";
+
+      const textSpan = document.createElement("span");
+      textSpan.className = "task-text";
+      textSpan.textContent = task.text;
+
+      const metaDiv = document.createElement("div");
+      metaDiv.style.display = "flex";
+      metaDiv.style.gap = "8px";
+      metaDiv.style.fontSize = "12px";
+      metaDiv.style.color = "#6b7280";
+
+      const categorySpan = document.createElement("span");
+      categorySpan.className = "task-category";
+      categorySpan.textContent = task.category;
+
+      metaDiv.appendChild(categorySpan);
+
+      // عرض التاريخ إذا موجود
+      if (task.dueDate) {
+        const dateSpan = document.createElement("span");
+        dateSpan.className = "task-date";
+        const dueDate = new Date(task.dueDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (dueDate < today) {
+          dateSpan.style.color = "#ef4444";
+          dateSpan.textContent = "🔴 Overdue: " + task.dueDate;
+        } else if (dueDate.getTime() === today.getTime()) {
+          dateSpan.style.color = "#f59e0b";
+          dateSpan.textContent = "🟡 Today";
+        } else {
+          dateSpan.textContent = "📅 " + task.dueDate;
+        }
+        
+        metaDiv.appendChild(dateSpan);
+      }
+
+      textDiv.appendChild(textSpan);
+      textDiv.appendChild(metaDiv);
+
+      leftDiv.appendChild(circleBtn);
+      leftDiv.appendChild(textDiv);
+
+      // ===== الجانب الأيمن (أزرار Edit + Delete) =====
+      const rightDiv = document.createElement("div");
+      rightDiv.style.display = "flex";
+      rightDiv.style.gap = "6px";
+
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "✏️";
+      editBtn.className = "task-action-btn";
+      editBtn.title = "Edit task";
+      editBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        openEditTaskModal(task);
+      });
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "🗑️";
+      deleteBtn.className = "task-action-btn";
+      deleteBtn.title = "Delete task";
+      deleteBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (confirm("Delete this task?")) {
+          deleteTask(task.id);
+          renderTaskList(filter);
+        }
+      });
+
+      rightDiv.appendChild(editBtn);
+      rightDiv.appendChild(deleteBtn);
+
+      item.appendChild(leftDiv);
+      item.appendChild(rightDiv);
+      fragment.appendChild(item);
+    });
   }
 
-  tasks.forEach(function (task) {
-    const item = document.createElement("div");
-    item.className = "task-item priority-" + task.priority;
-
-    // ===== الجانب الأيسر (دائرة + نص) =====
-    const leftDiv = document.createElement("div");
-    leftDiv.style.display = "flex";
-    leftDiv.style.alignItems = "center";
-    leftDiv.style.gap = "12px";
-    leftDiv.style.flex = "1";
-
-    const circleBtn = document.createElement("button");
-    circleBtn.className = "task-circle";
-    circleBtn.title = "Mark as completed";
-    circleBtn.addEventListener("click", function () {
-      openCompleteTaskModal(task);
-    });
-
-    const textDiv = document.createElement("div");
-    textDiv.style.display = "flex";
-    textDiv.style.flexDirection = "column";
-
-    const textSpan = document.createElement("span");
-    textSpan.className = "task-text";
-    textSpan.textContent = task.text;
-
-    const metaDiv = document.createElement("div");
-    metaDiv.style.display = "flex";
-    metaDiv.style.gap = "8px";
-    metaDiv.style.fontSize = "12px";
-    metaDiv.style.color = "#6b7280";
-
-    const categorySpan = document.createElement("span");
-    categorySpan.className = "task-category";
-    categorySpan.textContent = task.category;
-
-    metaDiv.appendChild(categorySpan);
-
-    // عرض التاريخ إذا موجود
-    if (task.dueDate) {
-      const dateSpan = document.createElement("span");
-      dateSpan.className = "task-date";
-      const dueDate = new Date(task.dueDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      if (dueDate < today) {
-        dateSpan.style.color = "#ef4444";
-        dateSpan.textContent = "🔴 Overdue: " + task.dueDate;
-      } else if (dueDate.getTime() === today.getTime()) {
-        dateSpan.style.color = "#f59e0b";
-        dateSpan.textContent = "🟡 Today";
-      } else {
-        dateSpan.textContent = "📅 " + task.dueDate;
-      }
-      
-      metaDiv.appendChild(dateSpan);
-    }
-
-    textDiv.appendChild(textSpan);
-    textDiv.appendChild(metaDiv);
-
-    leftDiv.appendChild(circleBtn);
-    leftDiv.appendChild(textDiv);
-
-    // ===== الجانب الأيمن (أزرار Edit + Delete) =====
-    const rightDiv = document.createElement("div");
-    rightDiv.style.display = "flex";
-    rightDiv.style.gap = "6px";
-
-    const editBtn = document.createElement("button");
-    editBtn.textContent = "✏️";
-    editBtn.className = "task-action-btn";
-    editBtn.title = "Edit task";
-    editBtn.addEventListener("click", function (e) {
-      e.stopPropagation();
-      openEditTaskModal(task);
-    });
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "🗑️";
-    deleteBtn.className = "task-action-btn";
-    deleteBtn.title = "Delete task";
-    deleteBtn.addEventListener("click", function (e) {
-      e.stopPropagation();
-      if (confirm("Delete this task?")) {
-        deleteTask(task.id);
-        renderTaskList(filter);
-      }
-    });
-
-    rightDiv.appendChild(editBtn);
-    rightDiv.appendChild(deleteBtn);
-
-    item.appendChild(leftDiv);
-    item.appendChild(rightDiv);
-    taskList.appendChild(item);
-  });
+  // ===== ✅ إضافة جميع العناصر دفعة واحدة =====
+  taskList.innerHTML = "";
+  taskList.appendChild(fragment);
 }
 
 // ===== دوال CRUD =====

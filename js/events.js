@@ -604,8 +604,6 @@ function renderEventsPage() {
     const container = document.getElementById("events-list");
     if (!container) return;
 
-    container.innerHTML = "";
-
     // ===== فصل الأحداث المثبتة =====
     const allEvents = events.length > 0 ? events : getAllEvents();
     const now = new Date();
@@ -620,39 +618,45 @@ function renderEventsPage() {
     const pinnedEvents = upcomingEvents.filter(e => e.pinned);
     const unpinnedEvents = upcomingEvents.filter(e => !e.pinned);
 
+    // ===== ✅ استخدام DocumentFragment لتجميع البطاقات =====
+    const fragment = document.createDocumentFragment();
+
     if (upcomingEvents.length === 0) {
       const empty = document.createElement("p");
       empty.className = "events-empty";
       empty.textContent = "No upcoming events. Add one!";
-      container.appendChild(empty);
-      return;
+      fragment.appendChild(empty);
+    } else {
+      // ===== عرض الأحداث المثبتة =====
+      if (pinnedEvents.length > 0) {
+        const pinnedTitle = document.createElement("h4");
+        pinnedTitle.className = "events-subtitle";
+        pinnedTitle.textContent = "📌 Pinned Events";
+        fragment.appendChild(pinnedTitle);
+
+        pinnedEvents.forEach(e => {
+          const card = createEventCard(e, true);
+          fragment.appendChild(card);
+        });
+      }
+
+      // ===== عرض الأحداث العادية =====
+      if (unpinnedEvents.length > 0) {
+        const unpinnedTitle = document.createElement("h4");
+        unpinnedTitle.className = "events-subtitle";
+        unpinnedTitle.textContent = pinnedEvents.length > 0 ? "📋 All Events" : "📌 Upcoming Events";
+        fragment.appendChild(unpinnedTitle);
+
+        unpinnedEvents.forEach(e => {
+          const card = createEventCard(e, true);
+          fragment.appendChild(card);
+        });
+      }
     }
 
-    // ===== عرض الأحداث المثبتة =====
-    if (pinnedEvents.length > 0) {
-      const pinnedTitle = document.createElement("h4");
-      pinnedTitle.className = "events-subtitle";
-      pinnedTitle.textContent = "📌 Pinned Events";
-      container.appendChild(pinnedTitle);
-
-      pinnedEvents.forEach(e => {
-        const card = createEventCard(e, true);
-        container.appendChild(card);
-      });
-    }
-
-    // ===== عرض الأحداث العادية =====
-    if (unpinnedEvents.length > 0) {
-      const unpinnedTitle = document.createElement("h4");
-      unpinnedTitle.className = "events-subtitle";
-      unpinnedTitle.textContent = pinnedEvents.length > 0 ? "📋 All Events" : "📌 Upcoming Events";
-      container.appendChild(unpinnedTitle);
-
-      unpinnedEvents.forEach(e => {
-        const card = createEventCard(e, true);
-        container.appendChild(card);
-      });
-    }
+    // ===== ✅ إضافة جميع البطاقات دفعة واحدة =====
+    container.innerHTML = "";
+    container.appendChild(fragment);
   }
 
   // ===== التنقل بين الأشهر =====

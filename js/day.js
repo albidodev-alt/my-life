@@ -522,6 +522,24 @@ function openSleepModal(dayName) {
 }
 
 // ========================================
+// ✅ دالة معالجة النقر على الساعات (Event Delegation)
+// ========================================
+
+function handleHourClick(event) {
+  const hourBox = event.target.closest(".hour-box");
+  if (!hourBox) return;
+  
+  const dayName = hourBox.closest("#hours-grid")?.dataset.dayName;
+  if (!dayName) return;
+  
+  const hourIndex = parseInt(hourBox.dataset.hour);
+  const label = hourBox.dataset.label;
+  const activity = hourBox.dataset.activity || "";
+  
+  openHourModal(dayName, hourIndex, label, activity);
+}
+
+// ========================================
 // فتح صفحة اليوم
 // ========================================
 
@@ -543,13 +561,22 @@ function openDay(dayName) {
 
   const hoursGrid = document.createElement("div");
   hoursGrid.id = "hours-grid";
+  hoursGrid.dataset.dayName = dayName; // ✅ لتتبع اليوم في Event Delegation
+
+  // ✅ استخدام DocumentFragment لتجميع جميع الساعات
+  const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < 24; i++) {
     const hourBox = document.createElement("div");
     hourBox.className = "hour-box";
-
+    
     const label = formatHourRange(i);
     const activity = dayData.hours[i] ? dayData.hours[i] : "";
+    
+    // تخزين البيانات في dataset بدلاً من إعادة حسابها لاحقاً
+    hourBox.dataset.hour = i;
+    hourBox.dataset.label = label;
+    hourBox.dataset.activity = activity;
     
     const bgColor = getHourColor(i);
     const textStyle = getTextStyle(bgColor);
@@ -592,12 +619,15 @@ function openDay(dayName) {
     hourBox.appendChild(labelSpan);
     hourBox.appendChild(activitySpan);
 
-    hourBox.addEventListener("click", function () {
-      openHourModal(dayName, i, label, activity);
-    });
-
-    hoursGrid.appendChild(hourBox);
+    fragment.appendChild(hourBox);
   }
+
+  // ✅ إضافة جميع الساعات دفعة واحدة
+  hoursGrid.appendChild(fragment);
+  
+  // ✅ إضافة Event Delegation واحد فقط على الحاوية
+  hoursGrid.addEventListener("click", handleHourClick);
+
   app.appendChild(hoursGrid);
 
   // ===== Day For? =====
