@@ -22,7 +22,7 @@
   --danger: #e74c5e;
   
   /* ----- Grid Colors ----- */
-  --grid-color: rgba(79, 142, 219, 0.20); /* ✅ زيادة الشفافية من 0.12 إلى 0.20 */
+  --grid-color: rgba(79, 142, 219, 0.20);
   --grid-size: 28px;
   
   /* ----- Text ----- */
@@ -109,7 +109,7 @@ body.dark-mode {
   --paper-warm: #142030;
   --paper-white: #182438;
   
-  --grid-color: rgba(109, 168, 232, 0.15); /* ✅ زيادة الشفافية في الوضع الليلي */
+  --grid-color: rgba(109, 168, 232, 0.15);
   --grid-size: 28px;
   
   --text-primary: #e8edf2;
@@ -151,8 +151,8 @@ body.dark-mode {
 html {
   min-height: 100vh;
   background-image:
-    linear-gradient(var(--grid-color) 2px, transparent 2px),  /* ✅ زيادة سمك الخط من 1px إلى 2px */
-    linear-gradient(90deg, var(--grid-color) 2px, transparent 2px); /* ✅ زيادة سمك الخط من 1px إلى 2px */
+    linear-gradient(var(--grid-color) 2px, transparent 2px),
+    linear-gradient(90deg, var(--grid-color) 2px, transparent 2px);
   background-size: var(--grid-size) var(--grid-size);
   background-position: -1px -1px;
 }
@@ -187,14 +187,14 @@ h2 { font-size: var(--font-3xl); font-weight: 700; }
 h3 { font-size: var(--font-xl); font-weight: 600; }
 
 /* ========================================
-   HEADER - أزرق غامق مع شفافية عالية (40%)
+   HEADER - أزرق مع شفافية 70%
    ======================================== */
 
 header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: rgba(25, 45, 75, 0.30); /* ✅ زيادة الشفافية من 0.40 إلى 0.30 */
+  background-color: rgba(25, 55, 90, 0.70);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   color: var(--text-light);
@@ -1514,4 +1514,4 @@ select:focus-visible {
   .menu-toggle.active .menu-icon:nth-child(3) {
     transform: translateY(-5px) rotate(-45deg);
   }
-} 
+}
