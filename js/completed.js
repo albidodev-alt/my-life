@@ -4,7 +4,7 @@ function renderCompleted() {
 
   // ===== العنوان =====
   const title = document.createElement("h2");
-  title.textContent = "🏆 Completed";
+  title.textContent = " Completed";
   app.appendChild(title);
 
   // ===== الفلاتر =====

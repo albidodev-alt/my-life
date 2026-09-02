@@ -22,7 +22,7 @@
   --danger: #e74c5e;
   
   /* ----- Grid Colors ----- */
-  --grid-color: rgba(79, 142, 219, 0.12);
+  --grid-color: rgba(79, 142, 219, 0.20); /* ✅ زيادة الشفافية من 0.12 إلى 0.20 */
   --grid-size: 28px;
   
   /* ----- Text ----- */
@@ -68,9 +68,9 @@
   --radius-2xl: 12px;
   --radius-full: 50%;
   
-  /* ----- Fonts ----- */
-  --font-handwritten: 'Caveat', 'Patrick Hand', cursive;
-  --font-body: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  /* ----- Fonts - تم التعديل لخطوط أكثر وضوحاً وسمكاً ----- */
+  --font-handwritten: 'Quicksand', 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  --font-body: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
   
   /* ----- Font Sizes ----- */
   --font-xs: 10px;
@@ -109,7 +109,8 @@ body.dark-mode {
   --paper-warm: #142030;
   --paper-white: #182438;
   
-  --grid-color: rgba(109, 168, 232, 0.08);
+  --grid-color: rgba(109, 168, 232, 0.15); /* ✅ زيادة الشفافية في الوضع الليلي */
+  --grid-size: 28px;
   
   --text-primary: #e8edf2;
   --text-secondary: #c8d4e0;
@@ -134,9 +135,9 @@ body.dark-mode {
 }
 
 /* ========================================
-   GOOGLE FONTS IMPORT
+   GOOGLE FONTS IMPORT - خطوط أكثر وضوحاً
    ======================================== */
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap');
 
 /* ========================================
    RESET & BASE - NOTEBOOK STYLE
@@ -147,24 +148,28 @@ body.dark-mode {
   padding: 0;
 }
 
-body {
-  font-family: var(--font-body);
-  background-color: var(--bg-body);
-  color: var(--text-primary);
-  transition: background-color var(--transition-slow), color var(--transition-slow);
-  
-  /* ----- Notebook Grid Background ----- */
+html {
+  min-height: 100vh;
   background-image:
-    linear-gradient(var(--grid-color) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    linear-gradient(var(--grid-color) 2px, transparent 2px),  /* ✅ زيادة سمك الخط من 1px إلى 2px */
+    linear-gradient(90deg, var(--grid-color) 2px, transparent 2px); /* ✅ زيادة سمك الخط من 1px إلى 2px */
   background-size: var(--grid-size) var(--grid-size);
   background-position: -1px -1px;
-  
+}
+
+body {
+  font-family: var(--font-body);
+  font-weight: 450;
+  background-color: transparent;
+  color: var(--text-primary);
+  transition: background-color var(--transition-slow), color var(--transition-slow);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ========================================
-   HANDWRITTEN FONTS
+   HANDWRITTEN FONTS - أصبحت أكثر وضوحاً وسمكاً
    ======================================== */
 h1, h2, h3,
 .handwritten,
@@ -178,19 +183,20 @@ h1, h2, h3,
 }
 
 h1 { font-size: var(--font-4xl); font-weight: 700; }
-h2 { font-size: var(--font-3xl); font-weight: 600; }
-h3 { font-size: var(--font-xl); font-weight: 500; }
+h2 { font-size: var(--font-3xl); font-weight: 700; }
+h3 { font-size: var(--font-xl); font-weight: 600; }
 
 /* ========================================
-   HEADER - NOTEBOOK STYLE
+   HEADER - أزرق غامق مع شفافية عالية (40%)
    ======================================== */
+
 header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: rgba(44, 62, 80, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(25, 45, 75, 0.30); /* ✅ زيادة الشفافية من 0.40 إلى 0.30 */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   color: var(--text-light);
   padding: var(--spacing-md) var(--spacing-2xl);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -199,11 +205,69 @@ header {
   z-index: 100;
 }
 
+/* ===== زر القائمة (ثلاث خطوط) ===== */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 40px;
+  flex-shrink: 0;
+}
+
+.menu-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 38px;
+  height: 38px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 6px;
+}
+
+.menu-toggle:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.menu-toggle .menu-icon {
+  display: block;
+  width: 22px;
+  height: 2.5px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  transform-origin: center;
+}
+
+/* ===== أنيميشن تحويل الثلاث خطوط إلى X ===== */
+.menu-toggle.active .menu-icon:nth-child(1) {
+  transform: translateY(6.5px) rotate(45deg);
+}
+
+.menu-toggle.active .menu-icon:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.menu-toggle.active .menu-icon:nth-child(3) {
+  transform: translateY(-6.5px) rotate(-45deg);
+}
+
+/* ===== عنوان الموقع ===== */
 header h1 {
   font-size: var(--font-2xl);
   font-weight: 600;
   color: #fff;
   letter-spacing: 0.5px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
 }
 
 header h1::before {
@@ -224,7 +288,8 @@ header h1::before {
   background-color: rgba(255, 255, 255, 0.10);
   cursor: pointer;
   transition: var(--transition-base);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
 }
 
 #user-profile-btn:hover {
@@ -248,6 +313,7 @@ header h1::before {
   color: var(--text-light);
   padding-right: var(--spacing-xs);
   letter-spacing: 0.5px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* ========================================
@@ -256,11 +322,13 @@ header h1::before {
 #layout {
   display: flex;
   min-height: calc(100vh - 60px);
+  position: relative;
 }
 
 /* ========================================
-   SIDEBAR - NOTEBOOK STYLE
+   SIDEBAR - مع أنيميشن انزلاق سلس
    ======================================== */
+
 #sidebar {
   display: flex;
   flex-direction: column;
@@ -270,13 +338,28 @@ header h1::before {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-right: 1px solid var(--border-light);
-  min-width: 170px;
+  min-width: 200px;
+  width: 200px;
   height: calc(100vh - 60px);
   position: sticky;
   top: 60px;
-  transition: background-color var(--transition-slow), border-color var(--transition-slow);
+  flex-shrink: 0;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
+/* ===== Sidebar مغلق ===== */
+#sidebar.closed {
+  min-width: 0;
+  width: 0;
+  padding: 0;
+  border-right: none;
+  opacity: 0;
+  overflow: hidden;
+  flex: 0;
+}
+
+/* ===== أزرار الـ Sidebar ===== */
 .nav-btn {
   padding: var(--spacing-md) var(--spacing-lg);
   border: none;
@@ -285,11 +368,13 @@ header h1::before {
   cursor: pointer;
   font-family: var(--font-handwritten);
   font-size: var(--font-lg);
+  font-weight: 500;
   text-align: left;
   transition: var(--transition-base);
   color: var(--ink-light);
   position: relative;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 .nav-btn::before {
@@ -348,10 +433,13 @@ body.dark-mode .nav-btn.active {
   padding: var(--spacing-2xl);
   overflow-y: auto;
   max-height: calc(100vh - 60px);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
 }
 
 #app h2 {
   font-size: var(--font-3xl);
+  font-weight: 700;
   color: var(--text-primary);
   margin-bottom: var(--spacing-lg);
   position: relative;
@@ -406,11 +494,11 @@ body.dark-mode .nav-btn.active {
   border-radius: 0;
   text-align: left;
   font-size: var(--font-xl);
+  font-weight: 500;
   cursor: pointer;
   transition: var(--transition-base);
   width: 100%;
   color: var(--text-primary);
-  font-weight: 500;
 }
 
 .day-btn:hover {
@@ -425,6 +513,7 @@ body.dark-mode .day-btn {
   padding: var(--spacing-xs) var(--spacing-lg) var(--spacing-sm) var(--spacing-lg);
   font-family: var(--font-handwritten);
   font-size: var(--font-sm);
+  font-weight: 500;
   color: var(--ink-faded);
   border-top: 1px solid var(--border-light);
   display: flex;
@@ -448,6 +537,7 @@ body.dark-mode .day-btn {
   color: var(--ink);
   font-family: var(--font-handwritten);
   font-size: var(--font-base);
+  font-weight: 500;
 }
 
 #back-btn:hover {
@@ -500,14 +590,14 @@ body.dark-mode #back-btn:hover {
 
 .hour-label {
   font-size: var(--font-xs);
-  color: var(--ink-faded);
   font-weight: 400;
+  color: var(--ink-faded);
 }
 
 .hour-activity {
   font-family: var(--font-handwritten);
   font-size: var(--font-sm);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
@@ -532,6 +622,7 @@ body.dark-mode .hour-activity {
   color: var(--text-secondary);
   font-family: var(--font-handwritten);
   font-size: var(--font-base);
+  font-weight: 500;
 }
 
 #day-for-box:hover {
@@ -596,6 +687,7 @@ body.dark-mode #day-for-box {
 #hour-modal h3 {
   font-family: var(--font-handwritten);
   font-size: var(--font-2xl);
+  font-weight: 600;
   margin-bottom: var(--spacing-xs);
   color: var(--text-primary);
 }
@@ -607,6 +699,7 @@ body.dark-mode #hour-modal h3 {
 .modal-subtitle {
   color: var(--text-muted);
   font-size: var(--font-sm);
+  font-weight: 500;
   margin-bottom: var(--spacing-lg);
 }
 
@@ -634,6 +727,7 @@ body.dark-mode #hour-modal h3 {
   cursor: pointer;
   font-family: var(--font-handwritten);
   font-size: var(--font-sm);
+  font-weight: 500;
   transition: var(--transition-base);
   color: var(--text-secondary);
 }
@@ -681,6 +775,7 @@ body.dark-mode .suggestion-btn:hover {
   margin-bottom: var(--spacing-md);
   font-family: var(--font-body);
   font-size: var(--font-md);
+  font-weight: 450;
   transition: var(--transition-base);
   background: var(--bg-input);
   color: var(--text-primary);
@@ -719,7 +814,7 @@ body.dark-mode #task-date-input {
   cursor: pointer;
   font-family: var(--font-handwritten);
   font-size: var(--font-lg);
-  font-weight: 500;
+  font-weight: 600;
   transition: var(--transition-base);
   letter-spacing: 0.5px;
 }
@@ -764,7 +859,7 @@ body.dark-mode #close-modal-btn:hover {
   cursor: pointer;
   font-family: var(--font-handwritten);
   font-size: var(--font-base);
-  font-weight: 500;
+  font-weight: 600;
   transition: var(--transition-base);
 }
 
@@ -810,6 +905,7 @@ body.dark-mode #close-modal-btn:hover {
 
 .task-text {
   font-size: var(--font-md);
+  font-weight: 500;
   color: var(--text-primary);
 }
 
@@ -837,6 +933,7 @@ body.dark-mode .task-text {
 
 .task-category {
   font-size: var(--font-xs);
+  font-weight: 500;
   color: var(--text-muted);
   background-color: var(--bg-hover);
   padding: 2px 10px;
@@ -888,6 +985,7 @@ body.dark-mode .task-category {
   cursor: pointer;
   font-family: var(--font-handwritten);
   font-size: var(--font-sm);
+  font-weight: 500;
   transition: var(--transition-base);
   color: var(--ink-light);
 }
@@ -922,6 +1020,7 @@ body.dark-mode .filter-btn.active {
    ======================================== */
 .task-date {
   font-size: var(--font-xs);
+  font-weight: 500;
   color: var(--text-muted);
   background-color: var(--bg-hover);
   padding: 1px 8px;
@@ -940,6 +1039,7 @@ body.dark-mode .task-date {
   color: var(--text-muted);
   font-family: var(--font-handwritten);
   font-size: var(--font-base);
+  font-weight: 500;
   padding: var(--spacing-xl) 0;
   opacity: 0.7;
 }
@@ -975,7 +1075,7 @@ body.dark-mode .task-date {
 
 .statistics-item-name {
   font-family: var(--font-handwritten);
-  font-weight: 500;
+  font-weight: 600;
   min-width: 80px;
   font-size: var(--font-base);
   color: var(--text-primary);
@@ -1003,6 +1103,7 @@ body.dark-mode .statistics-item-name {
 .statistics-item-hours {
   font-family: var(--font-handwritten);
   font-size: var(--font-sm);
+  font-weight: 500;
   color: var(--text-muted);
   min-width: 60px;
   text-align: right;
@@ -1073,13 +1174,14 @@ body.dark-mode .statistics-item-name {
 .profile-name {
   font-family: var(--font-handwritten);
   font-size: var(--font-3xl);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
   margin-bottom: var(--spacing-xs);
 }
 
 .profile-bio {
   font-family: var(--font-handwritten);
+  font-weight: 500;
   color: var(--text-muted);
   font-size: var(--font-base);
   margin-bottom: var(--spacing-xl);
@@ -1109,8 +1211,8 @@ body.dark-mode .statistics-item-name {
 
 .profile-stat-label {
   font-size: var(--font-xs);
+  font-weight: 500;
   color: var(--text-muted);
-  font-weight: 400;
 }
 
 /* ===== Profile Sections ===== */
@@ -1158,6 +1260,7 @@ body.dark-mode .statistics-item-name {
   border-radius: var(--radius-md);
   font-family: var(--font-body);
   font-size: var(--font-md);
+  font-weight: 450;
   transition: var(--transition-base);
   background: var(--bg-input);
   color: var(--text-primary);
@@ -1178,6 +1281,7 @@ body.dark-mode .statistics-item-name {
 .profile-member-info {
   font-family: var(--font-handwritten);
   font-size: var(--font-md);
+  font-weight: 500;
   color: var(--text-muted);
   margin: 0;
   text-align: center;
@@ -1199,10 +1303,24 @@ select:focus-visible {
    ======================================== */
 @media (max-width: 768px) {
   #sidebar {
-    min-width: 130px;
-    padding: var(--spacing-lg) var(--spacing-md);
+    min-width: 160px;
+    width: 160px;
   }
-
+  
+  #sidebar.closed {
+    min-width: 0;
+    width: 0;
+    padding: 0;
+  }
+  
+  header h1 {
+    font-size: var(--font-xl);
+  }
+  
+  #user-name-icon {
+    display: none;
+  }
+  
   .nav-btn {
     font-size: var(--font-base);
     padding: var(--spacing-sm) var(--spacing-md);
@@ -1266,7 +1384,7 @@ select:focus-visible {
   }
 
   #user-name-icon {
-    font-size: var(--font-sm);
+    display: none;
   }
 
   #user-avatar-icon {
@@ -1280,14 +1398,20 @@ select:focus-visible {
   }
 
   #sidebar {
-    min-width: 70px;
-    padding: var(--spacing-md) var(--spacing-xs);
+    min-width: 130px;
+    width: 130px;
+  }
+  
+  #sidebar.closed {
+    min-width: 0;
+    width: 0;
+    padding: 0;
   }
 
   .nav-btn {
     font-size: var(--font-sm);
     padding: var(--spacing-sm) var(--spacing-xs);
-    text-align: center;
+    text-align: left;
   }
 
   .nav-btn::before {
@@ -1372,4 +1496,22 @@ select:focus-visible {
   .profile-section {
     padding: var(--spacing-lg);
   }
-}
+
+  .menu-toggle {
+    width: 32px;
+    height: 32px;
+  }
+
+  .menu-toggle .menu-icon {
+    width: 18px;
+    height: 2px;
+  }
+
+  .menu-toggle.active .menu-icon:nth-child(1) {
+    transform: translateY(5px) rotate(45deg);
+  }
+
+  .menu-toggle.active .menu-icon:nth-child(3) {
+    transform: translateY(-5px) rotate(-45deg);
+  }
+} 

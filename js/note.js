@@ -163,7 +163,7 @@ function renderNotesPageV2() {
       <!-- Header Section -->
       <div class="notes-header-section">
         <div class="notes-title-area">
-          <h2 class="notes-main-title">📝 Notes</h2>
+          <h2 class="notes-main-title"> Notes</h2>
           <p class="notes-main-subtitle">Capture your thoughts, ideas, and reminders</p>
         </div>
         <button class="notes-add-main-btn" id="notes-open-add-btn">

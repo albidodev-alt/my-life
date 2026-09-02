@@ -116,7 +116,7 @@ function openEventDetailsModal(events, dateStr) {
   modal.className = "notes-modal";
   modal.id = "events-details-modal";
 
-  // عنوان
+  // عنوان - تم إصلاح المسافة الزائدة
   const formattedDate = new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
     weekday: 'long',
     year: 'numeric',
@@ -126,7 +126,7 @@ function openEventDetailsModal(events, dateStr) {
 
   const title = document.createElement("h3");
   title.className = "notes-modal-title";
-  title.textContent = "📅 " + formattedDate;
+  title.textContent = formattedDate;
   modal.appendChild(title);
 
   // عدد الأحداث
@@ -563,7 +563,7 @@ function renderEventsPage() {
       actionsDiv.appendChild(pinBtn);
     }
 
-    // زر تعديل
+    // زر تعديل - تم إصلاح class
     const editBtn = document.createElement("button");
     editBtn.className = "event-edit-btn";
     editBtn.textContent = "✏️";

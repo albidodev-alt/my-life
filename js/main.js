@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   setupNavigation();
   setupProfileButton();
+  setupSidebarToggle();
 
   // الصفحة الافتراضية
   navigateTo("routine");
@@ -113,19 +114,22 @@ function navigateTo(page) {
       break;
 
 
-    case "social":
-
-      if (typeof renderSocialPage === "function") {
-        renderSocialPage();
-      }
-
-      break;
-
-
     case "program":
 
-      if (typeof renderProgramPage === "function") {
+      // التحقق من وجود الدالة في النافذة العامة
+      if (typeof window.renderProgramPage === "function") {
+        window.renderProgramPage();
+      } else if (typeof renderProgramPage === "function") {
         renderProgramPage();
+      } else {
+        // رسالة خطأ واضحة
+        app.innerHTML = `
+          <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+            <h3>⚠️ Program module not loaded</h3>
+            <p>Please check that program.js is loaded correctly.</p>
+            <button onclick="location.reload()" style="padding: 10px 24px; margin-top: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Reload</button>
+          </div>
+        `;
       }
 
       break;
@@ -229,6 +233,35 @@ function setupProfileButton() {
 
   });
 
+}
+
+
+// ========================================
+// SIDEBAR TOGGLE (DeepSeek Style)
+// ========================================
+
+function setupSidebarToggle() {
+  const toggleBtn = document.getElementById("menu-toggle");
+  const sidebar = document.getElementById("sidebar");
+
+  if (!toggleBtn || !sidebar) return;
+
+  // استرجاع الحالة من localStorage
+  const isClosed = localStorage.getItem("sidebarClosed") === "true";
+  if (isClosed) {
+    sidebar.classList.add("closed");
+    toggleBtn.classList.add("active");
+  }
+
+  toggleBtn.addEventListener("click", function() {
+    // تبديل حالة الـ Sidebar
+    sidebar.classList.toggle("closed");
+    this.classList.toggle("active");
+    
+    // حفظ الحالة
+    const isNowClosed = sidebar.classList.contains("closed");
+    localStorage.setItem("sidebarClosed", isNowClosed);
+  });
 }
 
 
@@ -347,5 +380,7 @@ window.createDefaultAvatar = createDefaultAvatar;
 // يمكن إزالة هذا الجزء في الإنتاج
 if (window.DEBUG_MODE) {
   console.log("✅ Main.js loaded successfully");
-  console.log("📌 Available pages: routine, task, completed, notes, events, social, program");
+  console.log("📌 Available pages: routine, task, completed, notes, events, program");
 }
+
+console.log("📌 Main.js: renderProgramPage available:", typeof window.renderProgramPage === "function");

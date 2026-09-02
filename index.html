@@ -15,9 +15,6 @@
   <!-- Events styles -->
   <link rel="stylesheet" href="css/events.css">
 
-  <!-- Social styles -->
-  <link rel="stylesheet" href="css/social.css">
-
   <!-- Program styles -->
   <link rel="stylesheet" href="css/program.css">
 </head>
@@ -26,6 +23,15 @@
 
   <!-- ================= HEADER ================= -->
   <header>
+
+    <div class="header-left">
+      <!-- زر القائمة (ثلاث خطوط) -->
+      <button class="menu-toggle" id="menu-toggle" aria-label="Toggle sidebar">
+        <span class="menu-icon"></span>
+        <span class="menu-icon"></span>
+        <span class="menu-icon"></span>
+      </button>
+    </div>
 
     <h1>My Life</h1>
 
@@ -94,14 +100,6 @@
 
       <button
         class="nav-btn"
-        data-target="social"
-        type="button"
-      >
-        🌐 Social
-      </button>
-
-      <button
-        class="nav-btn"
         data-target="program"
         type="button"
       >
@@ -135,9 +133,6 @@
 
   <!-- Events -->
   <script src="js/events.js"></script>
-
-  <!-- Social -->
-  <script src="js/social.js"></script>
 
   <!-- Program -->
   <script src="js/program.js"></script>

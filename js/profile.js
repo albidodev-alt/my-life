@@ -112,74 +112,6 @@ function renderProfile() {
   profileCard.appendChild(statsGrid);
   app.appendChild(profileCard);
 
-  // ===== 📞 رقم الهاتف =====
-  const phoneField = document.createElement("div");
-  phoneField.style.cssText = `
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 14px 20px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    cursor: pointer;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.2s ease;
-  `;
-
-  phoneField.addEventListener('mouseenter', function() {
-    this.style.borderColor = 'var(--primary)';
-    this.style.backgroundColor = 'var(--bg-hover)';
-    this.style.transform = 'translateX(4px)';
-  });
-  phoneField.addEventListener('mouseleave', function() {
-    this.style.borderColor = 'var(--border-color)';
-    this.style.backgroundColor = 'var(--bg-card)';
-    this.style.transform = 'translateX(0)';
-  });
-
-  const phoneIcon = document.createElement("span");
-  phoneIcon.textContent = "📞";
-  phoneIcon.style.fontSize = "22px";
-
-  const phoneText = document.createElement("span");
-  phoneText.style.cssText = `
-    font-family: var(--font-handwritten);
-    font-size: 18px;
-    color: var(--text-primary);
-    flex: 1;
-  `;
-  phoneText.textContent = profile.phone && profile.phone.trim() !== "" 
-    ? profile.phone 
-    : "Add phone number";
-
-  const phoneEditIcon = document.createElement("span");
-  phoneEditIcon.textContent = "✏️";
-  phoneEditIcon.style.cssText = `
-    font-size: 14px;
-    color: var(--text-muted);
-    opacity: 0.4;
-    transition: opacity 0.2s ease;
-  `;
-
-  phoneField.appendChild(phoneIcon);
-  phoneField.appendChild(phoneText);
-  phoneField.appendChild(phoneEditIcon);
-
-  phoneField.addEventListener("click", function() {
-    const currentPhone = profile.phone || "";
-    const newPhone = prompt("Enter your phone number:", currentPhone);
-    if (newPhone !== null) {
-      profile.phone = newPhone.trim();
-      saveProfileData(profile);
-      renderProfile();
-    }
-  });
-
-  app.appendChild(phoneField);
-
   // ===== About Me =====
   const aboutSection = document.createElement("div");
   aboutSection.className = "profile-section";
@@ -305,7 +237,6 @@ function getDefaultProfile() {
     name: "User 1",
     bio: "Building my life one day at a time.",
     avatar: "",
-    phone: "",
     joinDate: new Date().toISOString()
   };
 }

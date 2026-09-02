@@ -1,5 +1,5 @@
 /* ========================================
-   MY LIFE HUB - PROGRAM
+   MY LIFE HUB - PROGRAM (Learning Only)
    ======================================== */
 
 /* ========================================
@@ -132,16 +132,6 @@
   flex: 1;
 }
 
-.program-card-type {
-  font-size: 12px;
-  color: var(--text-muted);
-  background: var(--bg-hover);
-  padding: 2px 10px;
-  border-radius: 20px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
 .program-card-description {
   font-size: 14px;
   color: var(--text-secondary);
@@ -149,7 +139,19 @@
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  line-clamp: 2; /* ✅ إضافة الخاصية القياسية */
+  line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.5;
+}
+
+.program-card-goal {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
   overflow: hidden;
   line-height: 1.5;
 }
@@ -242,7 +244,50 @@
 }
 
 /* ========================================
-   PROGRAM SECTIONS (Recently Used, Completed)
+   EMPTY STATE
+   ======================================== */
+
+.program-empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.program-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  background: var(--primary-light);
+  border-radius: 50%;
+  font-size: 28px;
+}
+
+.program-empty-title {
+  margin: 0 0 6px;
+  color: var(--text-primary);
+  font-family: var(--font-handwritten);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.program-empty-desc {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ========================================
+   PROGRAM SECTIONS (Completed)
    ======================================== */
 
 .program-section-title {
@@ -358,6 +403,13 @@
   border-radius: 20px;
 }
 
+.program-detail-goal {
+  display: block;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
 .program-detail-actions {
   display: flex;
   gap: 8px;
@@ -465,15 +517,7 @@
   font-weight: 500;
 }
 
-.program-overview-description {
-  font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-light);
-}
-
-/* ===== Structure Tab ===== */
+/* ===== Steps Tab (Structure) ===== */
 .program-structure {
   display: flex;
   flex-direction: column;
@@ -548,78 +592,6 @@
   color: var(--danger);
 }
 
-.program-topics {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-left: 12px;
-}
-
-.program-topic {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.program-topic:hover {
-  background: var(--bg-hover);
-  border-color: var(--primary);
-}
-
-.program-topic-completed {
-  opacity: 0.7;
-}
-
-.program-topic-completed .program-topic-name {
-  text-decoration: line-through;
-  color: var(--text-muted);
-}
-
-.program-topic-status {
-  font-size: 16px;
-  width: 24px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.program-topic-name {
-  font-size: 14px;
-  color: var(--text-primary);
-  flex: 1;
-}
-
-.program-topic-actions {
-  display: flex;
-  gap: 4px;
-}
-
-.program-topic-btn {
-  padding: 2px 8px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  color: var(--text-muted);
-  transition: all 0.2s ease;
-}
-
-.program-topic-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.program-topic-btn-danger:hover {
-  background: rgba(231, 76, 94, 0.10);
-  color: var(--danger);
-}
-
 .program-add-phase-btn,
 .program-add-topic-btn {
   display: inline-flex;
@@ -644,360 +616,7 @@
   background: var(--primary-light);
 }
 
-/* ===== Method Tab ===== */
-.program-method-container {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 24px;
-  box-shadow: var(--shadow-sm);
-}
-
-.program-method-topic-title {
-  font-family: var(--font-handwritten);
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 4px 0;
-}
-
-.program-method-topic-sub {
-  font-size: 14px;
-  color: var(--text-muted);
-  margin-bottom: 16px;
-}
-
-.program-method-objective {
-  margin-bottom: 16px;
-}
-
-.program-method-objective-label {
-  font-size: 13px;
-  color: var(--text-muted);
-  font-weight: 500;
-  display: block;
-  margin-bottom: 4px;
-}
-
-.program-method-objective-input {
-  width: 100%;
-  padding: 8px 12px;
-  background: var(--bg-input);
-  color: var(--text-primary);
-  border: 1px solid var(--border-input);
-  border-radius: 8px;
-  font-family: var(--font-body);
-  font-size: 14px;
-  transition: border-color 0.2s ease;
-}
-
-.program-method-objective-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79, 142, 219, 0.12);
-}
-
-.program-method-steps {
-  margin-bottom: 16px;
-}
-
-.program-method-steps-label {
-  font-size: 13px;
-  color: var(--text-muted);
-  font-weight: 500;
-  display: block;
-  margin-bottom: 6px;
-}
-
-.program-method-step {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: 6px;
-  margin-bottom: 4px;
-  transition: all 0.2s ease;
-}
-
-.program-method-step:hover {
-  background: var(--bg-hover);
-}
-
-.program-method-step-icon {
-  font-size: 14px;
-}
-
-.program-method-step-text {
-  font-size: 14px;
-  color: var(--text-primary);
-  flex: 1;
-}
-
-.program-method-step-actions {
-  display: flex;
-  gap: 2px;
-}
-
-.program-method-step-btn {
-  padding: 2px 6px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  color: var(--text-muted);
-  transition: all 0.2s ease;
-}
-
-.program-method-step-btn:hover {
-  color: var(--text-primary);
-  background: var(--bg-hover);
-}
-
-.program-method-step-btn-danger:hover {
-  color: var(--danger);
-  background: rgba(231, 76, 94, 0.10);
-}
-
-.program-method-add-step {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.program-method-add-step-input {
-  flex: 1;
-  padding: 6px 12px;
-  background: var(--bg-input);
-  color: var(--text-primary);
-  border: 1px solid var(--border-input);
-  border-radius: 6px;
-  font-size: 13px;
-}
-
-.program-method-add-step-input:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-
-.program-method-add-step-btn {
-  padding: 6px 14px;
-  background: var(--primary-gradient);
-  color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  font-family: var(--font-handwritten);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.program-method-add-step-btn:hover {
-  transform: scale(1.04);
-}
-
-.program-method-resources {
-  margin-bottom: 16px;
-}
-
-.program-method-resources-label {
-  font-size: 13px;
-  color: var(--text-muted);
-  font-weight: 500;
-  display: block;
-  margin-bottom: 6px;
-}
-
-.program-method-resource {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: 6px;
-  margin-bottom: 4px;
-}
-
-.program-method-resource-name {
-  font-size: 13px;
-  color: var(--text-primary);
-  flex: 1;
-}
-
-.program-method-resource-url {
-  font-size: 12px;
-  color: var(--text-muted);
-  text-decoration: none;
-}
-
-.program-method-resource-url:hover {
-  color: var(--primary);
-  text-decoration: underline;
-}
-
-.program-method-add-resource {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
-  flex-wrap: wrap;
-}
-
-.program-method-add-resource-input {
-  flex: 1;
-  min-width: 120px;
-  padding: 6px 12px;
-  background: var(--bg-input);
-  color: var(--text-primary);
-  border: 1px solid var(--border-input);
-  border-radius: 6px;
-  font-size: 13px;
-}
-
-.program-method-add-resource-input:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-
-.program-method-add-resource-btn {
-  padding: 6px 14px;
-  background: var(--primary-gradient);
-  color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  font-family: var(--font-handwritten);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.program-method-add-resource-btn:hover {
-  transform: scale(1.04);
-}
-
-.program-method-save-btn {
-  width: 100%;
-  padding: 10px;
-  background: var(--primary-gradient);
-  color: #ffffff;
-  border: none;
-  border-radius: 10px;
-  font-family: var(--font-handwritten);
-  font-size: 17px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.program-method-save-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-/* ========================================
-   PROGRESS TAB
-   ======================================== */
-
-.program-progress {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 24px;
-  box-shadow: var(--shadow-sm);
-}
-
-.program-progress-overall {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.program-progress-big-number {
-  font-family: var(--font-handwritten);
-  font-size: 48px;
-  font-weight: 700;
-  color: var(--primary);
-}
-
-.program-progress-big-label {
-  font-size: 14px;
-  color: var(--text-muted);
-}
-
-.program-progress-phase {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.program-progress-phase:last-child {
-  border-bottom: none;
-}
-
-.program-progress-phase-name {
-  font-family: var(--font-handwritten);
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-primary);
-  min-width: 120px;
-}
-
-.program-progress-phase-bar {
-  flex: 1;
-  height: 6px;
-  background: var(--border-light);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.program-progress-phase-fill {
-  height: 100%;
-  background: var(--primary-gradient);
-  border-radius: 10px;
-  transition: width 0.6s ease;
-}
-
-.program-progress-phase-percent {
-  font-size: 13px;
-  color: var(--text-muted);
-  min-width: 40px;
-  text-align: right;
-}
-
-.program-progress-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-light);
-}
-
-.program-progress-stat {
-  text-align: center;
-}
-
-.program-progress-stat-number {
-  font-family: var(--font-handwritten);
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.program-progress-stat-label {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-/* ========================================
-   SESSION MODAL
-   ======================================== */
-
+/* ===== SESSION MODAL ===== */
 .program-session-steps {
   display: flex;
   flex-direction: column;
@@ -1110,6 +729,35 @@
   border-color: var(--primary);
 }
 
+/* ===== Rating Stars ===== */
+#rating-stars {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+#rating-stars .difficulty-btn {
+  font-size: 24px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-input);
+  border-radius: 6px;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#rating-stars .difficulty-btn:hover {
+  background: var(--bg-hover);
+  transform: scale(1.05);
+}
+
+#rating-stars .difficulty-btn.active {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--text-primary);
+}
+
 .program-session-complete-form .confidence-slider {
   width: 100%;
   margin-bottom: 12px;
@@ -1138,45 +786,6 @@
   margin-bottom: 12px;
 }
 
-.program-builder-types {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.program-builder-type-btn {
-  padding: 10px 8px;
-  border: 2px solid var(--border-input);
-  border-radius: 10px;
-  background: var(--bg-input);
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.2s ease;
-  font-family: var(--font-body);
-}
-
-.program-builder-type-btn:hover {
-  border-color: var(--primary);
-  background: var(--bg-hover);
-}
-
-.program-builder-type-btn.active {
-  border-color: var(--primary);
-  background: var(--primary-light);
-}
-
-.program-builder-type-icon {
-  font-size: 24px;
-  display: block;
-  margin-bottom: 4px;
-}
-
-.program-builder-type-name {
-  font-size: 13px;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
 /* ========================================
    DARK MODE
    ======================================== */
@@ -1194,41 +803,28 @@ body.dark-mode .program-card-description {
   color: var(--text-secondary);
 }
 
+body.dark-mode .program-card-goal {
+  color: var(--text-secondary);
+}
+
+body.dark-mode .program-empty-state {
+  color: var(--text-muted);
+}
+
+body.dark-mode .program-empty-title {
+  color: var(--text-light);
+}
+
+body.dark-mode .program-empty-icon {
+  background: var(--primary-light);
+}
+
 body.dark-mode .program-phase {
   background: var(--bg-card);
   border-color: var(--border-color);
 }
 
-body.dark-mode .program-topic {
-  background: var(--bg-surface);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .program-topic:hover {
-  background: var(--bg-hover);
-}
-
 body.dark-mode .program-overview {
-  background: var(--bg-card);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .program-method-container {
-  background: var(--bg-card);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .program-method-step {
-  background: var(--bg-surface);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .program-method-resource {
-  background: var(--bg-surface);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .program-progress {
   background: var(--bg-card);
   border-color: var(--border-color);
 }
@@ -1266,19 +862,40 @@ body.dark-mode .program-session-step:hover {
   background: var(--bg-hover);
 }
 
-body.dark-mode .program-builder-type-btn {
+body.dark-mode .program-session-complete-form .difficulty-btn {
   background: var(--bg-input);
   border-color: var(--border-input);
   color: var(--text-light);
 }
 
-body.dark-mode .program-builder-type-btn:hover {
+body.dark-mode .program-session-complete-form .difficulty-btn:hover {
   background: var(--bg-hover);
 }
 
-body.dark-mode .program-builder-type-btn.active {
+body.dark-mode .program-session-complete-form .difficulty-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+body.dark-mode #rating-stars .difficulty-btn {
+  background: var(--bg-input);
+  border-color: var(--border-input);
+  color: var(--text-muted);
+}
+
+body.dark-mode #rating-stars .difficulty-btn:hover {
+  background: var(--bg-hover);
+}
+
+body.dark-mode #rating-stars .difficulty-btn.active {
   background: var(--primary-light);
   border-color: var(--primary);
+  color: var(--text-light);
+}
+
+body.dark-mode .program-detail-goal {
+  color: var(--text-secondary);
 }
 
 /* ========================================
@@ -1314,14 +931,6 @@ body.dark-mode .program-builder-type-btn.active {
   .program-overview-grid {
     grid-template-columns: 1fr 1fr;
   }
-
-  .program-builder-types {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .program-progress-stats {
-    grid-template-columns: 1fr 1fr;
-  }
 }
 
 @media (max-width: 480px) {
@@ -1333,16 +942,8 @@ body.dark-mode .program-builder-type-btn.active {
     font-size: 22px;
   }
 
-  .program-progress-big-number {
-    font-size: 36px;
-  }
-
   .program-overview-grid {
     grid-template-columns: 1fr;
-  }
-
-  .program-builder-types {
-    grid-template-columns: 1fr 1fr;
   }
 
   .program-detail-tabs {
@@ -1359,12 +960,13 @@ body.dark-mode .program-builder-type-btn.active {
     font-size: 12px;
   }
 
-  .program-progress-phase {
-    flex-wrap: wrap;
+  #rating-stars .difficulty-btn {
+    font-size: 20px;
+    padding: 6px 10px;
   }
 
-  .program-progress-phase-name {
-    min-width: 100%;
+  #rating-stars {
+    gap: 4px;
   }
 }
 
@@ -1379,10 +981,8 @@ body.dark-mode .program-builder-type-btn.active {
 .program-detail-delete-btn:focus-visible,
 .program-detail-tab:focus-visible,
 .program-phase-btn:focus-visible,
-.program-topic-btn:focus-visible,
-.program-method-save-btn:focus-visible,
-.program-method-add-step-btn:focus-visible,
-.program-method-add-resource-btn:focus-visible {
+.program-add-phase-btn:focus-visible,
+.program-add-topic-btn:focus-visible {
   outline: 3px solid rgba(79, 142, 219, 0.3);
   outline-offset: 2px;
 }
