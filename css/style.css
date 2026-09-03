@@ -515,6 +515,7 @@ body.dark-mode .nav-btn.active {
 #app {
   flex: 1;
   padding: var(--spacing-2xl);
+  padding-bottom: var(--spacing-2xl);
   overflow-y: auto;
   max-height: calc(100vh - 60px);
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -550,6 +551,7 @@ body.dark-mode .nav-btn.active {
   grid-template-columns: repeat(5, 1fr);
   gap: var(--spacing-md);
   max-width: 720px;
+  margin: 0 auto;
 }
 
 .day-card {
@@ -563,6 +565,7 @@ body.dark-mode .nav-btn.active {
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   transition: var(--transition-base);
+  min-height: 80px;
 }
 
 .day-card:hover {
@@ -583,6 +586,7 @@ body.dark-mode .nav-btn.active {
   transition: var(--transition-base);
   width: 100%;
   color: var(--text-primary);
+  flex: 1;
 }
 
 .day-btn:hover {
@@ -1584,7 +1588,16 @@ body.dark-mode #notes-fab .fab-btn:hover {
   }
 
   #app {
-    padding-bottom: calc(100px + var(--spacing-lg));
+    padding: var(--spacing-lg);
+    padding-bottom: calc(110px + var(--spacing-lg));
+    max-height: calc(100vh - 60px);
+  }
+
+  /* ===== أيام الأسبوع - مستطيلات تحت بعض ===== */
+  #week-container {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+    max-width: 100%;
   }
 
   #sidebar {
@@ -1629,11 +1642,6 @@ body.dark-mode #notes-fab .fab-btn:hover {
     font-size: var(--font-2xl);
   }
 
-  #week-container {
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--spacing-sm);
-  }
-
   #hours-grid {
     grid-template-columns: repeat(4, 1fr);
     gap: var(--spacing-xs);
@@ -1642,11 +1650,6 @@ body.dark-mode #notes-fab .fab-btn:hover {
   .hour-box {
     padding: var(--spacing-xs);
     min-height: 45px;
-  }
-
-  #app {
-    padding: var(--spacing-lg);
-    max-height: calc(100vh - 60px);
   }
 
   #layout {
@@ -1724,7 +1727,15 @@ body.dark-mode #notes-fab .fab-btn:hover {
   }
 
   #app {
+    padding: var(--spacing-md);
     padding-bottom: calc(90px + var(--spacing-md));
+  }
+
+  /* ===== أيام الأسبوع - مستطيلات تحت بعض ===== */
+  #week-container {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xs);
+    max-width: 100%;
   }
 
   #main-header {
@@ -1748,27 +1759,8 @@ body.dark-mode #notes-fab .fab-btn:hover {
     border-width: 1.5px;
   }
 
-  #app {
-    padding: var(--spacing-md);
-  }
-
   #app h2 {
     font-size: var(--font-xl);
-  }
-
-  #week-container {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-xs);
-  }
-
-  .day-btn {
-    font-size: var(--font-base);
-    padding: var(--spacing-sm);
-  }
-
-  .day-for-label {
-    font-size: var(--font-xs);
-    padding: 2px var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
   }
 
   #hours-grid {
