@@ -68,7 +68,7 @@
   --radius-2xl: 12px;
   --radius-full: 50%;
   
-  /* ----- Fonts - تم التعديل لخطوط أكثر وضوحاً وسمكاً ----- */
+  /* ----- Fonts ----- */
   --font-handwritten: 'Quicksand', 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
   --font-body: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
   
@@ -91,6 +91,8 @@
   /* ----- Z-Index ----- */
   --z-modal: 999;
   --z-overlay: 999;
+  --z-bottom-nav: 90;
+  --z-header: 100;
 }
 
 /* ========================================
@@ -135,12 +137,12 @@ body.dark-mode {
 }
 
 /* ========================================
-   GOOGLE FONTS IMPORT - خطوط أكثر وضوحاً
+   GOOGLE FONTS IMPORT
    ======================================== */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap');
 
 /* ========================================
-   RESET & BASE - NOTEBOOK STYLE
+   RESET & BASE
    ======================================== */
 * {
   box-sizing: border-box;
@@ -166,10 +168,11 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  padding-bottom: 0;
 }
 
 /* ========================================
-   HANDWRITTEN FONTS - أصبحت أكثر وضوحاً وسمكاً
+   HANDWRITTEN FONTS
    ======================================== */
 h1, h2, h3,
 .handwritten,
@@ -187,22 +190,43 @@ h2 { font-size: var(--font-3xl); font-weight: 700; }
 h3 { font-size: var(--font-xl); font-weight: 600; }
 
 /* ========================================
-   HEADER - أزرق مع شفافية عالية (70%)
+   HEADER - شفاف مع نفس خلفية الشبكة
    ======================================== */
 
-header {
+#main-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: rgba(25, 55, 90, 0.70);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  color: var(--text-light);
+  background-color: rgba(255, 255, 255, 0.06);
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+  background-position: -1px -1px;
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  color: var(--text-primary);
   padding: var(--spacing-md) var(--spacing-2xl);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: var(--z-header);
+  transition: all var(--transition-slow);
+  height: 60px;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.02);
+}
+
+body.dark-mode #main-header {
+  background-color: rgba(16, 26, 42, 0.15);
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+  background-position: -1px -1px;
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
 }
 
 /* ===== زر القائمة (ثلاث خطوط) ===== */
@@ -222,26 +246,43 @@ header {
   gap: 4px;
   width: 38px;
   height: 38px;
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(79, 142, 219, 0.12);
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease;
+  transition: all 0.3s ease;
   padding: 6px;
 }
 
 .menu-toggle:hover {
-  background: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(79, 142, 219, 0.25);
+  transform: scale(1.05);
 }
 
 .menu-toggle .menu-icon {
   display: block;
   width: 22px;
   height: 2.5px;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--text-primary);
   border-radius: 4px;
   transition: all 0.3s ease;
   transform-origin: center;
+}
+
+body.dark-mode .menu-toggle {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(109, 168, 232, 0.1);
+}
+
+body.dark-mode .menu-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .menu-toggle .menu-icon {
+  background: var(--text-light);
 }
 
 /* ===== أنيميشن تحويل الثلاث خطوط إلى X ===== */
@@ -258,43 +299,85 @@ header {
   transform: translateY(-6.5px) rotate(-45deg);
 }
 
-/* ===== عنوان الموقع ===== */
-header h1 {
-  font-size: var(--font-2xl);
-  font-weight: 600;
-  color: #fff;
-  letter-spacing: 0.5px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+/* ===== عنوان الموقع - مع إطار أنيق ===== */
+.header-title {
+  flex: 1;
+  text-align: center;
 }
 
-header h1::before {
-  content: "✧ ";
-  opacity: 0.6;
-  font-size: var(--font-lg);
+.title-border {
+  font-family: var(--font-handwritten);
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  padding: 6px 24px;
+  border: 2px solid rgba(79, 142, 219, 0.2);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  letter-spacing: 1px;
+  display: inline-block;
+  transition: all var(--transition-base);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.title-border:hover {
+  border-color: rgba(79, 142, 219, 0.4);
+  background: rgba(255, 255, 255, 0.16);
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(79, 142, 219, 0.06);
+}
+
+body.dark-mode .title-border {
+  color: var(--text-light);
+  border-color: rgba(109, 168, 232, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+body.dark-mode .title-border:hover {
+  border-color: rgba(109, 168, 232, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px rgba(109, 168, 232, 0.06);
 }
 
 /* ========================================
-   USER PROFILE BUTTON
+   USER PROFILE BUTTON - مع إطار مثل اسم الموقع
    ======================================== */
 #user-profile-btn {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  padding: var(--spacing-xs) var(--spacing-md) var(--spacing-xs) var(--spacing-xs);
+  padding: 4px 16px 4px 4px;
   border-radius: 30px;
-  background-color: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   cursor: pointer;
   transition: var(--transition-base);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(79, 142, 219, 0.2);
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
 #user-profile-btn:hover {
-  background-color: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(79, 142, 219, 0.4);
+  transform: scale(1.04);
+  box-shadow: 0 4px 16px rgba(79, 142, 219, 0.06);
+}
+
+body.dark-mode #user-profile-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(109, 168, 232, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+body.dark-mode #user-profile-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(109, 168, 232, 0.3);
+  box-shadow: 0 4px 16px rgba(109, 168, 232, 0.06);
 }
 
 #user-avatar-icon {
@@ -302,7 +385,7 @@ header h1::before {
   height: 34px;
   border-radius: var(--radius-full);
   object-fit: cover;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(79, 142, 219, 0.15);
   background-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -310,10 +393,13 @@ header h1::before {
   font-family: var(--font-handwritten);
   font-size: var(--font-base);
   font-weight: 500;
-  color: var(--text-light);
+  color: var(--text-primary);
   padding-right: var(--spacing-xs);
   letter-spacing: 0.5px;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-mode #user-name-icon {
+  color: var(--text-light);
 }
 
 /* ========================================
@@ -326,7 +412,7 @@ header h1::before {
 }
 
 /* ========================================
-   SIDEBAR - مع أنيميشن انزلاق سلس
+   SIDEBAR
    ======================================== */
 
 #sidebar {
@@ -348,7 +434,6 @@ header h1::before {
   overflow: hidden;
 }
 
-/* ===== Sidebar مغلق ===== */
 #sidebar.closed {
   min-width: 0;
   width: 0;
@@ -359,7 +444,6 @@ header h1::before {
   flex: 0;
 }
 
-/* ===== أزرار الـ Sidebar ===== */
 .nav-btn {
   padding: var(--spacing-md) var(--spacing-lg);
   border: none;
@@ -459,7 +543,7 @@ body.dark-mode .nav-btn.active {
 }
 
 /* ========================================
-   WEEK VIEW - NOTEBOOK CARDS
+   WEEK VIEW
    ======================================== */
 #week-container {
   display: grid;
@@ -581,13 +665,11 @@ body.dark-mode #back-btn:hover {
   min-height: 55px;
 }
 
-/* ✅ تم نقل تأثير hover من JavaScript إلى CSS */
 .hour-box:hover {
   transform: scale(1.04);
   box-shadow: 0 4px 20px rgba(100, 180, 255, 0.25), 0 0 40px rgba(100, 180, 255, 0.1);
 }
 
-/* توهج النص عند hover */
 .hour-box:hover .hour-activity {
   text-shadow: 0 0 20px rgba(100, 180, 255, 0.7), 0 0 40px rgba(100, 180, 255, 0.3), 0 0 60px rgba(100, 180, 255, 0.15);
 }
@@ -640,7 +722,7 @@ body.dark-mode #day-for-box {
 }
 
 /* ========================================
-   MODAL - NOTEBOOK STYLE
+   MODAL
    ======================================== */
 #modal-overlay {
   position: fixed;
@@ -765,7 +847,7 @@ body.dark-mode .suggestion-btn:hover {
 }
 
 /* ========================================
-   FORM INPUTS - NOTEBOOK STYLE
+   FORM INPUTS
    ======================================== */
 #custom-activity-input,
 #task-text-input,
@@ -806,7 +888,7 @@ body.dark-mode #task-date-input {
 }
 
 /* ========================================
-   BUTTONS - NOTEBOOK STYLE
+   BUTTONS
    ======================================== */
 #save-custom-btn {
   width: 100%;
@@ -873,7 +955,7 @@ body.dark-mode #close-modal-btn:hover {
 }
 
 /* ========================================
-   TASK LIST - NOTEBOOK STYLE
+   TASK LIST
    ======================================== */
 #task-list {
   display: flex;
@@ -917,7 +999,6 @@ body.dark-mode .task-text {
   color: var(--text-light);
 }
 
-/* ===== Task Circle ===== */
 .task-circle {
   width: 18px;
   height: 18px;
@@ -1049,7 +1130,7 @@ body.dark-mode .task-date {
 }
 
 /* ========================================
-   STATISTICS - NOTEBOOK STYLE
+   STATISTICS
    ======================================== */
 #statistics-list {
   max-width: 500px;
@@ -1114,7 +1195,7 @@ body.dark-mode .statistics-item-name {
 }
 
 /* ========================================
-   PROFILE - NOTEBOOK STYLE
+   PROFILE
    ======================================== */
 .profile-card {
   background: var(--bg-card);
@@ -1128,7 +1209,6 @@ body.dark-mode .statistics-item-name {
   margin-bottom: var(--spacing-2xl);
 }
 
-/* ===== Profile Avatar ===== */
 .profile-avatar-container {
   display: flex;
   justify-content: center;
@@ -1191,7 +1271,6 @@ body.dark-mode .statistics-item-name {
   margin-bottom: var(--spacing-xl);
 }
 
-/* ===== Profile Stats ===== */
 .profile-stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1219,7 +1298,6 @@ body.dark-mode .statistics-item-name {
   color: var(--text-muted);
 }
 
-/* ===== Profile Sections ===== */
 .profile-section {
   background: var(--bg-card);
   backdrop-filter: blur(8px);
@@ -1292,46 +1370,148 @@ body.dark-mode .statistics-item-name {
 }
 
 /* ========================================
-   ACCESSIBILITY
+   BOTTOM NAVIGATION - MOBILE ONLY
    ======================================== */
-button:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 3px solid rgba(79, 142, 219, 0.3);
-  outline-offset: 2px;
+
+#bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(79, 142, 219, 0.15);
+  z-index: var(--z-bottom-nav);
+  padding: 6px 0 env(safe-area-inset-bottom, 6px);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+}
+
+body.dark-mode #bottom-nav {
+  background: rgba(16, 26, 42, 0.92);
+  border-top: 1px solid rgba(109, 168, 232, 0.12);
+}
+
+.bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: all var(--transition-base);
+  position: relative;
+  min-height: 52px;
+  border-radius: var(--radius-md);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-btn .bn-icon {
+  font-size: 22px;
+  line-height: 1.2;
+  transition: transform var(--transition-base);
+}
+
+.bottom-nav-btn .bn-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: all var(--transition-base);
+}
+
+.bottom-nav-btn:hover {
+  color: var(--text-primary);
+  background: rgba(79, 142, 219, 0.05);
+}
+
+.bottom-nav-btn:hover .bn-icon {
+  transform: scale(1.1);
+}
+
+.bottom-nav-btn.active {
+  color: var(--primary);
+}
+
+.bottom-nav-btn.active .bn-icon {
+  transform: scale(1.05);
+}
+
+.bottom-nav-btn.active .bn-label {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+body.dark-mode .bottom-nav-btn:hover {
+  color: var(--text-light);
+  background: rgba(109, 168, 232, 0.08);
+}
+
+body.dark-mode .bottom-nav-btn.active {
+  color: var(--primary);
 }
 
 /* ========================================
-   RESPONSIVE
+   RESPONSIVE - Mobile Styles
    ======================================== */
+
 @media (max-width: 768px) {
-  #sidebar {
-    min-width: 160px;
-    width: 160px;
-  }
-  
-  #sidebar.closed {
-    min-width: 0;
-    width: 0;
-    padding: 0;
-  }
-  
-  header h1 {
-    font-size: var(--font-xl);
-  }
-  
-  #user-name-icon {
-    display: none;
-  }
-  
-  .nav-btn {
-    font-size: var(--font-base);
-    padding: var(--spacing-sm) var(--spacing-md);
+  #bottom-nav {
+    display: flex;
   }
 
   #app {
-    padding: var(--spacing-lg);
+    padding-bottom: calc(70px + var(--spacing-lg));
+  }
+
+  #sidebar {
+    display: none !important;
+  }
+
+  .menu-toggle {
+    display: none !important;
+  }
+
+  .header-left {
+    min-width: auto;
+  }
+
+  #user-name-icon {
+    display: none;
+  }
+
+  #main-header {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    height: 56px;
+  }
+
+  .title-border {
+    font-size: var(--font-lg);
+    padding: 4px 14px;
+    border-width: 1.5px;
+  }
+
+  #user-profile-btn {
+    padding: 2px 12px 2px 2px;
+    gap: var(--spacing-xs);
+    border-width: 1.5px;
+  }
+
+  #user-avatar-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  #app h2 {
+    font-size: var(--font-2xl);
   }
 
   #week-container {
@@ -1347,6 +1527,15 @@ select:focus-visible {
   .hour-box {
     padding: var(--spacing-xs);
     min-height: 45px;
+  }
+
+  #app {
+    padding: var(--spacing-lg);
+    max-height: calc(100vh - 60px);
+  }
+
+  #layout {
+    min-height: calc(100vh - 60px);
   }
 
   .profile-card {
@@ -1372,62 +1561,45 @@ select:focus-visible {
   .profile-stat-value {
     font-size: var(--font-2xl);
   }
+
+  .profile-stats-grid {
+    gap: var(--spacing-sm);
+  }
 }
 
+/* ========================================
+   RESPONSIVE - Very Small Screens
+   ======================================== */
+
 @media (max-width: 480px) {
-  header {
+  #main-header {
     padding: var(--spacing-sm) var(--spacing-md);
+    height: 48px;
   }
 
-  header h1 {
-    font-size: var(--font-lg);
-  }
-
-  header h1::before {
-    content: "✧";
-  }
-
-  #user-name-icon {
-    display: none;
+  .title-border {
+    font-size: var(--font-base);
+    padding: 3px 10px;
+    border-width: 1.5px;
   }
 
   #user-avatar-icon {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
   }
 
   #user-profile-btn {
     padding: 2px 8px 2px 2px;
-    gap: var(--spacing-xs);
-  }
-
-  #sidebar {
-    min-width: 130px;
-    width: 130px;
-  }
-  
-  #sidebar.closed {
-    min-width: 0;
-    width: 0;
-    padding: 0;
-  }
-
-  .nav-btn {
-    font-size: var(--font-sm);
-    padding: var(--spacing-sm) var(--spacing-xs);
-    text-align: left;
-  }
-
-  .nav-btn::before {
-    display: none;
+    border-width: 1.5px;
   }
 
   #app {
     padding: var(--spacing-md);
+    padding-bottom: calc(70px + var(--spacing-md));
   }
 
   #app h2 {
-    font-size: var(--font-2xl);
+    font-size: var(--font-xl);
   }
 
   #week-container {
@@ -1501,21 +1673,80 @@ select:focus-visible {
     padding: var(--spacing-lg);
   }
 
+  .bottom-nav-btn {
+    min-height: 44px;
+    padding: 4px 2px;
+  }
+
+  .bottom-nav-btn .bn-icon {
+    font-size: 18px;
+  }
+
+  .bottom-nav-btn .bn-label {
+    font-size: 9px;
+  }
+
+  #bottom-nav {
+    padding: 4px 0 env(safe-area-inset-bottom, 4px);
+  }
+
+  #app {
+    padding-bottom: calc(60px + var(--spacing-md));
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+.bottom-nav-btn:focus-visible {
+  outline: 3px solid rgba(79, 142, 219, 0.3);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   RESPONSIVE - Desktop (Sidebar visible, Bottom Nav hidden)
+   ======================================== */
+
+@media (min-width: 769px) {
+  #bottom-nav {
+    display: none !important;
+  }
+
+  #sidebar {
+    display: flex !important;
+  }
+
   .menu-toggle {
-    width: 32px;
-    height: 32px;
+    display: flex !important;
   }
 
-  .menu-toggle .menu-icon {
-    width: 18px;
-    height: 2px;
+  #app {
+    padding-bottom: var(--spacing-2xl);
   }
+}
 
-  .menu-toggle.active .menu-icon:nth-child(1) {
-    transform: translateY(5px) rotate(45deg);
-  }
+/* ========================================
+   DARK MODE - Bottom Navigation
+   ======================================== */
 
-  .menu-toggle.active .menu-icon:nth-child(3) {
-    transform: translateY(-5px) rotate(-45deg);
-  }
+body.dark-mode #bottom-nav {
+  background: rgba(16, 26, 42, 0.92);
+  border-top: 1px solid rgba(109, 168, 232, 0.12);
+}
+
+body.dark-mode .bottom-nav-btn {
+  color: var(--text-muted);
+}
+
+body.dark-mode .bottom-nav-btn.active {
+  color: var(--primary);
+}
+
+body.dark-mode .bottom-nav-btn:hover {
+  color: var(--text-light);
+  background: rgba(109, 168, 232, 0.08);
 }

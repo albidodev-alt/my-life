@@ -22,10 +22,10 @@
 <body>
 
   <!-- ================= HEADER ================= -->
-  <header>
+  <header id="main-header">
 
     <div class="header-left">
-      <!-- زر القائمة (ثلاث خطوط) -->
+      <!-- زر القائمة (يظهر فقط على Desktop) -->
       <button class="menu-toggle" id="menu-toggle" aria-label="Toggle sidebar">
         <span class="menu-icon"></span>
         <span class="menu-icon"></span>
@@ -33,7 +33,9 @@
       </button>
     </div>
 
-    <h1>My Life</h1>
+    <div class="header-title">
+      <span class="title-border">My Life Hub</span>
+    </div>
 
     <button
       id="user-profile-btn"
@@ -59,7 +61,7 @@
     <nav id="sidebar" aria-label="Main navigation">
 
       <button
-        class="nav-btn"
+        class="nav-btn active"
         data-target="routine"
         type="button"
       >
@@ -115,6 +117,32 @@
   </div>
 
 
+  <!-- ================= BOTTOM NAVIGATION (Mobile فقط) ================= -->
+  <nav id="bottom-nav" aria-label="Mobile navigation">
+
+    <button class="bottom-nav-btn active" data-target="routine" type="button">
+      <span class="bn-icon">📋</span>
+      <span class="bn-label">Routine</span>
+    </button>
+
+    <button class="bottom-nav-btn" data-target="task" type="button">
+      <span class="bn-icon">✅</span>
+      <span class="bn-label">Tasks</span>
+    </button>
+
+    <button class="bottom-nav-btn" data-target="events" type="button">
+      <span class="bn-icon">📅</span>
+      <span class="bn-label">Events</span>
+    </button>
+
+    <button class="bottom-nav-btn" data-target="program" type="button">
+      <span class="bn-icon">📚</span>
+      <span class="bn-label">Programs</span>
+    </button>
+
+  </nav>
+
+
   <!-- ================= JAVASCRIPT ================= -->
 
   <!-- Core storage -->
@@ -126,7 +154,7 @@
 
   <!-- Tasks -->
   <script src="js/task.js"></script>
-  <script src="js/completed.js"></script>
+  <script src="js/Achievements.js"></script>
 
   <!-- Notes -->
   <script src="js/note.js"></script>

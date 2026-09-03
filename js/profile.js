@@ -172,6 +172,103 @@ function renderProfile() {
 
   app.appendChild(aboutSection);
 
+  // ===== 🏆 Achievements Section =====
+  const achievementsSection = document.createElement("div");
+  achievementsSection.className = "profile-section";
+
+  const achievementsTitle = document.createElement("h3");
+  achievementsTitle.className = "profile-section-title";
+  achievementsTitle.textContent = "🏆 Achievements";
+  achievementsSection.appendChild(achievementsTitle);
+
+  // ===== إحصائية سريعة =====
+  const stats2 = getProfileStats();
+  const achievementBadge = document.createElement("div");
+  achievementBadge.style.cssText = `
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--bg-surface);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border-light);
+  `;
+
+  const badgeLabel = document.createElement("span");
+  badgeLabel.textContent = "✅ Completed Tasks";
+  badgeLabel.style.cssText = "font-weight: 500; color: var(--text-primary);";
+
+  const badgeCount = document.createElement("span");
+  badgeCount.textContent = stats2.completedTasks;
+  badgeCount.style.cssText = `
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary);
+  `;
+
+  achievementBadge.appendChild(badgeLabel);
+  achievementBadge.appendChild(badgeCount);
+  achievementsSection.appendChild(achievementBadge);
+
+  // ===== وصف =====
+  const achievementsDesc = document.createElement("p");
+  achievementsDesc.style.cssText = `
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 12px;
+    font-family: var(--font-body);
+  `;
+  achievementsDesc.textContent = "View all your completed tasks and achievements.";
+  achievementsSection.appendChild(achievementsDesc);
+
+  // ===== زر عرض الإنجازات =====
+  const viewBtn = document.createElement("button");
+  viewBtn.textContent = "📊 View Achievements";
+  viewBtn.style.cssText = `
+    width: 100%;
+    padding: 12px;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-handwritten);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  `;
+
+  viewBtn.addEventListener("mouseenter", function() {
+    this.style.transform = "translateY(-2px)";
+    this.style.boxShadow = "var(--shadow-md)";
+  });
+
+  viewBtn.addEventListener("mouseleave", function() {
+    this.style.transform = "translateY(0)";
+    this.style.boxShadow = "none";
+  });
+
+  viewBtn.addEventListener("click", function() {
+    if (typeof window.navigateTo === "function") {
+      window.navigateTo("completed");
+    } 
+    else if (typeof navigateTo === "function") {
+      navigateTo("completed");
+    }
+    else if (typeof renderCompleted === "function") {
+      document.querySelectorAll(".nav-btn, .bottom-nav-btn").forEach(function(btn) {
+        btn.classList.remove("active");
+      });
+      renderCompleted();
+    } else {
+      alert("Achievements page is not available. Please check if Achievements.js is loaded.");
+    }
+  });
+
+  achievementsSection.appendChild(viewBtn);
+  app.appendChild(achievementsSection);
+
   // ===== Member Since =====
   const memberSection = document.createElement("div");
   memberSection.className = "profile-section";
@@ -186,7 +283,6 @@ function renderProfile() {
 
   app.appendChild(memberSection);
 
-  // تحديث الرأس بعد التعديلات
   updateUserHeader();
 }
 
