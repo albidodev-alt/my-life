@@ -13,8 +13,44 @@ document.addEventListener("DOMContentLoaded", function () {
   setupSidebarToggle();
   setupBottomNav();
 
+  // ===== زر Notes FAB =====
+  const notesFabBtn = document.getElementById("notes-fab-btn");
+  if (notesFabBtn) {
+    notesFabBtn.addEventListener("click", function() {
+      navigateTo("notes");
+    });
+  }
+
   navigateTo("routine");
+
+  // تهيئة أيقونات Lucide
+  initLucideIcons();
 });
+
+
+// ========================================
+// INITIALIZE LUCDIE ICONS
+// ========================================
+
+function initLucideIcons() {
+  if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+    lucide.createIcons();
+    console.log("✅ Lucide icons initialized!");
+  } else {
+    console.warn("⚠️ Lucide library not loaded, retrying...");
+    setTimeout(function() {
+      if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+        console.log("✅ Lucide icons initialized (delayed)!");
+      } else {
+        console.error("❌ Lucide library failed to load.");
+      }
+    }, 500);
+  }
+}
+
+// جعل الدالة متاحة عالمياً
+window.initLucideIcons = initLucideIcons;
 
 
 function setupNavigation() {
@@ -114,6 +150,11 @@ function navigateTo(page) {
     default:
       renderNotFoundPage();
   }
+
+  // ✅ إعادة تهيئة أيقونات Lucide بعد تغيير الصفحة
+  setTimeout(function() {
+    initLucideIcons();
+  }, 50);
 }
 
 
@@ -276,6 +317,7 @@ window.navigateTo = navigateTo;
 window.renderNotesPage = renderNotesPage;
 window.updateUserHeader = updateUserHeader;
 window.createDefaultAvatar = createDefaultAvatar;
+window.initLucideIcons = initLucideIcons;
 
 
 function cleanupElement(element) {

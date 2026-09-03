@@ -164,7 +164,7 @@ function getSleepQuality(hours) {
 }
 
 // ========================================
-// دالة عرض إحصائيات اليوم مع Sleep Tracker
+// دالة عرض إحصائيات اليوم مع Sleep Tracker (معدلة)
 // ========================================
 
 function renderDayStatistics(container, hoursArray, dayName) {
@@ -175,12 +175,14 @@ function renderDayStatistics(container, hoursArray, dayName) {
   statsTitle.style.marginTop = "24px";
   container.appendChild(statsTitle);
 
-  // ===== Sleep Tracker =====
+  // ===== Sleep Tracker (معدل) =====
   const dayData = getDayData(dayName);
-  const sleepHour = dayData.sleepHour !== undefined ? dayData.sleepHour : 23; // 11:00 PM
-  const sleepMinute = dayData.sleepMinute !== undefined ? dayData.sleepMinute : 0;
-  const wakeHour = dayData.wakeHour !== undefined ? dayData.wakeHour : 6; // 6:00 AM
-  const wakeMinute = dayData.wakeMinute !== undefined ? dayData.wakeMinute : 0;
+  
+  // إذا لم تكن هناك قيم مخزنة، استخدم null
+  const sleepHour = dayData.sleepHour !== undefined && dayData.sleepHour !== null ? dayData.sleepHour : null;
+  const sleepMinute = dayData.sleepMinute !== undefined && dayData.sleepMinute !== null ? dayData.sleepMinute : null;
+  const wakeHour = dayData.wakeHour !== undefined && dayData.wakeHour !== null ? dayData.wakeHour : null;
+  const wakeMinute = dayData.wakeMinute !== undefined && dayData.wakeMinute !== null ? dayData.wakeMinute : null;
 
   const sleepCard = document.createElement("div");
   sleepCard.style.cssText = `
@@ -204,7 +206,7 @@ function renderDayStatistics(container, hoursArray, dayName) {
     this.style.transform = 'translateY(0)';
   });
 
-  // صف النوم
+  // عرض وقت النوم والاستيقاظ (بدون إيموجي)
   const sleepRow = document.createElement("div");
   sleepRow.style.cssText = `
     display: flex;
@@ -224,18 +226,17 @@ function renderDayStatistics(container, hoursArray, dayName) {
     color: var(--text-primary);
   `;
 
-  const sleepIcon = document.createElement("span");
-  sleepIcon.textContent = "😴";
-  sleepIcon.style.fontSize = "22px";
-
   const sleepText = document.createElement("span");
-  sleepText.textContent = "Sleep: " + formatTime12(sleepHour, sleepMinute);
+  if (sleepHour !== null && sleepMinute !== null) {
+    sleepText.textContent = "Sleep: " + formatTime12(sleepHour, sleepMinute);
+  } else {
+    sleepText.textContent = "Sleep: Not set";
+    sleepText.style.opacity = "0.6";
+  }
   sleepText.style.fontWeight = "600";
 
-  sleepInfo.appendChild(sleepIcon);
   sleepInfo.appendChild(sleepText);
 
-  // صف الاستيقاظ
   const wakeInfo = document.createElement("div");
   wakeInfo.style.cssText = `
     display: flex;
@@ -246,24 +247,21 @@ function renderDayStatistics(container, hoursArray, dayName) {
     color: var(--text-primary);
   `;
 
-  const wakeIcon = document.createElement("span");
-  wakeIcon.textContent = "🌅";
-  wakeIcon.style.fontSize = "22px";
-
   const wakeText = document.createElement("span");
-  wakeText.textContent = "Wake: " + formatTime12(wakeHour, wakeMinute);
+  if (wakeHour !== null && wakeMinute !== null) {
+    wakeText.textContent = "Wake: " + formatTime12(wakeHour, wakeMinute);
+  } else {
+    wakeText.textContent = "Wake: Not set";
+    wakeText.style.opacity = "0.6";
+  }
   wakeText.style.fontWeight = "600";
 
-  wakeInfo.appendChild(wakeIcon);
   wakeInfo.appendChild(wakeText);
 
   sleepRow.appendChild(sleepInfo);
   sleepRow.appendChild(wakeInfo);
 
-  // صف إجمالي ساعات النوم
-  const duration = calculateSleepDuration(sleepHour, sleepMinute, wakeHour, wakeMinute);
-  const quality = getSleepQuality(duration.hours);
-
+  // عرض إجمالي ساعات النوم (إذا تم ضبط الوقت)
   const durationRow = document.createElement("div");
   durationRow.style.cssText = `
     display: flex;
@@ -279,34 +277,44 @@ function renderDayStatistics(container, hoursArray, dayName) {
     gap: 8px;
   `;
 
-  const durationText = document.createElement("span");
-  durationText.textContent = `⏱️ Total Sleep: ${duration.hours}h ${duration.minutes > 0 ? duration.minutes + 'm' : ''}`;
-  durationText.style.fontWeight = "600";
+  if (sleepHour !== null && sleepMinute !== null && wakeHour !== null && wakeMinute !== null) {
+    const duration = calculateSleepDuration(sleepHour, sleepMinute, wakeHour, wakeMinute);
+    const quality = getSleepQuality(duration.hours);
 
-  const qualityText = document.createElement("span");
-  qualityText.textContent = `${quality.emoji} ${quality.label}`;
-  qualityText.style.cssText = `
-    padding: 4px 12px;
-    border-radius: 20px;
-    background: ${quality.emoji === '🟢' ? 'rgba(76, 175, 132, 0.15)' : 
-                quality.emoji === '🟡' ? 'rgba(245, 166, 35, 0.15)' :
-                quality.emoji === '🟠' ? 'rgba(255, 152, 0, 0.15)' :
-                'rgba(231, 76, 94, 0.15)'};
-    color: ${quality.emoji === '🟢' ? '#2e7d5e' : 
-            quality.emoji === '🟡' ? '#b7791f' :
-            quality.emoji === '🟠' ? '#c77800' :
-            '#c0392b'};
-    font-weight: 600;
-    font-size: 13px;
-  `;
+    const durationText = document.createElement("span");
+    durationText.textContent = `⏱️ Total Sleep: ${duration.hours}h ${duration.minutes > 0 ? duration.minutes + 'm' : ''}`;
+    durationText.style.fontWeight = "600";
 
-  durationRow.appendChild(durationText);
-  durationRow.appendChild(qualityText);
+    const qualityText = document.createElement("span");
+    qualityText.textContent = `${quality.emoji} ${quality.label}`;
+    qualityText.style.cssText = `
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: ${quality.emoji === '🟢' ? 'rgba(76, 175, 132, 0.15)' : 
+                  quality.emoji === '🟡' ? 'rgba(245, 166, 35, 0.15)' :
+                  quality.emoji === '🟠' ? 'rgba(255, 152, 0, 0.15)' :
+                  'rgba(231, 76, 94, 0.15)'};
+      color: ${quality.emoji === '🟢' ? '#2e7d5e' : 
+              quality.emoji === '🟡' ? '#b7791f' :
+              quality.emoji === '🟠' ? '#c77800' :
+              '#c0392b'};
+      font-weight: 600;
+      font-size: 13px;
+    `;
+
+    durationRow.appendChild(durationText);
+    durationRow.appendChild(qualityText);
+  } else {
+    const notSetText = document.createElement("span");
+    notSetText.textContent = "⏱️ Set sleep and wake times to track your sleep";
+    notSetText.style.opacity = "0.6";
+    durationRow.appendChild(notSetText);
+  }
 
   sleepCard.appendChild(sleepRow);
   sleepCard.appendChild(durationRow);
 
-  // ===== نافذة تعديل أوقات النوم =====
+  // ===== نافذة تعديل أوقات النوم (معدلة) =====
   sleepCard.addEventListener("click", function() {
     openSleepModal(dayName);
   });
@@ -359,15 +367,15 @@ function renderDayStatistics(container, hoursArray, dayName) {
 }
 
 // ========================================
-// نافذة تعديل أوقات النوم
+// نافذة تعديل أوقات النوم (معدلة - بدون إيموجي)
 // ========================================
 
 function openSleepModal(dayName) {
   const dayData = getDayData(dayName);
-  const sleepHour = dayData.sleepHour !== undefined ? dayData.sleepHour : 23;
-  const sleepMinute = dayData.sleepMinute !== undefined ? dayData.sleepMinute : 0;
-  const wakeHour = dayData.wakeHour !== undefined ? dayData.wakeHour : 6;
-  const wakeMinute = dayData.wakeMinute !== undefined ? dayData.wakeMinute : 0;
+  const sleepHour = dayData.sleepHour !== undefined && dayData.sleepHour !== null ? dayData.sleepHour : 23;
+  const sleepMinute = dayData.sleepMinute !== undefined && dayData.sleepMinute !== null ? dayData.sleepMinute : 0;
+  const wakeHour = dayData.wakeHour !== undefined && dayData.wakeHour !== null ? dayData.wakeHour : 6;
+  const wakeMinute = dayData.wakeMinute !== undefined && dayData.wakeMinute !== null ? dayData.wakeMinute : 0;
 
   const overlay = document.createElement("div");
   overlay.id = "modal-overlay";
@@ -376,7 +384,7 @@ function openSleepModal(dayName) {
   modal.id = "hour-modal";
 
   const title = document.createElement("h3");
-  title.textContent = "😴 Sleep Settings";
+  title.textContent = "Sleep Settings";
   modal.appendChild(title);
 
   const subtitle = document.createElement("p");
@@ -387,7 +395,7 @@ function openSleepModal(dayName) {
   // ===== وقت النوم =====
   const sleepLabel = document.createElement("p");
   sleepLabel.className = "modal-subtitle";
-  sleepLabel.textContent = "🌙 Sleep Time";
+  sleepLabel.textContent = "Sleep Time";
   sleepLabel.style.fontWeight = "600";
   sleepLabel.style.marginTop = "8px";
   modal.appendChild(sleepLabel);
@@ -426,7 +434,7 @@ function openSleepModal(dayName) {
   // ===== وقت الاستيقاظ =====
   const wakeLabel = document.createElement("p");
   wakeLabel.className = "modal-subtitle";
-  wakeLabel.textContent = "☀️ Wake Time";
+  wakeLabel.textContent = "Wake Time";
   wakeLabel.style.fontWeight = "600";
   wakeLabel.style.marginTop = "8px";
   modal.appendChild(wakeLabel);
@@ -610,7 +618,6 @@ function openDay(dayName) {
   hoursGrid.appendChild(fragment);
   
   // ✅ إضافة Event Delegation واحد فقط على الحاوية
-  // ✅ تم إزالة mouseenter/mouseleave (تم نقلها إلى CSS)
   hoursGrid.addEventListener("click", handleHourClick);
 
   app.appendChild(hoursGrid);

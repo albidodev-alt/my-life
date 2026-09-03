@@ -1,4 +1,9 @@
 /* ========================================
+   GOOGLE FONTS IMPORT - يجب أن يكون في الأعلى
+   ======================================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap');
+
+/* ========================================
    CSS VARIABLES / DESIGN SYSTEM
    NOTEBOOK STYLE v2.0
    ======================================== */
@@ -135,11 +140,6 @@ body.dark-mode {
   --shadow-lg: 4px 8px 20px rgba(0, 0, 0, 0.4);
   --shadow-overlay: rgba(0, 0, 0, 0.6);
 }
-
-/* ========================================
-   GOOGLE FONTS IMPORT
-   ======================================== */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap');
 
 /* ========================================
    RESET & BASE
@@ -606,7 +606,7 @@ body.dark-mode .day-btn {
 }
 
 /* ========================================
-   BACK BUTTON
+   BACK BUTTON - تم إصلاح الخطأ
    ======================================== */
 #back-btn {
   margin-bottom: var(--spacing-lg);
@@ -1370,27 +1370,34 @@ body.dark-mode .statistics-item-name {
 }
 
 /* ========================================
-   BOTTOM NAVIGATION - MOBILE ONLY
+   BOTTOM NAVIGATION - FLOATING PILL SHAPED (MOBILE ONLY)
    ======================================== */
 
 #bottom-nav {
   display: none;
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 480px;
   background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(79, 142, 219, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 50px;
   z-index: var(--z-bottom-nav);
-  padding: 6px 0 env(safe-area-inset-bottom, 6px);
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+  padding: 8px 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
 }
 
 body.dark-mode #bottom-nav {
-  background: rgba(16, 26, 42, 0.92);
-  border-top: 1px solid rgba(109, 168, 232, 0.12);
+  background: rgba(24, 36, 56, 0.92);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .bottom-nav-btn {
@@ -1400,7 +1407,7 @@ body.dark-mode #bottom-nav {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 6px 4px;
+  padding: 8px 4px;
   background: none;
   border: none;
   cursor: pointer;
@@ -1410,15 +1417,39 @@ body.dark-mode #bottom-nav {
   color: var(--text-muted);
   transition: all var(--transition-base);
   position: relative;
-  min-height: 52px;
-  border-radius: var(--radius-md);
+  min-height: 48px;
+  border-radius: 30px;
   -webkit-tap-highlight-color: transparent;
 }
 
 .bottom-nav-btn .bn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 22px;
   line-height: 1.2;
   transition: transform var(--transition-base);
+}
+
+/* ===== تنسيق أيقونات Lucide ===== */
+.bottom-nav-btn .bn-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2;
+  transition: all var(--transition-base);
+}
+
+.bottom-nav-btn.active .bn-icon svg {
+  stroke: var(--primary);
+  transform: scale(1.05);
+}
+
+.bottom-nav-btn:hover .bn-icon svg {
+  transform: scale(1.1);
+}
+
+.bottom-nav-btn .bn-icon svg {
+  color: currentColor;
 }
 
 .bottom-nav-btn .bn-label {
@@ -1430,7 +1461,7 @@ body.dark-mode #bottom-nav {
 
 .bottom-nav-btn:hover {
   color: var(--text-primary);
-  background: rgba(79, 142, 219, 0.05);
+  background: rgba(79, 142, 219, 0.06);
 }
 
 .bottom-nav-btn:hover .bn-icon {
@@ -1439,6 +1470,7 @@ body.dark-mode #bottom-nav {
 
 .bottom-nav-btn.active {
   color: var(--primary);
+  background: rgba(79, 142, 219, 0.08);
 }
 
 .bottom-nav-btn.active .bn-icon {
@@ -1457,6 +1489,79 @@ body.dark-mode .bottom-nav-btn:hover {
 
 body.dark-mode .bottom-nav-btn.active {
   color: var(--primary);
+  background: rgba(109, 168, 232, 0.12);
+}
+
+body.dark-mode .bottom-nav-btn .bn-icon svg {
+  stroke: var(--text-muted);
+}
+
+body.dark-mode .bottom-nav-btn.active .bn-icon svg {
+  stroke: var(--primary);
+}
+
+body.dark-mode .bottom-nav-btn:hover .bn-icon svg {
+  stroke: var(--text-light);
+}
+
+body.dark-mode .bottom-nav-btn.active:hover .bn-icon svg {
+  stroke: var(--primary);
+}
+
+/* ========================================
+   NOTES FLOATING BUTTON - الزاوية اليمنى فوق الـ Bottom Navigation
+   ======================================== */
+
+#notes-fab {
+  display: none;
+  position: fixed;
+  bottom: 85px;
+  right: 20px;
+  z-index: calc(var(--z-bottom-nav) + 1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#notes-fab .fab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: var(--primary-gradient);
+  border-radius: 50%;
+  border: none;
+  box-shadow: 0 4px 20px rgba(79, 142, 219, 0.35);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  padding: 0;
+}
+
+#notes-fab .fab-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 28px rgba(79, 142, 219, 0.45);
+}
+
+#notes-fab .fab-btn:active {
+  transform: scale(0.95);
+}
+
+#notes-fab .fab-btn svg {
+  width: 28px;
+  height: 28px;
+  stroke: white;
+  stroke-width: 2;
+  fill: none;
+}
+
+body.dark-mode #notes-fab .fab-btn {
+  background: var(--primary-gradient);
+  box-shadow: 0 4px 20px rgba(109, 168, 232, 0.3);
+}
+
+body.dark-mode #notes-fab .fab-btn:hover {
+  box-shadow: 0 6px 28px rgba(109, 168, 232, 0.4);
 }
 
 /* ========================================
@@ -1465,11 +1570,21 @@ body.dark-mode .bottom-nav-btn.active {
 
 @media (max-width: 768px) {
   #bottom-nav {
-    display: flex;
+    display: flex !important;
+    bottom: 20px;
+    width: calc(100% - 32px);
+    padding: 8px 12px;
+    border-radius: 50px;
+  }
+
+  #notes-fab {
+    display: block !important;
+    bottom: 82px;
+    right: 16px;
   }
 
   #app {
-    padding-bottom: calc(70px + var(--spacing-lg));
+    padding-bottom: calc(100px + var(--spacing-lg));
   }
 
   #sidebar {
@@ -1572,6 +1687,46 @@ body.dark-mode .bottom-nav-btn.active {
    ======================================== */
 
 @media (max-width: 480px) {
+  #bottom-nav {
+    bottom: 16px;
+    width: calc(100% - 24px);
+    padding: 6px 10px;
+    border-radius: 40px;
+  }
+
+  #notes-fab {
+    bottom: 72px;
+    right: 12px;
+  }
+
+  #notes-fab .fab-btn {
+    width: 48px;
+    height: 48px;
+  }
+
+  #notes-fab .fab-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .bottom-nav-btn {
+    min-height: 42px;
+    padding: 6px 2px;
+  }
+
+  .bottom-nav-btn .bn-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .bottom-nav-btn .bn-label {
+    font-size: 9px;
+  }
+
+  #app {
+    padding-bottom: calc(90px + var(--spacing-md));
+  }
+
   #main-header {
     padding: var(--spacing-sm) var(--spacing-md);
     height: 48px;
@@ -1595,7 +1750,6 @@ body.dark-mode .bottom-nav-btn.active {
 
   #app {
     padding: var(--spacing-md);
-    padding-bottom: calc(70px + var(--spacing-md));
   }
 
   #app h2 {
@@ -1672,27 +1826,6 @@ body.dark-mode .bottom-nav-btn.active {
   .profile-section {
     padding: var(--spacing-lg);
   }
-
-  .bottom-nav-btn {
-    min-height: 44px;
-    padding: 4px 2px;
-  }
-
-  .bottom-nav-btn .bn-icon {
-    font-size: 18px;
-  }
-
-  .bottom-nav-btn .bn-label {
-    font-size: 9px;
-  }
-
-  #bottom-nav {
-    padding: 4px 0 env(safe-area-inset-bottom, 4px);
-  }
-
-  #app {
-    padding-bottom: calc(60px + var(--spacing-md));
-  }
 }
 
 /* ========================================
@@ -1713,6 +1846,10 @@ select:focus-visible,
 
 @media (min-width: 769px) {
   #bottom-nav {
+    display: none !important;
+  }
+
+  #notes-fab {
     display: none !important;
   }
 
