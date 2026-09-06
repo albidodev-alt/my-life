@@ -2,7 +2,8 @@
   "name": "My Life",
   "short_name": "My Life",
   "description": "Your personal life management hub - routine, tasks, notes, events, and learning programs",
-  "start_url": "/index.html",
+  "start_url": "/my-life/",
+  "scope": "/my-life/",
   "display": "standalone",
   "background_color": "#fffdf7",
   "theme_color": "#4f8edb",
@@ -10,7 +11,7 @@
   "categories": ["productivity", "lifestyle", "education"],
   "icons": [
     {
-      "src": "icons/icon-512.png",
+      "src": "/my-life/icons/icon-512.png",
       "sizes": "72x72 96x96 128x128 144x144 152x152 192x192 384x384 512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -18,13 +19,13 @@
   ],
   "screenshots": [
     {
-      "src": "screenshots/desktop.png",
+      "src": "/my-life/screenshots/desktop.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "screenshots/mobile.png",
+      "src": "/my-life/screenshots/mobile.png",
       "sizes": "360x640",
       "type": "image/png",
       "form_factor": "narrow"
@@ -35,10 +36,10 @@
       "name": "Routine",
       "short_name": "Routine",
       "description": "View your weekly routine",
-      "url": "/index.html?page=routine",
+      "url": "/my-life/index.html?page=routine",
       "icons": [
         {
-          "src": "icons/icon-512.png",
+          "src": "/my-life/icons/icon-512.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -48,10 +49,10 @@
       "name": "Tasks",
       "short_name": "Tasks",
       "description": "View your tasks",
-      "url": "/index.html?page=task",
+      "url": "/my-life/index.html?page=task",
       "icons": [
         {
-          "src": "icons/icon-512.png",
+          "src": "/my-life/icons/icon-512.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -61,10 +62,10 @@
       "name": "Notes",
       "short_name": "Notes",
       "description": "View your notes",
-      "url": "/index.html?page=notes",
+      "url": "/my-life/index.html?page=notes",
       "icons": [
         {
-          "src": "icons/icon-512.png",
+          "src": "/my-life/icons/icon-512.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -74,10 +75,10 @@
       "name": "Events",
       "short_name": "Events",
       "description": "View your events",
-      "url": "/index.html?page=events",
+      "url": "/my-life/index.html?page=events",
       "icons": [
         {
-          "src": "icons/icon-512.png",
+          "src": "/my-life/icons/icon-512.png",
           "sizes": "96x96",
           "type": "image/png"
         }
