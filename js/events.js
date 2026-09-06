@@ -83,16 +83,16 @@ function getTimeRemaining(eventDate) {
   const target = new Date(eventDate + "T00:00:00");
   const diff = target - now;
   
-  if (diff < 0) return "Event passed";
+  if (diff < 0) return typeof t === 'function' ? t('event_passed', 'Event passed') : "Event passed";
   
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   
-  if (days === 0 && hours === 0) return "Today! 🎉";
-  if (days === 0) return hours + " hours left";
-  if (hours === 0) return days + " days left";
+  if (days === 0 && hours === 0) return typeof t === 'function' ? t('today', 'Today! 🎉') : "Today! 🎉";
+  if (days === 0) return hours + " " + (typeof t === 'function' ? t('hours_left', 'hours left') : "hours left");
+  if (hours === 0) return days + " " + (typeof t === 'function' ? t('days_left', 'days left') : "days left");
   
-  return days + " days, " + hours + " hours left";
+  return days + " " + (typeof t === 'function' ? t('days', 'days') : "days") + ", " + hours + " " + (typeof t === 'function' ? t('hours', 'hours') : "hours") + " " + (typeof t === 'function' ? t('left', 'left') : "left");
 }
 
 function getEventsByMonth(events, year, month) {
@@ -116,7 +116,6 @@ function openEventDetailsModal(events, dateStr) {
   modal.className = "notes-modal";
   modal.id = "events-details-modal";
 
-  // عنوان - تم إصلاح المسافة الزائدة
   const formattedDate = new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
     weekday: 'long',
     year: 'numeric',
@@ -129,13 +128,11 @@ function openEventDetailsModal(events, dateStr) {
   title.textContent = formattedDate;
   modal.appendChild(title);
 
-  // عدد الأحداث
   const countLabel = document.createElement("p");
   countLabel.className = "modal-subtitle";
-  countLabel.textContent = events.length + " event" + (events.length > 1 ? "s" : "");
+  countLabel.textContent = events.length + " " + (typeof t === 'function' ? t('events', 'event') : "event") + (events.length > 1 ? "s" : "");
   modal.appendChild(countLabel);
 
-  // قائمة الأحداث
   const eventsList = document.createElement("div");
   eventsList.style.cssText = `
     display: flex;
@@ -161,7 +158,6 @@ function openEventDetailsModal(events, dateStr) {
       eventCard.style.background = "var(--primary-light)";
     }
 
-    // عنوان الحدث
     const titleRow = document.createElement("div");
     titleRow.style.cssText = `
       display: flex;
@@ -183,7 +179,6 @@ function openEventDetailsModal(events, dateStr) {
     eventTitle.textContent = event.title;
     titleRow.appendChild(eventTitle);
 
-    // الوصف
     const descRow = document.createElement("div");
     descRow.style.cssText = `
       margin-top: 6px;
@@ -194,11 +189,10 @@ function openEventDetailsModal(events, dateStr) {
     if (event.description) {
       descRow.textContent = "📝 " + event.description;
     } else {
-      descRow.textContent = "No description";
+      descRow.textContent = typeof t === 'function' ? t('no_description', 'No description') : "No description";
       descRow.style.opacity = "0.5";
     }
 
-    // الوقت المتبقي
     const remainingRow = document.createElement("div");
     remainingRow.style.cssText = `
       margin-top: 6px;
@@ -213,7 +207,7 @@ function openEventDetailsModal(events, dateStr) {
     const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     if (diff < 0) {
-      remainingRow.textContent = "⏳ Event passed";
+      remainingRow.textContent = "⏳ " + (typeof t === 'function' ? t('event_passed', 'Event passed') : "Event passed");
       remainingRow.style.color = "#6b7280";
     } else if (daysLeft <= 3) {
       remainingRow.textContent = "⏳ " + remaining;
@@ -226,7 +220,6 @@ function openEventDetailsModal(events, dateStr) {
       remainingRow.style.color = "#22c55e";
     }
 
-    // ===== أزرار الإجراءات (تعديل + حذف) =====
     const actionsRow = document.createElement("div");
     actionsRow.style.cssText = `
       display: flex;
@@ -234,9 +227,8 @@ function openEventDetailsModal(events, dateStr) {
       margin-top: 8px;
     `;
 
-    // زر تعديل
     const editBtn = document.createElement("button");
-    editBtn.textContent = "✏️ Edit";
+    editBtn.textContent = "✏️ " + (typeof t === 'function' ? t('edit', 'Edit') : "Edit");
     editBtn.style.cssText = `
       padding: 4px 12px;
       border: 1px solid var(--border-input);
@@ -262,9 +254,8 @@ function openEventDetailsModal(events, dateStr) {
       openEventModal(event);
     });
 
-    // زر حذف
     const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "🗑️ Delete";
+    deleteBtn.textContent = "🗑️ " + (typeof t === 'function' ? t('delete', 'Delete') : "Delete");
     deleteBtn.style.cssText = `
       padding: 4px 12px;
       border: 1px solid #ef4444;
@@ -307,7 +298,6 @@ function openEventDetailsModal(events, dateStr) {
 
   modal.appendChild(eventsList);
 
-  // ===== زر الإغلاق =====
   const closeBtn = document.createElement("button");
   closeBtn.className = "notes-modal-close-btn";
   closeBtn.textContent = "✕";
@@ -319,10 +309,9 @@ function openEventDetailsModal(events, dateStr) {
 
   modal.appendChild(closeBtn);
 
-  // ===== زر إغلاق إضافي =====
   const closeModalBtn = document.createElement("button");
   closeModalBtn.className = "notes-modal-save-btn";
-  closeModalBtn.textContent = "Close";
+  closeModalBtn.textContent = typeof t === 'function' ? t('close', 'Close') : "Close";
   closeModalBtn.style.marginTop = "8px";
 
   closeModalBtn.addEventListener("click", function() {
@@ -334,12 +323,10 @@ function openEventDetailsModal(events, dateStr) {
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  // إغلاق عند النقر خارج المودال
   overlay.addEventListener("click", function(e) {
     if (e.target === overlay) overlay.remove();
   });
 
-  // إغلاق بالـ Escape
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape" && document.getElementById("events-details-modal-overlay")) {
       overlay.remove();
@@ -348,7 +335,7 @@ function openEventDetailsModal(events, dateStr) {
 }
 
 // ========================================
-// عرض صفحة الأحداث
+// عرض صفحة الأحداث (معدلة مع Lucide والترجمة)
 // ========================================
 
 function renderEventsPage() {
@@ -363,10 +350,13 @@ function renderEventsPage() {
     <div id="events-container">
       <!-- Header -->
       <div class="events-header">
-        <h2 class="events-title">📅 Events</h2>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span data-lucide="calendar" style="width: 32px; height: 32px; color: var(--primary);"></span>
+          <h2 class="events-title" style="margin: 0;">${typeof t === 'function' ? t('events_title', 'Events') : 'Events'}</h2>
+        </div>
         <button class="events-add-btn" id="events-add-btn">
           <span class="events-add-icon">＋</span>
-          Add Event
+          ${typeof t === 'function' ? t('add_event_btn', 'Add Event') : 'Add Event'}
         </button>
       </div>
 
@@ -380,13 +370,13 @@ function renderEventsPage() {
 
         <div class="calendar-grid">
           <div class="calendar-weekdays">
-            <span>Sun</span>
-            <span>Mon</span>
-            <span>Tue</span>
-            <span>Wed</span>
-            <span>Thu</span>
-            <span>Fri</span>
-            <span>Sat</span>
+            <span>${typeof t === 'function' ? t('sunday', 'Sun') : 'Sun'}</span>
+            <span>${typeof t === 'function' ? t('monday', 'Mon') : 'Mon'}</span>
+            <span>${typeof t === 'function' ? t('tuesday', 'Tue') : 'Tue'}</span>
+            <span>${typeof t === 'function' ? t('wednesday', 'Wed') : 'Wed'}</span>
+            <span>${typeof t === 'function' ? t('thursday', 'Thu') : 'Thu'}</span>
+            <span>${typeof t === 'function' ? t('friday', 'Fri') : 'Fri'}</span>
+            <span>${typeof t === 'function' ? t('saturday', 'Sat') : 'Sat'}</span>
           </div>
           <div class="calendar-days" id="calendar-days"></div>
         </div>
@@ -399,7 +389,12 @@ function renderEventsPage() {
     </div>
   `;
 
-  // ===== إضافة أحداث =====
+  setTimeout(function() {
+    if (typeof initLucideIcons === 'function') {
+      initLucideIcons();
+    }
+  }, 50);
+
   let currentYearState = currentYear;
   let currentMonthState = currentMonth;
 
@@ -423,7 +418,6 @@ function renderEventsPage() {
     const eventsThisMonth = getEventsByMonth(allEvents, year, month);
     const eventDates = new Set(eventsThisMonth.map(e => e.date));
     
-    // الأيام التي فيها أحداث مثبتة
     const pinnedDates = new Set();
     eventsThisMonth.forEach(e => {
       if (e.pinned) pinnedDates.add(e.date);
@@ -431,14 +425,12 @@ function renderEventsPage() {
 
     daysContainer.innerHTML = "";
 
-    // أيام فارغة قبل أول يوم
     for (let i = 0; i < firstDay; i++) {
       const empty = document.createElement("div");
       empty.className = "calendar-day-empty";
       daysContainer.appendChild(empty);
     }
 
-    // أيام الشهر
     for (let day = 1; day <= daysInMonth; day++) {
       const dayDiv = document.createElement("div");
       const dateStr = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
@@ -453,7 +445,6 @@ function renderEventsPage() {
 
       dayDiv.textContent = day;
 
-      // إضافة أيقونة pin للأيام التي فيها أحداث مثبتة
       if (hasPinned) {
         const pinIcon = document.createElement("span");
         pinIcon.className = "calendar-pin-icon";
@@ -461,7 +452,6 @@ function renderEventsPage() {
         dayDiv.appendChild(pinIcon);
       }
 
-      // عرض الأحداث عند النقر على اليوم
       dayDiv.addEventListener("click", function() {
         const eventsOnDay = getEventsByDate(allEvents, dateStr);
         if (eventsOnDay.length > 0) {
@@ -483,7 +473,6 @@ function renderEventsPage() {
     const infoDiv = document.createElement("div");
     infoDiv.className = "event-info";
 
-    // عنوان مع أيقونة التثبيت
     const titleDiv = document.createElement("div");
     titleDiv.className = "event-title-row";
 
@@ -499,7 +488,6 @@ function renderEventsPage() {
     titleDiv.appendChild(pinIcon);
     titleDiv.appendChild(titleSpan);
 
-    // باقي التفاصيل
     const dateSpan = document.createElement("span");
     dateSpan.className = "event-date";
     const formattedDate = new Date(event.date + "T00:00:00").toLocaleDateString("en-US", {
@@ -514,7 +502,6 @@ function renderEventsPage() {
     const remaining = getTimeRemaining(event.date);
     remainingSpan.textContent = "⏳ " + remaining;
 
-    // تحديد لون الوقت المتبقي
     const now = new Date();
     const target = new Date(event.date + "T00:00:00");
     const diff = target - now;
@@ -542,16 +529,14 @@ function renderEventsPage() {
       infoDiv.appendChild(descSpan);
     }
 
-    // ===== أزرار الإجراءات =====
     const actionsDiv = document.createElement("div");
     actionsDiv.className = "event-actions";
 
-    // زر التثبيت
     if (showPinButton) {
       const pinBtn = document.createElement("button");
       pinBtn.className = "event-pin-btn";
       pinBtn.textContent = event.pinned ? "📌" : "📍";
-      pinBtn.title = event.pinned ? "Unpin event" : "Pin event";
+      pinBtn.title = event.pinned ? (typeof t === 'function' ? t('unpin', 'Unpin event') : "Unpin event") : (typeof t === 'function' ? t('pin', 'Pin event') : "Pin event");
       pinBtn.setAttribute("aria-label", pinBtn.title);
 
       pinBtn.addEventListener("click", function(e) {
@@ -563,11 +548,10 @@ function renderEventsPage() {
       actionsDiv.appendChild(pinBtn);
     }
 
-    // زر تعديل - تم إصلاح class
     const editBtn = document.createElement("button");
     editBtn.className = "event-edit-btn";
     editBtn.textContent = "✏️";
-    editBtn.title = "Edit event";
+    editBtn.title = typeof t === 'function' ? t('edit', 'Edit event') : "Edit event";
     editBtn.setAttribute("aria-label", "Edit event");
 
     editBtn.addEventListener("click", function(e) {
@@ -577,11 +561,10 @@ function renderEventsPage() {
 
     actionsDiv.appendChild(editBtn);
 
-    // زر الحذف
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "event-delete-btn";
     deleteBtn.textContent = "🗑️";
-    deleteBtn.title = "Delete event";
+    deleteBtn.title = typeof t === 'function' ? t('delete', 'Delete event') : "Delete event";
     deleteBtn.setAttribute("aria-label", "Delete event");
 
     deleteBtn.addEventListener("click", function(e) {
@@ -604,34 +587,30 @@ function renderEventsPage() {
     const container = document.getElementById("events-list");
     if (!container) return;
 
-    // ===== فصل الأحداث المثبتة =====
     const allEvents = events.length > 0 ? events : getAllEvents();
     const now = new Date();
     const todayStr = now.getFullYear() + '-' + 
                      String(now.getMonth() + 1).padStart(2, '0') + '-' + 
                      String(now.getDate()).padStart(2, '0');
 
-    // تصفية الأحداث القادمة
     const upcomingEvents = allEvents.filter(e => e.date >= todayStr);
     upcomingEvents.sort((a, b) => a.date.localeCompare(b.date));
 
     const pinnedEvents = upcomingEvents.filter(e => e.pinned);
     const unpinnedEvents = upcomingEvents.filter(e => !e.pinned);
 
-    // ===== ✅ استخدام DocumentFragment لتجميع البطاقات =====
     const fragment = document.createDocumentFragment();
 
     if (upcomingEvents.length === 0) {
       const empty = document.createElement("p");
       empty.className = "events-empty";
-      empty.textContent = "No upcoming events. Add one!";
+      empty.textContent = typeof t === 'function' ? t('no_events', 'No upcoming events. Add one!') : "No upcoming events. Add one!";
       fragment.appendChild(empty);
     } else {
-      // ===== عرض الأحداث المثبتة =====
       if (pinnedEvents.length > 0) {
         const pinnedTitle = document.createElement("h4");
         pinnedTitle.className = "events-subtitle";
-        pinnedTitle.textContent = "📌 Pinned Events";
+        pinnedTitle.textContent = "📌 " + (typeof t === 'function' ? t('pinned_events', 'Pinned Events') : "Pinned Events");
         fragment.appendChild(pinnedTitle);
 
         pinnedEvents.forEach(e => {
@@ -640,11 +619,10 @@ function renderEventsPage() {
         });
       }
 
-      // ===== عرض الأحداث العادية =====
       if (unpinnedEvents.length > 0) {
         const unpinnedTitle = document.createElement("h4");
         unpinnedTitle.className = "events-subtitle";
-        unpinnedTitle.textContent = pinnedEvents.length > 0 ? "📋 All Events" : "📌 Upcoming Events";
+        unpinnedTitle.textContent = pinnedEvents.length > 0 ? (typeof t === 'function' ? t('all_events', 'All Events') : "All Events") : (typeof t === 'function' ? t('upcoming_events', 'Upcoming Events') : "Upcoming Events");
         fragment.appendChild(unpinnedTitle);
 
         unpinnedEvents.forEach(e => {
@@ -654,12 +632,10 @@ function renderEventsPage() {
       }
     }
 
-    // ===== ✅ إضافة جميع البطاقات دفعة واحدة =====
     container.innerHTML = "";
     container.appendChild(fragment);
   }
 
-  // ===== التنقل بين الأشهر =====
   document.getElementById("calendar-prev").addEventListener("click", function() {
     currentMonthState--;
     if (currentMonthState < 1) {
@@ -680,18 +656,16 @@ function renderEventsPage() {
     renderEventsList([]);
   });
 
-  // ===== زر إضافة حدث =====
   document.getElementById("events-add-btn").addEventListener("click", function() {
     openEventModal();
   });
 
-  // ===== العرض الأولي =====
   renderCalendar(currentYearState, currentMonthState);
   renderEventsList([]);
 }
 
 // ========================================
-// نافذة إضافة/تعديل حدث
+// نافذة إضافة/تعديل حدث (مع دعم الترجمة)
 // ========================================
 
 function openEventModal(editEvent = null) {
@@ -706,26 +680,24 @@ function openEventModal(editEvent = null) {
 
   const title = document.createElement("h3");
   title.className = "notes-modal-title";
-  title.textContent = isEditing ? "✏️ Edit Event" : "➕ Add Event";
+  title.textContent = isEditing ? ("✏️ " + (typeof t === 'function' ? t('edit_event', 'Edit Event') : "Edit Event")) : ("➕ " + (typeof t === 'function' ? t('add_event', 'Add Event') : "Add Event"));
 
-  // حقل العنوان
   const titleLabel = document.createElement("label");
   titleLabel.className = "notes-modal-label";
-  titleLabel.textContent = "Title";
+  titleLabel.textContent = typeof t === 'function' ? t('title', 'Title') : "Title";
   titleLabel.setAttribute("for", "events-modal-title-input");
 
   const titleInput = document.createElement("input");
   titleInput.type = "text";
   titleInput.id = "events-modal-title-input";
   titleInput.className = "notes-modal-input";
-  titleInput.placeholder = "Enter event title...";
+  titleInput.placeholder = typeof t === 'function' ? t('enter_event_title', 'Enter event title...') : "Enter event title...";
   titleInput.maxLength = 120;
   titleInput.value = isEditing ? editEvent.title : "";
 
-  // حقل التاريخ
   const dateLabel = document.createElement("label");
   dateLabel.className = "notes-modal-label";
-  dateLabel.textContent = "Date";
+  dateLabel.textContent = typeof t === 'function' ? t('date', 'Date') : "Date";
   dateLabel.setAttribute("for", "events-modal-date-input");
 
   const dateInput = document.createElement("input");
@@ -734,30 +706,28 @@ function openEventModal(editEvent = null) {
   dateInput.className = "notes-modal-input";
   dateInput.value = isEditing ? editEvent.date : "";
 
-  // حقل الوصف
   const descLabel = document.createElement("label");
   descLabel.className = "notes-modal-label";
-  descLabel.textContent = "Description (optional)";
+  descLabel.textContent = typeof t === 'function' ? t('description', 'Description (optional)') : "Description (optional)";
   descLabel.setAttribute("for", "events-modal-desc-input");
 
   const descInput = document.createElement("textarea");
   descInput.id = "events-modal-desc-input";
   descInput.className = "notes-modal-textarea";
-  descInput.placeholder = "Add a description...";
+  descInput.placeholder = typeof t === 'function' ? t('add_description', 'Add a description...') : "Add a description...";
   descInput.rows = 3;
   descInput.value = isEditing ? editEvent.description : "";
 
-  // أزرار
   const actionsDiv = document.createElement("div");
   actionsDiv.className = "notes-modal-actions";
 
   const saveBtn = document.createElement("button");
   saveBtn.className = "notes-modal-save-btn";
-  saveBtn.textContent = isEditing ? "💾 Update" : "➕ Add";
+  saveBtn.textContent = isEditing ? ("💾 " + (typeof t === 'function' ? t('update', 'Update') : "Update")) : ("➕ " + (typeof t === 'function' ? t('add', 'Add') : "Add"));
 
   const cancelBtn = document.createElement("button");
   cancelBtn.className = "notes-modal-cancel-btn";
-  cancelBtn.textContent = "Cancel";
+  cancelBtn.textContent = typeof t === 'function' ? t('cancel', 'Cancel') : "Cancel";
 
   const closeBtn = document.createElement("button");
   closeBtn.className = "notes-modal-close-btn";

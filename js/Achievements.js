@@ -4,7 +4,7 @@ function renderCompleted() {
 
   // ===== العنوان =====
   const title = document.createElement("h2");
-  title.textContent = " Completed";
+  title.textContent = "✅ " + (typeof t === 'function' ? t('completed', 'Completed') : "Completed");
   app.appendChild(title);
 
   // ===== الفلاتر =====
@@ -16,16 +16,16 @@ function renderCompleted() {
   filterDiv.style.flexWrap = "wrap";
 
   const filterLabel = document.createElement("span");
-  filterLabel.textContent = "Filter by difficulty:";
+  filterLabel.textContent = (typeof t === 'function' ? t('filter_by_difficulty', 'Filter by difficulty:') : "Filter by difficulty:");
   filterLabel.style.fontSize = "14px";
   filterLabel.style.fontWeight = "500";
   filterDiv.appendChild(filterLabel);
 
   const filters = [
-    { value: "all", label: "All" },
-    { value: "Easy", label: "🟢 Easy" },
-    { value: "Medium", label: "🟡 Medium" },
-    { value: "Hard", label: "🔴 Hard" }
+    { value: "all", label: typeof t === 'function' ? t('all', 'All') : "All" },
+    { value: "Easy", label: "🟢 " + (typeof t === 'function' ? t('easy', 'Easy') : "Easy") },
+    { value: "Medium", label: "🟡 " + (typeof t === 'function' ? t('medium', 'Medium') : "Medium") },
+    { value: "Hard", label: "🔴 " + (typeof t === 'function' ? t('hard', 'Hard') : "Hard") }
   ];
 
   filters.forEach(function (f) {
@@ -81,9 +81,11 @@ function renderCompletedList(filter = "all") {
   if (tasks.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty-message";
-    empty.textContent = filter === "all" 
-      ? "No completed tasks yet." 
-      : "No completed tasks with " + filter + " difficulty.";
+    if (filter === "all") {
+      empty.textContent = typeof t === 'function' ? t('no_completed_tasks', 'No completed tasks yet.') : "No completed tasks yet.";
+    } else {
+      empty.textContent = (typeof t === 'function' ? t('no_completed_with_difficulty', 'No completed tasks with ') : "No completed tasks with ") + filter + " " + (typeof t === 'function' ? t('difficulty', 'difficulty.') : "difficulty.");
+    }
     taskList.appendChild(empty);
     return;
   }
@@ -125,12 +127,14 @@ function renderCompletedList(filter = "all") {
     difficultySpan.className = "task-category";
     const difficultyEmoji = task.difficulty === "Hard" ? "🔴" : 
                            task.difficulty === "Medium" ? "🟡" : "🟢";
-    difficultySpan.textContent = difficultyEmoji + " " + task.difficulty;
+    const difficultyLabel = typeof t === 'function' ? t(task.difficulty.toLowerCase(), task.difficulty) : task.difficulty;
+    difficultySpan.textContent = difficultyEmoji + " " + difficultyLabel;
 
     // التصنيف
     const categorySpan = document.createElement("span");
     categorySpan.className = "task-category";
-    categorySpan.textContent = "📂 " + (task.category || "General");
+    const categoryLabel = typeof t === 'function' ? t('category', 'Category') : "Category";
+    categorySpan.textContent = "📂 " + (task.category || categoryLabel);
 
     // تاريخ الإكمال
     const dateSpan = document.createElement("span");
@@ -148,14 +152,14 @@ function renderCompletedList(filter = "all") {
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "🗑️";
     deleteBtn.className = "task-action-btn";
-    deleteBtn.title = "Delete permanently";
+    deleteBtn.title = typeof t === 'function' ? t('delete_permanently', 'Delete permanently') : "Delete permanently";
     deleteBtn.style.opacity = "0.5";
     deleteBtn.style.fontSize = "18px";
     deleteBtn.style.padding = "6px 12px";
 
     deleteBtn.addEventListener("click", function (e) {
       e.stopPropagation();
-      if (confirm('Delete "' + task.text + '" permanently?')) {
+      if (confirm((typeof t === 'function' ? t('delete_confirm', 'Delete "') : 'Delete "') + task.text + '" ' + (typeof t === 'function' ? t('permanently', 'permanently?') : 'permanently?'))) {
         deleteTaskPermanently(task.id);
         renderCompletedList(
           document.querySelector(".filter-btn.active")?.dataset.filter || "all"

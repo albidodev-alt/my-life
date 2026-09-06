@@ -30,52 +30,39 @@ function saveAllPrograms(programs) {
 }
 
 function getProgram(programId) {
-  var programs = getAllPrograms();
-  for (var i = 0; i < programs.length; i++) {
-    if (programs[i].id === programId) {
-      return programs[i];
-    }
-  }
-  return null;
+  const programs = getAllPrograms();
+  return programs.find(p => p.id === programId) || null;
 }
 
 function updateProgram(updatedProgram) {
-  var programs = getAllPrograms();
-  for (var i = 0; i < programs.length; i++) {
-    if (programs[i].id === updatedProgram.id) {
-      programs[i] = updatedProgram;
-      saveAllPrograms(programs);
-      return true;
-    }
-  }
-  return false;
+  const programs = getAllPrograms();
+  const index = programs.findIndex(p => p.id === updatedProgram.id);
+  if (index === -1) return false;
+  programs[index] = updatedProgram;
+  saveAllPrograms(programs);
+  return true;
 }
 
 function deleteProgram(programId) {
-  var programs = getAllPrograms();
-  var filtered = [];
-  for (var i = 0; i < programs.length; i++) {
-    if (programs[i].id !== programId) {
-      filtered.push(programs[i]);
-    }
-  }
+  const programs = getAllPrograms();
+  const filtered = programs.filter(p => p.id !== programId);
   saveAllPrograms(filtered);
 }
 
 // ========================================
-// دوال مساعدة (تم نقلها للأعلى)
+// دوال مساعدة
 // ========================================
 
 function escapeHtml(text) {
   if (!text) return "";
-  var div = document.createElement("div");
+  const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
 }
 
 function formatDate(dateString) {
   if (!dateString) return "";
-  var date = new Date(dateString);
+  const date = new Date(dateString);
   if (isNaN(date.getTime())) return "";
   return date.toLocaleDateString("en-US", {
     month: "short",
@@ -84,13 +71,17 @@ function formatDate(dateString) {
   });
 }
 
+function tr(key, fallback) {
+  return typeof t === 'function' ? t(key, fallback) : fallback;
+}
+
 // ========================================
 // إنشاء برنامج جديد
 // ========================================
 
 function createProgram(name, description, goal, resources) {
-  var programs = getAllPrograms();
-  var newProgram = {
+  const programs = getAllPrograms();
+  const newProgram = {
     id: Date.now() + Math.random() * 1000,
     name: name.trim(),
     description: description.trim(),
@@ -110,18 +101,15 @@ function createProgram(name, description, goal, resources) {
 }
 
 // ========================================
-// دوال إدارة الموارد (Resources)
+// دوال إدارة الموارد
 // ========================================
 
 function addResource(programId, name, url) {
-  var program = getProgram(programId);
+  const program = getProgram(programId);
   if (!program) return null;
+  if (!program.resources) program.resources = [];
 
-  if (!program.resources) {
-    program.resources = [];
-  }
-
-  var newResource = {
+  const newResource = {
     id: Date.now() + Math.random() * 1000,
     name: name.trim(),
     url: url.trim() || ""
@@ -134,39 +122,25 @@ function addResource(programId, name, url) {
 }
 
 function deleteResource(programId, resourceId) {
-  var program = getProgram(programId);
-  if (!program) return false;
+  const program = getProgram(programId);
+  if (!program || !program.resources) return false;
 
-  if (!program.resources) {
-    program.resources = [];
-    return false;
-  }
-
-  var newResources = [];
-  for (var i = 0; i < program.resources.length; i++) {
-    if (program.resources[i].id !== resourceId) {
-      newResources.push(program.resources[i]);
-    }
-  }
-  program.resources = newResources;
+  program.resources = program.resources.filter(r => r.id !== resourceId);
   program.updatedAt = new Date().toISOString();
   updateProgram(program);
   return true;
 }
 
 // ========================================
-// دوال إدارة الخطوات (Steps)
+// دوال إدارة الخطوات
 // ========================================
 
 function addStep(programId, stepName) {
-  var program = getProgram(programId);
+  const program = getProgram(programId);
   if (!program) return null;
+  if (!program.steps) program.steps = [];
 
-  if (!program.steps) {
-    program.steps = [];
-  }
-
-  var newStep = {
+  const newStep = {
     id: Date.now() + Math.random() * 1000,
     name: stepName.trim(),
     completed: false,
@@ -184,44 +158,24 @@ function addStep(programId, stepName) {
 }
 
 function deleteStep(programId, stepId) {
-  var program = getProgram(programId);
-  if (!program) return false;
+  const program = getProgram(programId);
+  if (!program || !program.steps) return false;
 
-  if (!program.steps) {
-    program.steps = [];
-    return false;
-  }
-
-  var newSteps = [];
-  for (var i = 0; i < program.steps.length; i++) {
-    if (program.steps[i].id !== stepId) {
-      newSteps.push(program.steps[i]);
-    }
-  }
-  program.steps = newSteps;
+  program.steps = program.steps.filter(s => s.id !== stepId);
   program.updatedAt = new Date().toISOString();
   updateProgram(program);
   return true;
 }
 
 function reorderSteps(programId, stepIds) {
-  var program = getProgram(programId);
-  if (!program) return false;
+  const program = getProgram(programId);
+  if (!program || !program.steps) return false;
 
-  if (!program.steps) {
-    program.steps = [];
-    return false;
-  }
-
-  var newSteps = [];
-  for (var i = 0; i < stepIds.length; i++) {
-    for (var j = 0; j < program.steps.length; j++) {
-      if (program.steps[j].id === stepIds[i]) {
-        newSteps.push(program.steps[j]);
-        break;
-      }
-    }
-  }
+  const newSteps = [];
+  stepIds.forEach(id => {
+    const step = program.steps.find(s => s.id === id);
+    if (step) newSteps.push(step);
+  });
 
   program.steps = newSteps;
   program.updatedAt = new Date().toISOString();
@@ -230,28 +184,15 @@ function reorderSteps(programId, stepIds) {
 }
 
 function completeStep(programId, stepId, duration, difficulty, learning, rating) {
-  var program = getProgram(programId);
-  if (!program) return false;
+  const program = getProgram(programId);
+  if (!program || !program.steps) return false;
 
-  if (!program.steps) {
-    program.steps = [];
-    return false;
-  }
-
-  var step = null;
-  for (var i = 0; i < program.steps.length; i++) {
-    if (program.steps[i].id === stepId) {
-      step = program.steps[i];
-      break;
-    }
-  }
+  const step = program.steps.find(s => s.id === stepId);
   if (!step) return false;
 
-  if (!program.sessions) {
-    program.sessions = [];
-  }
+  if (!program.sessions) program.sessions = [];
 
-  var session = {
+  const session = {
     id: Date.now() + Math.random() * 1000,
     stepId: stepId,
     stepName: step.name,
@@ -271,14 +212,7 @@ function completeStep(programId, stepId, duration, difficulty, learning, rating)
   step.learning = learning;
   step.rating = rating;
 
-  var allCompleted = true;
-  for (var j = 0; j < program.steps.length; j++) {
-    if (!program.steps[j].completed) {
-      allCompleted = false;
-      break;
-    }
-  }
-
+  const allCompleted = program.steps.every(s => s.completed);
   if (allCompleted && program.steps.length > 0) {
     program.status = "completed";
     program.completedAt = new Date().toISOString();
@@ -291,46 +225,25 @@ function completeStep(programId, stepId, duration, difficulty, learning, rating)
 
 function getNextStep(program) {
   if (!program.steps) return null;
-  for (var i = 0; i < program.steps.length; i++) {
-    if (!program.steps[i].completed) {
-      return program.steps[i];
-    }
-  }
-  return null;
+  return program.steps.find(s => !s.completed) || null;
 }
 
 function calculateProgress(program) {
-  var total = program.steps ? program.steps.length : 0;
-  var completed = 0;
-  if (program.steps) {
-    for (var i = 0; i < program.steps.length; i++) {
-      if (program.steps[i].completed) completed++;
-    }
-  }
-  var percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
-  return {
-    total: total,
-    completed: completed,
-    percentage: percentage
-  };
+  const total = program.steps ? program.steps.length : 0;
+  const completed = program.steps ? program.steps.filter(s => s.completed).length : 0;
+  const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+  return { total, completed, percentage };
 }
 
 function getProgramStats(program) {
-  var progress = calculateProgress(program);
-  var totalSessions = program.sessions ? program.sessions.length : 0;
+  const progress = calculateProgress(program);
+  const totalSessions = program.sessions ? program.sessions.length : 0;
 
-  var now = new Date();
-  var weekAgo = new Date(now);
+  const now = new Date();
+  const weekAgo = new Date(now);
   weekAgo.setDate(weekAgo.getDate() - 7);
 
-  var recentSessions = [];
-  if (program.sessions) {
-    for (var i = 0; i < program.sessions.length; i++) {
-      if (new Date(program.sessions[i].completedAt) >= weekAgo) {
-        recentSessions.push(program.sessions[i]);
-      }
-    }
-  }
+  const recentSessions = program.sessions ? program.sessions.filter(s => new Date(s.completedAt) >= weekAgo) : [];
 
   return {
     totalSteps: progress.total,
@@ -342,336 +255,294 @@ function getProgramStats(program) {
 }
 
 // ========================================
-// عرض الصفحة الرئيسية
+// عرض الصفحة الرئيسية (مع الترجمة الكاملة)
 // ========================================
 
 function renderProgramPage() {
   console.log("📌 renderProgramPage called");
-  var app = document.getElementById("app");
+  const app = document.getElementById("app");
   if (!app) {
     console.error("❌ app element not found");
     return;
   }
 
-  var programs = getAllPrograms();
+  const programs = getAllPrograms();
   console.log("📌 Programs loaded:", programs.length);
 
-  var activePrograms = [];
-  var completedPrograms = [];
-  
-  for (var i = 0; i < programs.length; i++) {
-    if (programs[i].status === "active") {
-      activePrograms.push(programs[i]);
-    } else {
-      completedPrograms.push(programs[i]);
-    }
-  }
+  const activePrograms = programs.filter(p => p.status === "active");
+  const completedPrograms = programs.filter(p => p.status !== "active");
 
-  var html = '';
-  html += '<div id="program-container">';
-  html += '  <div class="program-header">';
-  html += '    <div class="program-title-area">';
-  html += '      <h2 class="program-main-title">📚 Learning Programs</h2>';
-  html += '      <p class="program-main-subtitle">Create your learning programs and track your progress step by step</p>';
-  html += '    </div>';
-  html += '    <button class="program-add-btn" id="program-add-btn">';
-  html += '      <span class="program-add-icon">＋</span>';
-  html += '      New Program';
-  html += '    </button>';
-  html += '  </div>';
+  const html = `
+    <div id="program-container">
+      <div class="program-header">
+        <div class="program-title-area">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span data-lucide="graduation-cap" style="width: 32px; height: 32px; color: var(--primary);"></span>
+            <h2 class="program-main-title" style="margin: 0;">${tr('program', 'Learning Programs')}</h2>
+          </div>
+          <p class="program-main-subtitle">${tr('program_subtitle', 'Create your learning programs and track your progress step by step')}</p>
+        </div>
+        <button class="program-add-btn" id="program-add-btn">
+          <span class="program-add-icon">＋</span>
+          ${tr('add_program', 'New Program')}
+        </button>
+      </div>
+    </div>
+  `;
 
-  // ===== ✅ استخدام DocumentFragment للبطاقات =====
-  var fragment = document.createDocumentFragment();
-  var grid = document.createElement("div");
+  app.innerHTML = html;
+
+  const container = document.getElementById("program-container");
+  const fragment = document.createDocumentFragment();
+  const grid = document.createElement("div");
   grid.className = "program-grid";
   grid.id = "program-grid";
 
   if (activePrograms.length > 0) {
-    for (var j = 0; j < activePrograms.length; j++) {
-      var cardHTML = renderProgramCard(activePrograms[j]);
-      var tempDiv = document.createElement("div");
-      tempDiv.innerHTML = cardHTML;
-      while (tempDiv.firstChild) {
-        grid.appendChild(tempDiv.firstChild);
-      }
-    }
+    activePrograms.forEach(p => {
+      const card = createProgramCardHTML(p);
+      const temp = document.createElement("div");
+      temp.innerHTML = card;
+      while (temp.firstChild) grid.appendChild(temp.firstChild);
+    });
     fragment.appendChild(grid);
   } else {
-    var emptyHTML = `
+    const emptyHTML = `
       <div class="program-empty-state">
         <div class="program-empty-icon">📚</div>
-        <h3 class="program-empty-title">No programs yet</h3>
-        <p class="program-empty-desc">Create your first learning program</p>
+        <h3 class="program-empty-title">${tr('no_programs', 'No programs yet')}</h3>
+        <p class="program-empty-desc">${tr('create_first_program', 'Create your first learning program')}</p>
       </div>
     `;
-    var tempDiv = document.createElement("div");
-    tempDiv.innerHTML = emptyHTML;
-    while (tempDiv.firstChild) {
-      fragment.appendChild(tempDiv.firstChild);
-    }
+    const temp = document.createElement("div");
+    temp.innerHTML = emptyHTML;
+    while (temp.firstChild) fragment.appendChild(temp.firstChild);
   }
 
   if (completedPrograms.length > 0) {
-    var sectionTitle = document.createElement("h3");
+    const sectionTitle = document.createElement("h3");
     sectionTitle.className = "program-section-title";
-    sectionTitle.textContent = "✅ Completed Programs";
+    sectionTitle.textContent = "✅ " + tr('completed_programs', 'Completed Programs');
     fragment.appendChild(sectionTitle);
 
-    var subgrid = document.createElement("div");
+    const subgrid = document.createElement("div");
     subgrid.className = "program-section-subgrid";
-    for (var k = 0; k < completedPrograms.length; k++) {
-      var cardHTML = renderCompletedCard(completedPrograms[k]);
-      var tempDiv2 = document.createElement("div");
-      tempDiv2.innerHTML = cardHTML;
-      while (tempDiv2.firstChild) {
-        subgrid.appendChild(tempDiv2.firstChild);
-      }
-    }
+    completedPrograms.forEach(p => {
+      const cardHTML = createCompletedCardHTML(p);
+      const temp = document.createElement("div");
+      temp.innerHTML = cardHTML;
+      while (temp.firstChild) subgrid.appendChild(temp.firstChild);
+    });
     fragment.appendChild(subgrid);
   }
 
-  // ===== ✅ إضافة جميع العناصر دفعة واحدة =====
-  app.innerHTML = html;
-  var container = document.getElementById("program-container");
-  var existingGrid = document.getElementById("program-grid");
-  var existingEmpty = container.querySelector(".program-empty-state");
-  
   // إزالة العناصر القديمة
-  var oldGrid = document.getElementById("program-grid");
-  if (oldGrid) oldGrid.remove();
-  var oldEmpty = container.querySelector(".program-empty-state");
-  if (oldEmpty) oldEmpty.remove();
-  var oldSectionTitle = container.querySelector(".program-section-title");
-  if (oldSectionTitle) oldSectionTitle.remove();
-  var oldSubgrid = container.querySelector(".program-section-subgrid");
-  if (oldSubgrid) oldSubgrid.remove();
+  document.getElementById("program-grid")?.remove();
+  container.querySelector(".program-empty-state")?.remove();
+  container.querySelector(".program-section-title")?.remove();
+  container.querySelector(".program-section-subgrid")?.remove();
 
-  // إضافة العناصر الجديدة
   while (fragment.firstChild) {
     container.appendChild(fragment.firstChild);
   }
 
-  // ===== إضافة الأحداث =====
-  var addBtn = document.getElementById("program-add-btn");
-  if (addBtn) {
-    addBtn.addEventListener("click", function() {
-      openProgramBuilder();
-    });
-  }
+  // الأحداث
+  document.getElementById("program-add-btn")?.addEventListener("click", () => openProgramBuilder());
 
-  var continueBtns = document.querySelectorAll(".program-card-continue-btn");
-  for (var a = 0; a < continueBtns.length; a++) {
-    continueBtns[a].addEventListener("click", function() {
-      var programId = parseFloat(this.dataset.programId);
-      openProgramDetail(programId);
+  document.querySelectorAll(".program-card-continue-btn").forEach(btn => {
+    btn.addEventListener("click", function() {
+      openProgramDetail(parseFloat(this.dataset.programId));
     });
-  }
+  });
 
-  var deleteBtns = document.querySelectorAll(".program-card-delete-btn");
-  for (var b = 0; b < deleteBtns.length; b++) {
-    deleteBtns[b].addEventListener("click", function() {
-      var programId = parseFloat(this.dataset.programId);
-      if (confirm("Delete this program permanently?")) {
-        deleteProgram(programId);
+  document.querySelectorAll(".program-card-delete-btn").forEach(btn => {
+    btn.addEventListener("click", function() {
+      const id = parseFloat(this.dataset.programId);
+      if (confirm(tr('delete_program_confirm', 'Delete this program permanently?'))) {
+        deleteProgram(id);
         renderProgramPage();
       }
     });
-  }
+  });
 
-  var smallBtns = document.querySelectorAll(".program-card-small-btn");
-  for (var c = 0; c < smallBtns.length; c++) {
-    smallBtns[c].addEventListener("click", function() {
-      var programId = parseFloat(this.dataset.programId);
-      openProgramDetail(programId);
+  document.querySelectorAll(".program-card-small-btn").forEach(btn => {
+    btn.addEventListener("click", function() {
+      openProgramDetail(parseFloat(this.dataset.programId));
     });
-  }
+  });
+
+  setTimeout(() => { if (typeof initLucideIcons === 'function') initLucideIcons(); }, 50);
 }
 
 // ========================================
-// دوال عرض البطاقات
+// إنشاء بطاقات البرامج (مع الترجمة)
 // ========================================
 
-function renderProgramCard(program) {
-  var stats = getProgramStats(program);
-  var progress = stats.percentage;
+function createProgramCardHTML(program) {
+  const stats = getProgramStats(program);
+  const progress = stats.percentage;
+  const nextStep = getNextStep(program);
+  const nextStepName = nextStep ? escapeHtml(nextStep.name) : 
+                       (stats.totalSteps > 0 && stats.completedSteps === stats.totalSteps ? 
+                       "✅ " + tr('completed', 'Completed!') : tr('no_steps_added', 'No steps added'));
 
-  var nextStep = getNextStep(program);
-  var nextStepName = nextStep ? nextStep.name : (stats.totalSteps > 0 && stats.completedSteps === stats.totalSteps ? "✅ Completed!" : "No steps added");
-
-  var html = '';
-  html += '<div class="program-card">';
-  html += '  <div class="program-card-header">';
-  html += '    <span class="program-card-icon">📚</span>';
-  html += '    <span class="program-card-name">' + escapeHtml(program.name) + '</span>';
-  html += '  </div>';
-  html += '  <p class="program-card-description">' + (escapeHtml(program.description) || "No description") + '</p>';
-  if (program.goal) {
-    html += '  <p class="program-card-goal">🎯 ' + escapeHtml(program.goal) + '</p>';
-  }
-  html += '  <div class="program-card-progress">';
-  html += '    <div class="program-card-progress-bar">';
-  html += '      <div class="program-card-progress-fill" style="width: ' + progress + '%"></div>';
-  html += '    </div>';
-  html += '    <div class="program-card-progress-text">';
-  html += '      <span>' + progress + '% Complete</span>';
-  html += '      <span>' + stats.completedSteps + '/' + stats.totalSteps + ' Steps</span>';
-  html += '    </div>';
-  html += '  </div>';
-  html += '  <div class="program-card-stats">';
-  html += '    <span class="program-card-stat">📌 Next: ' + escapeHtml(nextStepName) + '</span>';
-  html += '    <span class="program-card-stat">📋 ' + stats.totalSessions + ' Sessions</span>';
-  html += '  </div>';
-  html += '  <div class="program-card-actions">';
-  html += '    <button class="program-card-continue-btn" data-program-id="' + program.id + '">';
-  html +=       (stats.totalSteps === 0 ? 'Add Steps →' : 'Continue →');
-  html += '    </button>';
-  html += '    <button class="program-card-delete-btn" data-program-id="' + program.id + '">🗑️</button>';
-  html += '  </div>';
-  html += '</div>';
-
-  return html;
+  return `
+    <div class="program-card">
+      <div class="program-card-header">
+        <span class="program-card-icon" data-lucide="book-open" style="width: 28px; height: 28px; color: var(--primary);"></span>
+        <span class="program-card-name">${escapeHtml(program.name)}</span>
+      </div>
+      <p class="program-card-description">${escapeHtml(program.description) || tr('no_description', 'No description')}</p>
+      ${program.goal ? `<p class="program-card-goal">🎯 ${escapeHtml(program.goal)}</p>` : ''}
+      <div class="program-card-progress">
+        <div class="program-card-progress-bar">
+          <div class="program-card-progress-fill" style="width: ${progress}%"></div>
+        </div>
+        <div class="program-card-progress-text">
+          <span>${progress}% ${tr('complete', 'Complete')}</span>
+          <span>${stats.completedSteps}/${stats.totalSteps} ${tr('steps', 'Steps')}</span>
+        </div>
+      </div>
+      <div class="program-card-stats">
+        <span class="program-card-stat">📌 ${tr('next', 'Next')}: ${nextStepName}</span>
+        <span class="program-card-stat">📋 ${stats.totalSessions} ${tr('sessions', 'Sessions')}</span>
+      </div>
+      <div class="program-card-actions">
+        <button class="program-card-continue-btn" data-program-id="${program.id}">
+          ${stats.totalSteps === 0 ? tr('add_steps', 'Add Steps →') : tr('continue', 'Continue →')}
+        </button>
+        <button class="program-card-delete-btn" data-program-id="${program.id}">🗑️</button>
+      </div>
+    </div>
+  `;
 }
 
-function renderCompletedCard(program) {
-  var stats = getProgramStats(program);
-
-  var html = '';
-  html += '<div class="program-card-small">';
-  html += '  <div class="program-card-small-info">';
-  html += '    <div class="program-card-small-name">📚 ' + escapeHtml(program.name) + '</div>';
-  html += '    <div class="program-card-small-progress">' + stats.totalSessions + ' Sessions • ' + stats.completedSteps + '/' + stats.totalSteps + ' Steps</div>';
-  html += '  </div>';
-  html += '  <button class="program-card-small-btn" data-program-id="' + program.id + '">View</button>';
-  html += '</div>';
-
-  return html;
+function createCompletedCardHTML(program) {
+  const stats = getProgramStats(program);
+  return `
+    <div class="program-card-small">
+      <div class="program-card-small-info">
+        <div class="program-card-small-name">📚 ${escapeHtml(program.name)}</div>
+        <div class="program-card-small-progress">${stats.totalSessions} ${tr('sessions', 'Sessions')} • ${stats.completedSteps}/${stats.totalSteps} ${tr('steps', 'Steps')}</div>
+      </div>
+      <button class="program-card-small-btn" data-program-id="${program.id}">${tr('view', 'View')}</button>
+    </div>
+  `;
 }
 
 // ========================================
-// Program Builder (مع موارد اختيارية)
+// Program Builder (مع الترجمة)
 // ========================================
 
 function openProgramBuilder() {
-  var overlay = document.createElement("div");
+  const overlay = document.createElement("div");
   overlay.className = "notes-modal-overlay";
   overlay.id = "program-builder-overlay";
 
-  var modal = document.createElement("div");
+  const modal = document.createElement("div");
   modal.className = "notes-modal";
   modal.id = "program-builder-modal";
 
   modal.innerHTML = `
     <button class="notes-modal-close-btn" id="program-builder-close">✕</button>
-    <h3 class="notes-modal-title">📚 Create Learning Program</h3>
+    <h3 class="notes-modal-title">📚 ${tr('create_learning_program', 'Create Learning Program')}</h3>
 
     <div class="program-builder-step">
-      <label class="notes-modal-label">Program Name *</label>
-      <input type="text" class="notes-modal-input" id="program-builder-name" placeholder="e.g. Read a Book" />
+      <label class="notes-modal-label">${tr('program_name', 'Program Name')} *</label>
+      <input type="text" class="notes-modal-input" id="program-builder-name" placeholder="${tr('program_name_placeholder', 'e.g. Read a Book')}" />
 
-      <label class="notes-modal-label">Description</label>
-      <textarea class="notes-modal-textarea" id="program-builder-desc" rows="3" placeholder="Describe your program..."></textarea>
+      <label class="notes-modal-label">${tr('description', 'Description')}</label>
+      <textarea class="notes-modal-textarea" id="program-builder-desc" rows="3" placeholder="${tr('describe_program', 'Describe your program...')}"></textarea>
       
-      <label class="notes-modal-label">Goal</label>
-      <input type="text" class="notes-modal-input" id="program-builder-goal" placeholder="e.g. Understand the fundamentals..." />
+      <label class="notes-modal-label">${tr('goal', 'Goal')}</label>
+      <input type="text" class="notes-modal-input" id="program-builder-goal" placeholder="${tr('goal_placeholder', 'e.g. Understand the fundamentals...')}" />
 
-      <label class="notes-modal-label">Resources (optional)</label>
+      <label class="notes-modal-label">${tr('resources_optional', 'Resources (optional)')}</label>
       <div id="program-builder-resources">
         <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-          <input type="text" class="notes-modal-input" id="program-builder-resource-name" placeholder="Resource name..." style="flex: 1; margin-bottom: 0;" />
-          <input type="text" class="notes-modal-input" id="program-builder-resource-url" placeholder="URL (optional)" style="flex: 1.5; margin-bottom: 0;" />
-          <button class="notes-modal-cancel-btn" id="program-builder-add-resource" style="padding: 12px 16px; flex: 0.5;">Add</button>
+          <input type="text" class="notes-modal-input" id="program-builder-resource-name" placeholder="${tr('resource_name', 'Resource name...')}" style="flex: 1; margin-bottom: 0;" />
+          <input type="text" class="notes-modal-input" id="program-builder-resource-url" placeholder="${tr('url_optional', 'URL (optional)')}" style="flex: 1.5; margin-bottom: 0;" />
+          <button class="notes-modal-cancel-btn" id="program-builder-add-resource" style="padding: 12px 16px; flex: 0.5;">${tr('add', 'Add')}</button>
         </div>
         <div id="program-builder-resources-list" style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;"></div>
       </div>
     </div>
 
     <div class="notes-modal-actions">
-      <button class="notes-modal-cancel-btn" id="program-builder-cancel">Cancel</button>
-      <button class="notes-modal-save-btn" id="program-builder-create">Create Program →</button>
+      <button class="notes-modal-cancel-btn" id="program-builder-cancel">${tr('cancel', 'Cancel')}</button>
+      <button class="notes-modal-save-btn" id="program-builder-create">${tr('create_program', 'Create Program →')}</button>
     </div>
   `;
 
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  var tempResources = [];
+  let tempResources = [];
 
   function renderTempResources() {
-    var list = document.getElementById("program-builder-resources-list");
+    const list = document.getElementById("program-builder-resources-list");
     if (!list) return;
     list.innerHTML = "";
-    for (var i = 0; i < tempResources.length; i++) {
-      var r = tempResources[i];
-      var div = document.createElement("div");
+    tempResources.forEach((r, i) => {
+      const div = document.createElement("div");
       div.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 4px; font-size: 13px;";
-      var text = document.createElement("span");
+      const text = document.createElement("span");
       text.textContent = r.name + (r.url ? " 🔗" : "");
-      var btn = document.createElement("button");
+      const btn = document.createElement("button");
       btn.textContent = "✕";
       btn.style.cssText = "background: none; border: none; color: var(--danger); cursor: pointer; font-size: 14px;";
-      btn.addEventListener("click", function() {
-        var index = parseInt(this.dataset.index);
-        tempResources.splice(index, 1);
-        renderTempResources();
-      });
       btn.dataset.index = i;
+      btn.onclick = () => { tempResources.splice(i, 1); renderTempResources(); };
       div.appendChild(text);
       div.appendChild(btn);
       list.appendChild(div);
-    }
+    });
   }
 
-  document.getElementById("program-builder-add-resource").addEventListener("click", function() {
-    var name = document.getElementById("program-builder-resource-name").value.trim();
-    var url = document.getElementById("program-builder-resource-url").value.trim();
+  document.getElementById("program-builder-add-resource").onclick = () => {
+    const name = document.getElementById("program-builder-resource-name").value.trim();
+    const url = document.getElementById("program-builder-resource-url").value.trim();
     if (name) {
-      tempResources.push({ name: name, url: url });
+      tempResources.push({ name, url });
       document.getElementById("program-builder-resource-name").value = "";
       document.getElementById("program-builder-resource-url").value = "";
       renderTempResources();
     }
-  });
+  };
 
-  function closeModal() {
-    overlay.remove();
-  }
+  const closeModal = () => overlay.remove();
 
-  document.getElementById("program-builder-close").addEventListener("click", closeModal);
-  document.getElementById("program-builder-cancel").addEventListener("click", closeModal);
+  document.getElementById("program-builder-close").onclick = closeModal;
+  document.getElementById("program-builder-cancel").onclick = closeModal;
+  overlay.onclick = e => { if (e.target === overlay) closeModal(); };
 
-  overlay.addEventListener("click", function(e) {
-    if (e.target === overlay) closeModal();
-  });
-
-  document.getElementById("program-builder-create").addEventListener("click", function() {
-    var name = document.getElementById("program-builder-name").value.trim();
-    var desc = document.getElementById("program-builder-desc").value.trim();
-    var goal = document.getElementById("program-builder-goal").value.trim();
+  document.getElementById("program-builder-create").onclick = () => {
+    const name = document.getElementById("program-builder-name").value.trim();
+    const desc = document.getElementById("program-builder-desc").value.trim();
+    const goal = document.getElementById("program-builder-goal").value.trim();
 
     if (!name) {
       document.getElementById("program-builder-name").classList.add("notes-modal-input-error");
-      setTimeout(function() {
-        document.getElementById("program-builder-name").classList.remove("notes-modal-input-error");
-      }, 500);
+      setTimeout(() => document.getElementById("program-builder-name").classList.remove("notes-modal-input-error"), 500);
       return;
     }
 
-    var program = createProgram(name, desc, goal, tempResources);
+    const program = createProgram(name, desc, goal, tempResources);
     closeModal();
     openProgramDetail(program.id);
-  });
+  };
 }
 
 // ========================================
-// Program Detail
+// Program Detail (مع الترجمة)
 // ========================================
 
-var currentProgramId = null;
-var currentTab = "overview";
+let currentProgramId = null;
+let currentTab = "overview";
 
 function openProgramDetail(programId) {
   console.log("📌 openProgramDetail called with id:", programId);
-  var program = getProgram(programId);
+  const program = getProgram(programId);
   if (!program) {
     console.error("❌ Program not found:", programId);
     renderProgramPage();
@@ -685,156 +556,211 @@ function openProgramDetail(programId) {
 
 function renderProgramDetail(program) {
   console.log("📌 renderProgramDetail called for:", program.name);
-  var app = document.getElementById("app");
+  const app = document.getElementById("app");
   if (!app) return;
 
-  var stats = getProgramStats(program);
-  var progress = stats.percentage;
+  const stats = getProgramStats(program);
+  const progress = stats.percentage;
 
-  var html = '';
-  html += '<div class="program-detail-container">';
-  html += '  <div class="program-detail-header">';
-  html += '    <div class="program-detail-title-area">';
-  html += '      <span class="program-detail-icon">📚</span>';
-  html += '      <div>';
-  html += '        <h2 class="program-detail-name">' + escapeHtml(program.name) + '</h2>';
-  html += '        <span class="program-detail-type">' + program.status + '</span>';
-  if (program.goal) {
-    html += '        <span class="program-detail-goal">🎯 ' + escapeHtml(program.goal) + '</span>';
-  }
-  html += '      </div>';
-  html += '    </div>';
-  html += '    <div class="program-detail-actions">';
-  html += '      <button class="program-detail-back-btn" id="program-detail-back">← Back</button>';
-  html += '      <button class="program-detail-delete-btn" id="program-detail-delete">🗑️ Delete</button>';
-  html += '    </div>';
-  html += '  </div>';
+  const html = `
+    <div class="program-detail-container">
+      <div class="program-detail-header">
+        <div class="program-detail-title-area">
+          <span class="program-detail-icon" data-lucide="book-open" style="width: 32px; height: 32px; color: var(--primary);"></span>
+          <div>
+            <h2 class="program-detail-name">${escapeHtml(program.name)}</h2>
+            <span class="program-detail-type">${program.status}</span>
+            ${program.goal ? `<span class="program-detail-goal">🎯 ${escapeHtml(program.goal)}</span>` : ''}
+          </div>
+        </div>
+        <div class="program-detail-actions">
+          <button class="program-detail-back-btn" id="program-detail-back">← ${tr('back', 'Back')}</button>
+          <button class="program-detail-delete-btn" id="program-detail-delete">🗑️ ${tr('delete', 'Delete')}</button>
+        </div>
+      </div>
 
-  // Progress bar
-  html += '  <div style="margin-bottom: 20px; background: var(--bg-card); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border-color);">';
-  html += '    <div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted); margin-bottom: 6px;">';
-  html += '      <span>Progress</span>';
-  html += '      <span>' + progress + '% (' + stats.completedSteps + '/' + stats.totalSteps + ' steps)</span>';
-  html += '    </div>';
-  html += '    <div style="width: 100%; height: 8px; background: var(--border-light); border-radius: 10px; overflow: hidden;">';
-  html += '      <div style="height: 100%; width: ' + progress + '%; background: var(--primary-gradient); border-radius: 10px; transition: width 0.6s ease;"></div>';
-  html += '    </div>';
-  html += '  </div>';
+      <div style="margin-bottom: 20px; background: var(--bg-card); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted); margin-bottom: 6px;">
+          <span>${tr('progress', 'Progress')}</span>
+          <span>${progress}% (${stats.completedSteps}/${stats.totalSteps} ${tr('steps', 'steps')})</span>
+        </div>
+        <div style="width: 100%; height: 8px; background: var(--border-light); border-radius: 10px; overflow: hidden;">
+          <div style="height: 100%; width: ${progress}%; background: var(--primary-gradient); border-radius: 10px; transition: width 0.6s ease;"></div>
+        </div>
+      </div>
 
-  html += '  <div class="program-detail-tabs">';
-  html += '    <button class="program-detail-tab ' + (currentTab === 'overview' ? 'active' : '') + '" data-tab="overview">Overview</button>';
-  html += '    <button class="program-detail-tab ' + (currentTab === 'steps' ? 'active' : '') + '" data-tab="steps">Steps</button>';
-  html += '    <button class="program-detail-tab ' + (currentTab === 'resources' ? 'active' : '') + '" data-tab="resources">Resources</button>';
-  html += '    <button class="program-detail-tab ' + (currentTab === 'sessions' ? 'active' : '') + '" data-tab="sessions">Sessions</button>';
-  html += '  </div>';
+      <div class="program-detail-tabs">
+        <button class="program-detail-tab ${currentTab === 'overview' ? 'active' : ''}" data-tab="overview">${tr('overview', 'Overview')}</button>
+        <button class="program-detail-tab ${currentTab === 'steps' ? 'active' : ''}" data-tab="steps">${tr('steps', 'Steps')}</button>
+        <button class="program-detail-tab ${currentTab === 'resources' ? 'active' : ''}" data-tab="resources">${tr('resources', 'Resources')}</button>
+        <button class="program-detail-tab ${currentTab === 'sessions' ? 'active' : ''}" data-tab="sessions">${tr('sessions', 'Sessions')}</button>
+      </div>
 
-  html += '  <div id="program-tab-content"></div>';
-  html += '</div>';
+      <div id="program-tab-content"></div>
+    </div>
+  `;
 
   app.innerHTML = html;
 
-  document.getElementById("program-detail-back").addEventListener("click", function() {
-    renderProgramPage();
-  });
+  setTimeout(() => { if (typeof initLucideIcons === 'function') initLucideIcons(); }, 50);
 
-  document.getElementById("program-detail-delete").addEventListener("click", function() {
-    if (confirm('Delete "' + program.name + '" permanently?')) {
+  document.getElementById("program-detail-back").onclick = () => renderProgramPage();
+  document.getElementById("program-detail-delete").onclick = () => {
+    if (confirm(tr('delete_program_confirm', 'Delete "' + program.name + '" permanently?'))) {
       deleteProgram(program.id);
       renderProgramPage();
     }
-  });
+  };
 
-  var tabs = document.querySelectorAll(".program-detail-tab");
-  for (var i = 0; i < tabs.length; i++) {
-    tabs[i].addEventListener("click", function() {
+  document.querySelectorAll(".program-detail-tab").forEach(tab => {
+    tab.onclick = function() {
       currentTab = this.dataset.tab;
       renderProgramDetail(program);
-    });
-  }
+    };
+  });
 
-  var content = document.getElementById("program-tab-content");
-
+  const content = document.getElementById("program-tab-content");
   switch (currentTab) {
-    case "overview":
-      renderOverview(content, program);
-      break;
-    case "steps":
-      renderSteps(content, program);
-      break;
-    case "resources":
-      renderResources(content, program);
-      break;
-    case "sessions":
-      renderSessions(content, program);
-      break;
+    case "overview": renderOverview(content, program); break;
+    case "steps": renderSteps(content, program); break;
+    case "resources": renderResources(content, program); break;
+    case "sessions": renderSessions(content, program); break;
   }
 }
 
 // ========================================
-// Steps Tab - مع DocumentFragment
+// Overview Tab (مع الترجمة)
+// ========================================
+
+function renderOverview(container, program) {
+  const stats = getProgramStats(program);
+  const nextStep = getNextStep(program);
+
+  const html = `
+    <div class="program-overview">
+      <div class="program-overview-grid">
+        <div class="program-overview-item">
+          <span class="program-overview-label">${tr('description', 'Description')}</span>
+          <span class="program-overview-value">${escapeHtml(program.description) || tr('no_description', 'No description')}</span>
+        </div>
+        <div class="program-overview-item">
+          <span class="program-overview-label">${tr('goal', 'Goal')}</span>
+          <span class="program-overview-value">${escapeHtml(program.goal) || tr('not_set', 'Not set')}</span>
+        </div>
+        <div class="program-overview-item">
+          <span class="program-overview-label">${tr('status', 'Status')}</span>
+          <span class="program-overview-value">${program.status}</span>
+        </div>
+        <div class="program-overview-item">
+          <span class="program-overview-label">${tr('progress', 'Progress')}</span>
+          <span class="program-overview-value">${stats.percentage}%</span>
+        </div>
+        <div class="program-overview-item">
+          <span class="program-overview-label">${tr('steps', 'Steps')}</span>
+          <span class="program-overview-value">${stats.completedSteps}/${stats.totalSteps}</span>
+        </div>
+        <div class="program-overview-item">
+          <span class="program-overview-label">${tr('sessions', 'Sessions')}</span>
+          <span class="program-overview-value">${stats.totalSessions}</span>
+        </div>
+        <div class="program-overview-item">
+          <span class="program-overview-label">${tr('resources', 'Resources')}</span>
+          <span class="program-overview-value">${program.resources ? program.resources.length : 0}</span>
+        </div>
+        <div class="program-overview-item">
+          <span class="program-overview-label">${tr('next_step', 'Next Step')}</span>
+          <span class="program-overview-value">${nextStep ? escapeHtml(nextStep.name) : (stats.totalSteps > 0 ? "✅ " + tr('all_completed', 'All completed!') : tr('no_steps_added', 'No steps added'))}</span>
+        </div>
+        <div class="program-overview-item">
+          <span class="program-overview-label">${tr('created', 'Created')}</span>
+          <span class="program-overview-value">${formatDate(program.createdAt)}</span>
+        </div>
+        ${program.completedAt ? `
+        <div class="program-overview-item">
+          <span class="program-overview-label">${tr('completed', 'Completed')}</span>
+          <span class="program-overview-value">${formatDate(program.completedAt)}</span>
+        </div>` : ''}
+      </div>
+
+      ${program.status === "active" ? `
+        <button class="program-card-continue-btn" id="program-start-session" style="width: 100%; margin-top: 12px;">
+          ${getNextStep(program) ? tr('start_session', 'Start Session') + ': ' + escapeHtml(getNextStep(program).name) + ' →' : (stats.totalSteps === 0 ? tr('add_steps_first', 'Add Steps First →') : '✅ ' + tr('all_steps_completed', 'All Steps Completed!'))}
+        </button>` : ''}
+
+      ${program.status === "completed" ? `
+        <div style="text-align: center; padding: 12px; background: #4caf84; color: white; border-radius: 8px; margin-top: 12px;">
+          🎉 ${tr('program_completed', 'Program Completed! All')} ${stats.totalSteps} ${tr('steps_done', 'steps done!')}
+        </div>` : ''}
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  document.getElementById("program-start-session")?.addEventListener("click", () => startSession(program.id));
+}
+
+// ========================================
+// Steps Tab (مع الترجمة)
 // ========================================
 
 function renderSteps(container, program) {
-  // ===== ✅ استخدام DocumentFragment =====
-  var fragment = document.createDocumentFragment();
-
-  var wrapper = document.createElement("div");
+  const fragment = document.createDocumentFragment();
+  const wrapper = document.createElement("div");
   wrapper.className = "program-structure";
   wrapper.id = "program-steps-container";
 
   if (!program.steps || program.steps.length === 0) {
-    var emptyMsg = document.createElement("div");
+    const emptyMsg = document.createElement("div");
     emptyMsg.style.cssText = "text-align: center; padding: 30px; color: var(--text-muted);";
-    emptyMsg.innerHTML = "<p>No steps added yet. Add your first step below!</p>";
+    emptyMsg.innerHTML = `<p>${tr('no_steps_added_yet', 'No steps added yet. Add your first step below!')}</p>`;
     wrapper.appendChild(emptyMsg);
   } else {
-    for (var i = 0; i < program.steps.length; i++) {
-      var step = program.steps[i];
-      var phaseDiv = document.createElement("div");
+    program.steps.forEach(step => {
+      const phaseDiv = document.createElement("div");
       phaseDiv.className = "program-phase";
       phaseDiv.dataset.stepId = step.id;
       phaseDiv.draggable = true;
 
-      var headerDiv = document.createElement("div");
+      const headerDiv = document.createElement("div");
       headerDiv.className = "program-phase-header";
 
-      var nameSpan = document.createElement("span");
+      const nameSpan = document.createElement("span");
       nameSpan.className = "program-phase-name";
       nameSpan.textContent = (step.completed ? '✅' : '⬜') + ' ' + escapeHtml(step.name);
       headerDiv.appendChild(nameSpan);
 
       if (step.completed) {
-        var dateSpan = document.createElement("span");
+        const dateSpan = document.createElement("span");
         dateSpan.style.cssText = "font-size: 12px; color: var(--text-muted);";
         dateSpan.textContent = formatDate(step.completedAt);
         headerDiv.appendChild(dateSpan);
 
         if (step.difficulty) {
-          var diffSpan = document.createElement("span");
+          const diffSpan = document.createElement("span");
           diffSpan.style.cssText = "font-size: 12px; color: var(--text-muted);";
-          diffSpan.textContent = step.difficulty;
+          diffSpan.textContent = tr(step.difficulty.toLowerCase(), step.difficulty);
           headerDiv.appendChild(diffSpan);
         }
 
         if (step.rating) {
-          var ratingSpan = document.createElement("span");
+          const ratingSpan = document.createElement("span");
           ratingSpan.style.cssText = "font-size: 12px; color: var(--warning);";
           ratingSpan.textContent = '⭐ ' + step.rating + '/5';
           headerDiv.appendChild(ratingSpan);
         }
       }
 
-      var actionsDiv = document.createElement("div");
+      const actionsDiv = document.createElement("div");
       actionsDiv.className = "program-phase-actions";
 
       if (!step.completed) {
-        var editBtn = document.createElement("button");
+        const editBtn = document.createElement("button");
         editBtn.className = "program-phase-btn program-edit-step-btn";
         editBtn.textContent = "✏️";
         editBtn.dataset.stepId = step.id;
         actionsDiv.appendChild(editBtn);
 
-        var deleteBtn = document.createElement("button");
+        const deleteBtn = document.createElement("button");
         deleteBtn.className = "program-phase-btn program-phase-btn-danger program-delete-step-btn";
         deleteBtn.textContent = "✕";
         deleteBtn.dataset.stepId = step.id;
@@ -845,240 +771,249 @@ function renderSteps(container, program) {
       phaseDiv.appendChild(headerDiv);
 
       if (step.completed && step.learning) {
-        var learningDiv = document.createElement("div");
+        const learningDiv = document.createElement("div");
         learningDiv.style.cssText = "font-size: 13px; color: var(--text-secondary); padding: 4px 0 0 24px; font-style: italic;";
         learningDiv.textContent = '💡 ' + escapeHtml(step.learning);
         phaseDiv.appendChild(learningDiv);
       }
 
       if (step.completed && step.duration) {
-        var durationDiv = document.createElement("div");
+        const durationDiv = document.createElement("div");
         durationDiv.style.cssText = "font-size: 12px; color: var(--text-muted); padding: 2px 0 0 24px;";
         durationDiv.textContent = '⏱️ ' + step.duration + ' min';
         phaseDiv.appendChild(durationDiv);
       }
 
       wrapper.appendChild(phaseDiv);
-    }
+    });
   }
 
-  var addBtn = document.createElement("button");
+  const addBtn = document.createElement("button");
   addBtn.className = "program-add-phase-btn";
   addBtn.id = "program-add-step";
   addBtn.style.marginTop = "12px";
-  addBtn.textContent = "＋ Add Step";
+  addBtn.textContent = "＋ " + tr('add_step', 'Add Step');
   wrapper.appendChild(addBtn);
 
   fragment.appendChild(wrapper);
-
-  // ===== ✅ إضافة جميع العناصر دفعة واحدة =====
   container.innerHTML = "";
   container.appendChild(fragment);
 
-  // ===== إضافة الأحداث =====
-  document.getElementById("program-add-step").addEventListener("click", function() {
-    var name = prompt("Enter step name:");
+  // الأحداث
+  document.getElementById("program-add-step").onclick = () => {
+    const name = prompt(tr('enter_step_name', 'Enter step name:'));
     if (name && name.trim()) {
-      var result = addStep(program.id, name.trim());
+      const result = addStep(program.id, name.trim());
       if (result) {
-        var updatedProgram = getProgram(program.id);
-        if (updatedProgram) {
-          renderProgramDetail(updatedProgram);
-        }
+        const updated = getProgram(program.id);
+        if (updated) renderProgramDetail(updated);
       }
     }
-  });
+  };
 
-  var editBtns = document.querySelectorAll(".program-edit-step-btn");
-  for (var e = 0; e < editBtns.length; e++) {
-    editBtns[e].addEventListener("click", function(e) {
+  document.querySelectorAll(".program-edit-step-btn").forEach(btn => {
+    btn.onclick = function(e) {
       e.stopPropagation();
-      var stepId = parseFloat(this.dataset.stepId);
-      var newName = prompt("Edit step name:");
+      const stepId = parseFloat(this.dataset.stepId);
+      const newName = prompt(tr('edit_step_name', 'Edit step name:'));
       if (newName && newName.trim()) {
-        var program2 = getProgram(program.id);
-        if (program2) {
-          for (var s = 0; s < program2.steps.length; s++) {
-            if (program2.steps[s].id === stepId) {
-              program2.steps[s].name = newName.trim();
-              program2.updatedAt = new Date().toISOString();
-              updateProgram(program2);
-              renderProgramDetail(program2);
-              break;
-            }
+        const p = getProgram(program.id);
+        if (p) {
+          const step = p.steps.find(s => s.id === stepId);
+          if (step) {
+            step.name = newName.trim();
+            p.updatedAt = new Date().toISOString();
+            updateProgram(p);
+            renderProgramDetail(p);
           }
         }
       }
-    });
-  }
+    };
+  });
 
-  var deleteBtns = document.querySelectorAll(".program-delete-step-btn");
-  for (var d = 0; d < deleteBtns.length; d++) {
-    deleteBtns[d].addEventListener("click", function(e) {
+  document.querySelectorAll(".program-delete-step-btn").forEach(btn => {
+    btn.onclick = function(e) {
       e.stopPropagation();
-      var stepId = parseFloat(this.dataset.stepId);
-      if (confirm("Delete this step?")) {
+      const stepId = parseFloat(this.dataset.stepId);
+      if (confirm(tr('delete_step_confirm', 'Delete this step?'))) {
         deleteStep(program.id, stepId);
-        var updatedProgram = getProgram(program.id);
-        if (updatedProgram) {
-          renderProgramDetail(updatedProgram);
-        }
+        const updated = getProgram(program.id);
+        if (updated) renderProgramDetail(updated);
       }
-    });
-  }
+    };
+  });
 
   setupStepDragAndDrop(program.id);
 }
 
 // ========================================
-// باقي الدوال (غير معدلة)
+// Resources Tab (مع الترجمة)
 // ========================================
 
-function renderOverview(container, program) {
-  var stats = getProgramStats(program);
-  var nextStep = getNextStep(program);
+function renderResources(container, program) {
+  let html = `<div class="program-overview">`;
 
-  var html = '';
-  html += '<div class="program-overview">';
-  html += '  <div class="program-overview-grid">';
-  html += '    <div class="program-overview-item">';
-  html += '      <span class="program-overview-label">Description</span>';
-  html += '      <span class="program-overview-value">' + (escapeHtml(program.description) || "No description") + '</span>';
-  html += '    </div>';
-  html += '    <div class="program-overview-item">';
-  html += '      <span class="program-overview-label">Goal</span>';
-  html += '      <span class="program-overview-value">' + (escapeHtml(program.goal) || "Not set") + '</span>';
-  html += '    </div>';
-  html += '    <div class="program-overview-item">';
-  html += '      <span class="program-overview-label">Status</span>';
-  html += '      <span class="program-overview-value">' + program.status + '</span>';
-  html += '    </div>';
-  html += '    <div class="program-overview-item">';
-  html += '      <span class="program-overview-label">Progress</span>';
-  html += '      <span class="program-overview-value">' + stats.percentage + '%</span>';
-  html += '    </div>';
-  html += '    <div class="program-overview-item">';
-  html += '      <span class="program-overview-label">Steps</span>';
-  html += '      <span class="program-overview-value">' + stats.completedSteps + '/' + stats.totalSteps + '</span>';
-  html += '    </div>';
-  html += '    <div class="program-overview-item">';
-  html += '      <span class="program-overview-label">Sessions</span>';
-  html += '      <span class="program-overview-value">' + stats.totalSessions + '</span>';
-  html += '    </div>';
-  html += '    <div class="program-overview-item">';
-  html += '      <span class="program-overview-label">Resources</span>';
-  html += '      <span class="program-overview-value">' + (program.resources ? program.resources.length : 0) + '</span>';
-  html += '    </div>';
-  html += '    <div class="program-overview-item">';
-  html += '      <span class="program-overview-label">Next Step</span>';
-  html += '      <span class="program-overview-value">' + (nextStep ? escapeHtml(nextStep.name) : (stats.totalSteps > 0 ? "✅ All completed!" : "No steps added")) + '</span>';
-  html += '    </div>';
-  html += '    <div class="program-overview-item">';
-  html += '      <span class="program-overview-label">Created</span>';
-  html += '      <span class="program-overview-value">' + formatDate(program.createdAt) + '</span>';
-  html += '    </div>';
-  if (program.completedAt) {
-    html += '    <div class="program-overview-item">';
-    html += '      <span class="program-overview-label">Completed</span>';
-    html += '      <span class="program-overview-value">' + formatDate(program.completedAt) + '</span>';
-    html += '    </div>';
-  }
-  html += '  </div>';
-
-  if (program.status === "active") {
-    var nextStepCheck = getNextStep(program);
-    html += '  <button class="program-card-continue-btn" id="program-start-session" style="width: 100%; margin-top: 12px;">';
-    html +=    (nextStepCheck ? 'Start Session: ' + escapeHtml(nextStepCheck.name) + ' →' : (stats.totalSteps === 0 ? 'Add Steps First →' : '✅ All Steps Completed!'));
-    html += '  </button>';
-  }
-
-  if (program.status === "completed") {
-    html += '  <div style="text-align: center; padding: 12px; background: #4caf84; color: white; border-radius: 8px; margin-top: 12px;">';
-    html += '    🎉 Program Completed! All ' + stats.totalSteps + ' steps done!';
-    html += '  </div>';
-  }
-
-  html += '</div>';
-  container.innerHTML = html;
-
-  var startBtn = document.getElementById("program-start-session");
-  if (startBtn) {
-    startBtn.addEventListener("click", function() {
-      startSession(program.id);
+  if (!program.resources || program.resources.length === 0) {
+    html += `<p style="text-align: center; color: var(--text-muted); padding: 20px 0;">${tr('no_resources', 'No resources added.')}</p>`;
+  } else {
+    program.resources.forEach(res => {
+      html += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 8px; background: var(--bg-surface);">
+          <div>
+            <span style="font-weight: 500; color: var(--text-primary);">${escapeHtml(res.name)}</span>
+            ${res.url ? `<a href="${escapeHtml(res.url)}" target="_blank" style="margin-left: 12px; color: var(--primary); text-decoration: none; font-size: 13px;">🔗 ${tr('open', 'Open')}</a>` : ''}
+          </div>
+          <button class="program-phase-btn program-phase-btn-danger" data-action="delete-resource" data-resource-id="${res.id}" style="padding: 4px 10px;">✕</button>
+        </div>
+      `;
     });
   }
+
+  html += `
+    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light);">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <input type="text" id="program-add-resource-name" placeholder="${tr('resource_name', 'Resource name...')}" style="flex: 1; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);" />
+        <input type="text" id="program-add-resource-url" placeholder="${tr('url_optional', 'URL (optional)')}" style="flex: 1.5; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);" />
+        <button class="program-card-continue-btn" id="program-add-resource-btn" style="padding: 8px 20px;">${tr('add_resource', 'Add Resource')}</button>
+      </div>
+    </div>
+  `;
+
+  html += `</div>`;
+  container.innerHTML = html;
+
+  document.getElementById("program-add-resource-btn").onclick = () => {
+    const name = document.getElementById("program-add-resource-name").value.trim();
+    const url = document.getElementById("program-add-resource-url").value.trim();
+    if (name) {
+      addResource(program.id, name, url);
+      document.getElementById("program-add-resource-name").value = "";
+      document.getElementById("program-add-resource-url").value = "";
+      const updated = getProgram(program.id);
+      if (updated) renderProgramDetail(updated);
+    }
+  };
+
+  container.querySelectorAll("[data-action='delete-resource']").forEach(btn => {
+    btn.onclick = function() {
+      const resourceId = parseFloat(this.dataset.resourceId);
+      if (confirm(tr('delete_resource_confirm', 'Delete this resource?'))) {
+        deleteResource(program.id, resourceId);
+        const updated = getProgram(program.id);
+        if (updated) renderProgramDetail(updated);
+      }
+    };
+  });
 }
 
 // ========================================
-// Drag & Drop for Steps (تم إصلاحها)
+// Sessions Tab (مع الترجمة)
+// ========================================
+
+function renderSessions(container, program) {
+  const sessions = program.sessions || [];
+
+  if (sessions.length === 0) {
+    let html = `<div class="program-overview">`;
+    html += `<p style="text-align: center; color: var(--text-muted); padding: 20px 0;">${tr('no_sessions', 'No sessions completed yet. Start your first session!')}</p>`;
+    if (program.status === "active" && program.steps && program.steps.length > 0) {
+      const nextStep = getNextStep(program);
+      if (nextStep) {
+        html += `<button class="program-card-continue-btn" id="program-start-session-from-sessions" style="width: 100%;">${tr('start_session', 'Start Session')} →</button>`;
+      }
+    }
+    html += `</div>`;
+    container.innerHTML = html;
+    document.getElementById("program-start-session-from-sessions")?.addEventListener("click", () => startSession(program.id));
+    return;
+  }
+
+  const sortedSessions = [...sessions].reverse();
+
+  let html = `<div class="program-overview">`;
+  html += `
+    <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <span style="font-weight: 600; color: var(--text-primary);">${sessions.length} ${tr('sessions_completed', 'Sessions Completed')}</span>
+      ${program.status === "active" && getNextStep(program) ? `<button class="program-card-continue-btn" id="program-start-session-from-sessions">${tr('start_session', 'Start Session')} →</button>` : ''}
+    </div>
+  `;
+
+  sortedSessions.forEach(session => {
+    const difficultyEmoji = session.difficulty === "Hard" ? "🔴" : session.difficulty === "Medium" ? "🟡" : "🟢";
+    const difficultyLabel = tr(session.difficulty?.toLowerCase() || 'medium', session.difficulty || 'Medium');
+
+    html += `
+      <div style="padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 8px; background: var(--bg-surface);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <span style="font-weight: 600; color: var(--text-primary);">${escapeHtml(session.stepName)}</span>
+          </div>
+          <div style="display: flex; gap: 12px; font-size: 13px; color: var(--text-muted);">
+            <span>${difficultyEmoji} ${difficultyLabel}</span>
+            <span>⭐ ${session.rating}/5</span>
+            ${session.duration ? `<span>⏱️ ${session.duration} min</span>` : ''}
+          </div>
+        </div>
+        ${session.learning ? `<div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-style: italic;">💡 "${escapeHtml(session.learning)}"</div>` : ''}
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">${formatDate(session.completedAt)}</div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+  container.innerHTML = html;
+
+  document.getElementById("program-start-session-from-sessions")?.addEventListener("click", () => startSession(program.id));
+}
+
+// ========================================
+// Drag & Drop
 // ========================================
 
 function setupStepDragAndDrop(programId) {
-  var container = document.getElementById("program-steps-container");
+  const container = document.getElementById("program-steps-container");
   if (!container) return;
 
-  var dragSrcIndex = null;
+  let dragSrcIndex = null;
+  const steps = document.querySelectorAll(".program-phase");
 
-  var steps = document.querySelectorAll(".program-phase");
-  for (var i = 0; i < steps.length; i++) {
-    steps[i].addEventListener("dragstart", function(e) {
+  steps.forEach(step => {
+    step.addEventListener("dragstart", function(e) {
       dragSrcIndex = this;
       this.classList.add("dragging");
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", this.dataset.stepId);
     });
 
-    steps[i].addEventListener("dragend", function(e) {
+    step.addEventListener("dragend", function() {
       this.classList.remove("dragging");
-      var allSteps = document.querySelectorAll(".program-phase");
-      for (var j = 0; j < allSteps.length; j++) {
-        allSteps[j].classList.remove("drag-over");
-      }
+      document.querySelectorAll(".program-phase").forEach(s => s.classList.remove("drag-over"));
     });
 
-    steps[i].addEventListener("dragover", function(e) {
+    step.addEventListener("dragover", function(e) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
-      if (this !== dragSrcIndex) {
-        this.classList.add("drag-over");
-      }
+      if (this !== dragSrcIndex) this.classList.add("drag-over");
     });
 
-    steps[i].addEventListener("dragleave", function(e) {
+    step.addEventListener("dragleave", function() {
       this.classList.remove("drag-over");
     });
 
-    steps[i].addEventListener("drop", function(e) {
+    step.addEventListener("drop", function(e) {
       e.preventDefault();
       this.classList.remove("drag-over");
 
-      var draggedId = parseFloat(e.dataTransfer.getData("text/plain"));
-      var targetId = parseFloat(this.dataset.stepId);
-
+      const draggedId = parseFloat(e.dataTransfer.getData("text/plain"));
+      const targetId = parseFloat(this.dataset.stepId);
       if (draggedId === targetId) return;
 
-      var program = getProgram(programId);
-      if (!program) {
-        console.error("❌ Program not found for drag and drop:", programId);
-        return;
-      }
+      const program = getProgram(programId);
+      if (!program || !program.steps) return;
 
-      if (!program.steps) {
-        program.steps = [];
-        return;
-      }
-
-      var stepIds = [];
-      for (var k = 0; k < program.steps.length; k++) {
-        stepIds.push(program.steps[k].id);
-      }
-
-      var draggedIndex = -1;
-      var targetIndex = -1;
-      for (var m = 0; m < stepIds.length; m++) {
-        if (stepIds[m] === draggedId) draggedIndex = m;
-        if (stepIds[m] === targetId) targetIndex = m;
-      }
+      const stepIds = program.steps.map(s => s.id);
+      const draggedIndex = stepIds.indexOf(draggedId);
+      const targetIndex = stepIds.indexOf(targetId);
 
       if (draggedIndex === -1 || targetIndex === -1) return;
 
@@ -1086,176 +1021,31 @@ function setupStepDragAndDrop(programId) {
       stepIds.splice(targetIndex, 0, draggedId);
 
       reorderSteps(programId, stepIds);
-      var updatedProgram = getProgram(programId);
-      if (updatedProgram) {
-        renderProgramDetail(updatedProgram);
-      }
+      const updated = getProgram(programId);
+      if (updated) renderProgramDetail(updated);
     });
-  }
-}
-
-// ========================================
-// Resources Tab
-// ========================================
-
-function renderResources(container, program) {
-  var html = '<div class="program-overview">';
-
-  if (!program.resources || program.resources.length === 0) {
-    html += '  <p style="text-align: center; color: var(--text-muted); padding: 20px 0;">No resources added.</p>';
-  } else {
-    for (var i = 0; i < program.resources.length; i++) {
-      var res = program.resources[i];
-      html += '  <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 8px; background: var(--bg-surface);">';
-      html += '    <div>';
-      html += '      <span style="font-weight: 500; color: var(--text-primary);">' + escapeHtml(res.name) + '</span>';
-      if (res.url) {
-        html += '      <a href="' + escapeHtml(res.url) + '" target="_blank" style="margin-left: 12px; color: var(--primary); text-decoration: none; font-size: 13px;">🔗 Open</a>';
-      }
-      html += '    </div>';
-      html += '    <button class="program-phase-btn program-phase-btn-danger" data-action="delete-resource" data-resource-id="' + res.id + '" style="padding: 4px 10px;">✕</button>';
-      html += '  </div>';
-    }
-  }
-
-  html += '  <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light);">';
-  html += '    <div style="display: flex; gap: 8px; flex-wrap: wrap;">';
-  html += '      <input type="text" id="program-add-resource-name" placeholder="Resource name..." style="flex: 1; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);" />';
-  html += '      <input type="text" id="program-add-resource-url" placeholder="URL (optional)" style="flex: 1.5; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);" />';
-  html += '      <button class="program-card-continue-btn" id="program-add-resource-btn" style="padding: 8px 20px;">Add Resource</button>';
-  html += '    </div>';
-  html += '  </div>';
-
-  html += '</div>';
-  container.innerHTML = html;
-
-  document.getElementById("program-add-resource-btn").addEventListener("click", function() {
-    var name = document.getElementById("program-add-resource-name").value.trim();
-    var url = document.getElementById("program-add-resource-url").value.trim();
-    if (name) {
-      addResource(program.id, name, url);
-      document.getElementById("program-add-resource-name").value = "";
-      document.getElementById("program-add-resource-url").value = "";
-      var updatedProgram = getProgram(program.id);
-      if (updatedProgram) {
-        renderProgramDetail(updatedProgram);
-      }
-    }
   });
-
-  var deleteBtns = container.querySelectorAll("[data-action='delete-resource']");
-  for (var d = 0; d < deleteBtns.length; d++) {
-    deleteBtns[d].addEventListener("click", function() {
-      var resourceId = parseFloat(this.dataset.resourceId);
-      if (confirm("Delete this resource?")) {
-        deleteResource(program.id, resourceId);
-        var updatedProgram = getProgram(program.id);
-        if (updatedProgram) {
-          renderProgramDetail(updatedProgram);
-        }
-      }
-    });
-  }
 }
 
 // ========================================
-// Sessions Tab
-// ========================================
-
-function renderSessions(container, program) {
-  var sessions = program.sessions || [];
-
-  if (sessions.length === 0) {
-    var html = '<div class="program-overview">';
-    html += '  <p style="text-align: center; color: var(--text-muted); padding: 20px 0;">No sessions completed yet. Start your first session!</p>';
-    if (program.status === "active" && program.steps && program.steps.length > 0) {
-      var nextStep = getNextStep(program);
-      if (nextStep) {
-        html += '  <button class="program-card-continue-btn" id="program-start-session-from-sessions" style="width: 100%;">Start Session →</button>';
-      }
-    }
-    html += '</div>';
-    container.innerHTML = html;
-
-    var startBtn = document.getElementById("program-start-session-from-sessions");
-    if (startBtn) {
-      startBtn.addEventListener("click", function() {
-        startSession(program.id);
-      });
-    }
-    return;
-  }
-
-  var sortedSessions = [];
-  for (var i = sessions.length - 1; i >= 0; i--) {
-    sortedSessions.push(sessions[i]);
-  }
-
-  var html = '<div class="program-overview">';
-  html += '  <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">';
-  html += '    <span style="font-weight: 600; color: var(--text-primary);">' + sessions.length + ' Sessions Completed</span>';
-  if (program.status === "active") {
-    var nextStep = getNextStep(program);
-    if (nextStep) {
-      html += '    <button class="program-card-continue-btn" id="program-start-session-from-sessions">Start Session →</button>';
-    }
-  }
-  html += '  </div>';
-
-  for (var j = 0; j < sortedSessions.length; j++) {
-    var session = sortedSessions[j];
-    var difficultyEmoji = session.difficulty === "Hard" ? "🔴" : session.difficulty === "Medium" ? "🟡" : "🟢";
-
-    html += '  <div style="padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 8px; background: var(--bg-surface);">';
-    html += '    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">';
-    html += '      <div>';
-    html += '        <span style="font-weight: 600; color: var(--text-primary);">' + escapeHtml(session.stepName) + '</span>';
-    html += '      </div>';
-    html += '      <div style="display: flex; gap: 12px; font-size: 13px; color: var(--text-muted);">';
-    html += '        <span>' + difficultyEmoji + ' ' + session.difficulty + '</span>';
-    html += '        <span>⭐ ' + session.rating + '/5</span>';
-    if (session.duration) {
-      html += '        <span>⏱️ ' + session.duration + ' min</span>';
-    }
-    html += '      </div>';
-    html += '    </div>';
-    if (session.learning) {
-      html += '    <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-style: italic;">💡 "' + escapeHtml(session.learning) + '"</div>';
-    }
-    html += '    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">' + formatDate(session.completedAt) + '</div>';
-    html += '  </div>';
-  }
-
-  html += '</div>';
-  container.innerHTML = html;
-
-  var startBtn = document.getElementById("program-start-session-from-sessions");
-  if (startBtn) {
-    startBtn.addEventListener("click", function() {
-      startSession(program.id);
-    });
-  }
-}
-
-// ========================================
-// Start Session with Timer
+// Start Session with Timer (مع الترجمة)
 // ========================================
 
 function startSession(programId) {
-  var program = getProgram(programId);
+  const program = getProgram(programId);
   if (!program) return;
 
   if (program.status === "completed") {
-    alert("🎉 All steps are completed! This program is finished.");
+    alert("🎉 " + tr('all_steps_completed', 'All steps are completed! This program is finished.'));
     return;
   }
 
-  var nextStep = getNextStep(program);
+  const nextStep = getNextStep(program);
   if (!nextStep) {
     if (!program.steps || program.steps.length === 0) {
-      alert("You need to add steps first! Go to the Steps tab.");
+      alert(tr('add_steps_first', 'You need to add steps first! Go to the Steps tab.'));
     } else {
-      alert("🎉 All steps are completed!");
+      alert("🎉 " + tr('all_steps_completed', 'All steps are completed!'));
     }
     return;
   }
@@ -1264,210 +1054,157 @@ function startSession(programId) {
 }
 
 function openSessionModal(programId, stepId, stepName) {
-  var overlay = document.createElement("div");
+  const overlay = document.createElement("div");
   overlay.className = "notes-modal-overlay";
   overlay.id = "session-modal-overlay";
 
-  var modal = document.createElement("div");
+  const modal = document.createElement("div");
   modal.className = "notes-modal";
   modal.id = "session-modal";
 
-  var timerSeconds = 0;
-  var timerInterval = null;
-  var isTimerRunning = false;
+  let timerSeconds = 0;
+  let timerInterval = null;
+  let isTimerRunning = false;
 
-  var html = '';
-  html += '<button class="notes-modal-close-btn" id="session-modal-close">✕</button>';
-  html += '<h3 class="notes-modal-title">⏱️ Session</h3>';
-  html += '<p style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">' + escapeHtml(stepName) + '</p>';
-  
-  // Timer
-  html += '<div style="text-align: center; margin: 16px 0;">';
-  html += '  <div style="font-size: 48px; font-weight: 700; font-family: monospace; color: var(--primary);" id="session-timer-display">00:00</div>';
-  html += '  <div style="display: flex; gap: 8px; justify-content: center; margin-top: 8px;">';
-  html += '    <button class="notes-modal-cancel-btn" id="session-timer-start" style="padding: 6px 20px; font-size: 14px;">▶ Start</button>';
-  html += '    <button class="notes-modal-cancel-btn" id="session-timer-pause" style="padding: 6px 20px; font-size: 14px; display: none;">⏸ Pause</button>';
-  html += '    <button class="notes-modal-cancel-btn" id="session-timer-reset" style="padding: 6px 20px; font-size: 14px;">↺ Reset</button>';
-  html += '  </div>';
-  html += '</div>';
+  const html = `
+    <button class="notes-modal-close-btn" id="session-modal-close">✕</button>
+    <h3 class="notes-modal-title">⏱️ ${tr('session', 'Session')}</h3>
+    <p style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">${escapeHtml(stepName)}</p>
+    
+    <div style="text-align: center; margin: 16px 0;">
+      <div style="font-size: 48px; font-weight: 700; font-family: monospace; color: var(--primary);" id="session-timer-display">00:00</div>
+      <div style="display: flex; gap: 8px; justify-content: center; margin-top: 8px;">
+        <button class="notes-modal-cancel-btn" id="session-timer-start" style="padding: 6px 20px; font-size: 14px;">▶ ${tr('start', 'Start')}</button>
+        <button class="notes-modal-cancel-btn" id="session-timer-pause" style="padding: 6px 20px; font-size: 14px; display: none;">⏸ ${tr('pause', 'Pause')}</button>
+        <button class="notes-modal-cancel-btn" id="session-timer-reset" style="padding: 6px 20px; font-size: 14px;">↺ ${tr('reset', 'Reset')}</button>
+      </div>
+    </div>
 
-  html += '<hr style="border: none; border-top: 1px solid var(--border-light); margin: 12px 0;" />';
+    <hr style="border: none; border-top: 1px solid var(--border-light); margin: 12px 0;" />
 
-  html += '<div class="program-session-complete-form">';
-  html += '  <label>How was this step?</label>';
-  html += '  <div class="difficulty-grid">';
-  html += '    <button class="difficulty-btn active" data-difficulty="Medium">Medium</button>';
-  html += '    <button class="difficulty-btn" data-difficulty="Hard">Hard</button>';
-  html += '    <button class="difficulty-btn" data-difficulty="Easy">Easy</button>';
-  html += '  </div>';
+    <div class="program-session-complete-form">
+      <label>${tr('how_was_step', 'How was this step?')}</label>
+      <div class="difficulty-grid">
+        <button class="difficulty-btn active" data-difficulty="Medium">${tr('medium', 'Medium')}</button>
+        <button class="difficulty-btn" data-difficulty="Hard">${tr('hard', 'Hard')}</button>
+        <button class="difficulty-btn" data-difficulty="Easy">${tr('easy', 'Easy')}</button>
+      </div>
 
-  html += '  <label>What did you learn?</label>';
-  html += '  <input type="text" id="session-learning" placeholder="e.g. I understood the concept..." />';
+      <label>${tr('what_did_you_learn', 'What did you learn?')}</label>
+      <input type="text" id="session-learning" placeholder="${tr('learning_placeholder', 'e.g. I understood the concept...')}" />
 
-  html += '  <label>Rating (1-5)</label>';
-  html += '  <div id="rating-stars">';
-  for (var i = 1; i <= 5; i++) {
-    html += '    <button class="difficulty-btn" data-rating="' + i + '">☆</button>';
-  }
-  html += '  </div>';
+      <label>${tr('rating', 'Rating')} (1-5)</label>
+      <div id="rating-stars">
+        ${[1,2,3,4,5].map(i => `<button class="difficulty-btn" data-rating="${i}">${i <= 3 ? '★' : '☆'}</button>`).join('')}
+      </div>
 
-  html += '  <button class="notes-modal-save-btn" id="session-complete-btn" style="margin-top: 12px;">✅ Complete Step</button>';
-  html += '</div>';
+      <button class="notes-modal-save-btn" id="session-complete-btn" style="margin-top: 12px;">✅ ${tr('complete_step', 'Complete Step')}</button>
+    </div>
+  `;
 
   modal.innerHTML = html;
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  var selectedDifficulty = "Medium";
-  var selectedRating = 3;
+  let selectedDifficulty = "Medium";
+  let selectedRating = 3;
 
-  function closeModal() {
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
+  const closeModal = () => {
+    if (timerInterval) clearInterval(timerInterval);
     overlay.remove();
-  }
+  };
 
-  document.getElementById("session-modal-close").addEventListener("click", closeModal);
-  overlay.addEventListener("click", function(e) {
-    if (e.target === overlay) closeModal();
-  });
+  document.getElementById("session-modal-close").onclick = closeModal;
+  overlay.onclick = e => { if (e.target === overlay) closeModal(); };
 
-  // ===== Timer Functions =====
-  function updateTimerDisplay() {
-    var mins = Math.floor(timerSeconds / 60);
-    var secs = timerSeconds % 60;
-    var display = document.getElementById("session-timer-display");
-    if (display) {
-      display.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
-    }
-  }
+  // Timer
+  const updateDisplay = () => {
+    const mins = Math.floor(timerSeconds / 60);
+    const secs = timerSeconds % 60;
+    const display = document.getElementById("session-timer-display");
+    if (display) display.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+  };
 
-  function startTimer() {
+  const startTimer = () => {
     if (isTimerRunning) return;
     isTimerRunning = true;
-    var startBtn = document.getElementById("session-timer-start");
-    var pauseBtn = document.getElementById("session-timer-pause");
-    if (startBtn) startBtn.style.display = "none";
-    if (pauseBtn) pauseBtn.style.display = "block";
-    timerInterval = setInterval(function() {
-      timerSeconds++;
-      updateTimerDisplay();
-    }, 1000);
-  }
+    document.getElementById("session-timer-start").style.display = "none";
+    document.getElementById("session-timer-pause").style.display = "block";
+    timerInterval = setInterval(() => { timerSeconds++; updateDisplay(); }, 1000);
+  };
 
-  function pauseTimer() {
+  const pauseTimer = () => {
     if (!isTimerRunning) return;
     isTimerRunning = false;
-    var startBtn = document.getElementById("session-timer-start");
-    var pauseBtn = document.getElementById("session-timer-pause");
-    if (startBtn) startBtn.style.display = "block";
-    if (pauseBtn) pauseBtn.style.display = "none";
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
-  }
+    document.getElementById("session-timer-start").style.display = "block";
+    document.getElementById("session-timer-pause").style.display = "none";
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  };
 
-  function resetTimer() {
+  const resetTimer = () => {
     pauseTimer();
     timerSeconds = 0;
-    updateTimerDisplay();
-    var startBtn = document.getElementById("session-timer-start");
-    var pauseBtn = document.getElementById("session-timer-pause");
-    if (startBtn) startBtn.style.display = "block";
-    if (pauseBtn) pauseBtn.style.display = "none";
-  }
+    updateDisplay();
+    document.getElementById("session-timer-start").style.display = "block";
+    document.getElementById("session-timer-pause").style.display = "none";
+  };
 
-  var startBtn = document.getElementById("session-timer-start");
-  var pauseBtn = document.getElementById("session-timer-pause");
-  var resetBtn = document.getElementById("session-timer-reset");
-  
-  if (startBtn) startBtn.addEventListener("click", startTimer);
-  if (pauseBtn) pauseBtn.addEventListener("click", pauseTimer);
-  if (resetBtn) resetBtn.addEventListener("click", resetTimer);
+  document.getElementById("session-timer-start").onclick = startTimer;
+  document.getElementById("session-timer-pause").onclick = pauseTimer;
+  document.getElementById("session-timer-reset").onclick = resetTimer;
 
-  // ===== Difficulty Buttons =====
-  var diffBtns = document.querySelectorAll(".difficulty-btn[data-difficulty]");
-  for (var db = 0; db < diffBtns.length; db++) {
-    diffBtns[db].addEventListener("click", function() {
-      var allBtns = document.querySelectorAll(".difficulty-btn[data-difficulty]");
-      for (var ab = 0; ab < allBtns.length; ab++) {
-        allBtns[ab].classList.remove("active");
-      }
+  // Difficulty
+  document.querySelectorAll(".difficulty-btn[data-difficulty]").forEach(btn => {
+    btn.onclick = function() {
+      document.querySelectorAll(".difficulty-btn[data-difficulty]").forEach(b => b.classList.remove("active"));
       this.classList.add("active");
       selectedDifficulty = this.dataset.difficulty;
-    });
-  }
+    };
+  });
 
-  // ===== Rating Stars =====
-  var starBtns = document.querySelectorAll("[data-rating]");
-  for (var s = 0; s < starBtns.length; s++) {
-    starBtns[s].addEventListener("click", function() {
-      var allStars = document.querySelectorAll("[data-rating]");
-      var rating = parseInt(this.dataset.rating);
+  // Rating
+  document.querySelectorAll("[data-rating]").forEach(btn => {
+    btn.onclick = function() {
+      const rating = parseInt(this.dataset.rating);
       selectedRating = rating;
-      for (var rs = 0; rs < allStars.length; rs++) {
-        var starNum = parseInt(allStars[rs].dataset.rating);
-        allStars[rs].textContent = starNum <= rating ? "★" : "☆";
-        allStars[rs].classList.toggle("active", starNum <= rating);
-        if (starNum <= rating) {
-          allStars[rs].style.color = "#f5a623";
-        } else {
-          allStars[rs].style.color = "var(--text-muted)";
-        }
-      }
-    });
-    // Set initial stars (3 stars default)
-    if (s < 3) {
-      starBtns[s].textContent = "★";
-      starBtns[s].style.color = "#f5a623";
-      starBtns[s].classList.add("active");
-    }
-  }
+      document.querySelectorAll("[data-rating]").forEach(b => {
+        const num = parseInt(b.dataset.rating);
+        b.textContent = num <= rating ? "★" : "☆";
+        b.classList.toggle("active", num <= rating);
+        b.style.color = num <= rating ? "#f5a623" : "var(--text-muted)";
+      });
+    };
+  });
 
-  // ===== Complete Step =====
-  document.getElementById("session-complete-btn").addEventListener("click", function() {
+  // Complete
+  document.getElementById("session-complete-btn").onclick = () => {
     pauseTimer();
-    
-    var learning = document.getElementById("session-learning").value.trim() || "Completed successfully!";
-    var duration = Math.ceil(timerSeconds / 60);
+    const learning = document.getElementById("session-learning").value.trim() || tr('completed_successfully', 'Completed successfully!');
+    const duration = Math.ceil(timerSeconds / 60);
 
-    if (confirm("Complete this step? You spent " + duration + " minutes.")) {
+    if (confirm(tr('complete_step_confirm', 'Complete this step? You spent ') + duration + ' ' + tr('minutes', 'minutes.') + (duration > 1 ? '' : ''))) {
       completeStep(programId, stepId, duration, selectedDifficulty, learning, selectedRating);
       closeModal();
       openProgramDetail(programId);
     }
-  });
+  };
 
-  // ===== Keyboard shortcuts =====
+  // Keyboard shortcuts
   document.addEventListener("keydown", function(e) {
     if (e.key === " " && document.getElementById("session-modal-overlay")) {
       e.preventDefault();
-      if (isTimerRunning) {
-        pauseTimer();
-      } else {
-        startTimer();
-      }
+      isTimerRunning ? pauseTimer() : startTimer();
     }
-    if (e.key === "Escape" && document.getElementById("session-modal-overlay")) {
-      closeModal();
-    }
+    if (e.key === "Escape" && document.getElementById("session-modal-overlay")) closeModal();
   });
 
-  var learningInput = document.getElementById("session-learning");
-  if (learningInput) {
-    learningInput.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        document.getElementById("session-complete-btn").click();
-      }
-    });
-  }
+  document.getElementById("session-learning")?.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") document.getElementById("session-complete-btn").click();
+  });
 }
 
 // ========================================
-// تصدير الدالة للاستخدام من main.js
+// تصدير الدالة
 // ========================================
 
 window.renderProgramPage = renderProgramPage;

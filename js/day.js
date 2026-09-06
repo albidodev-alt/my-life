@@ -1,550 +1,142 @@
 const activitySuggestions = [
-  { icon: "😴", name: "Sleep" },
-  { icon: "📚", name: "Study" },
-  { icon: "🎓", name: "University" },
-  { icon: "🏋️", name: "Gym" },
-  { icon: "⚽", name: "Sport" },
-  { icon: "💻", name: "Work" },
-  { icon: "🍽️", name: "Food" },
-  { icon: "🧘", name: "Rest" },
-  { icon: "🚗", name: "Commute" },
-  { icon: "🎮", name: "Free Time" }
+  { icon: "😴", name: "Sleep", lucide: "moon" },
+  { icon: "📚", name: "Study", lucide: "book-open" },
+  { icon: "🎓", name: "University", lucide: "graduation-cap" },
+  { icon: "🏫", name: "High School", lucide: "school" },
+  { icon: "🏋️", name: "Gym", lucide: "dumbbell" },
+  { icon: "⚽", name: "Sport", lucide: "activity" },
+  { icon: "💻", name: "Work", lucide: "briefcase" },
+  { icon: "🍽️", name: "Food", lucide: "utensils" },
+  { icon: "🧘", name: "Rest", lucide: "coffee" },
+  { icon: "🚗", name: "Commute", lucide: "car" },
+  { icon: "🎮", name: "Free Time", lucide: "gamepad-2" }
 ];
 
 // ========================================
-// دالة مساعدة لتنسيق الوقت بصيغة AM/PM
+// دوال مساعدة
 // ========================================
 
-function formatHourRange(startHour) {
-  const start = startHour;
-  const end = startHour + 1;
-  
-  function formatHour(hour) {
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const hour12 = hour % 12 || 12;
-    return hour12 + ':00 ' + ampm;
-  }
-  
-  return formatHour(start) + ' - ' + formatHour(end);
+function formatHourRange(h) {
+  const f = h => ((h % 12) || 12) + ':00 ' + (h >= 12 ? 'PM' : 'AM');
+  return f(h) + ' - ' + f(h + 1);
+}
+
+function getHourColor() { return '#dbeafe'; }
+
+function getTextStyle() {
+  return { color: '#1e293b', textShadow: 'none', labelColor: 'rgba(30,41,59,0.5)' };
+}
+
+function getActivityIcon(name) {
+  return activitySuggestions.find(s => s.name === name)?.lucide || 'circle';
 }
 
 // ========================================
-// دالة حساب التدرج اللوني باستخدام منحنى متعدد النقاط (Hermite Spline)
-// ========================================
-
-function getHourColor(hour) {
-  // ===== نقاط التحكم (Control Points) =====
-  const controlPoints = [
-    { time: 0, color: { r: 13, g: 27, b: 42 } },     // 12:00 AM
-    { time: 3, color: { r: 20, g: 40, b: 65 } },     // 3:00 AM
-    { time: 5, color: { r: 30, g: 58, b: 95 } },     // 5:00 AM
-    { time: 6, color: { r: 80, g: 130, b: 200 } },   // 6:00 AM
-    { time: 8, color: { r: 180, g: 210, b: 250 } },  // 8:00 AM
-    { time: 10, color: { r: 210, g: 225, b: 255 } }, // 10:00 AM
-    { time: 12, color: { r: 235, g: 242, b: 255 } }, // 12:00 PM
-    { time: 14, color: { r: 210, g: 225, b: 255 } }, // 2:00 PM
-    { time: 16, color: { r: 180, g: 210, b: 250 } }, // 4:00 PM
-    { time: 18, color: { r: 120, g: 160, b: 210 } }, // 6:00 PM
-    { time: 19, color: { r: 74, g: 122, b: 170 } },  // 7:00 PM
-    { time: 20, color: { r: 40, g: 70, b: 110 } },   // 8:00 PM
-    { time: 22, color: { r: 20, g: 40, b: 65 } },    // 10:00 PM
-    { time: 24, color: { r: 13, g: 27, b: 42 } },    // 12:00 AM
-  ];
-
-  let p1 = controlPoints[0];
-  let p2 = controlPoints[controlPoints.length - 1];
-  
-  for (let i = 0; i < controlPoints.length - 1; i++) {
-    if (hour >= controlPoints[i].time && hour < controlPoints[i + 1].time) {
-      p1 = controlPoints[i];
-      p2 = controlPoints[i + 1];
-      break;
-    }
-  }
-  
-  const timeDiff = p2.time - p1.time;
-  let progress = timeDiff === 0 ? 0 : (hour - p1.time) / timeDiff;
-  progress = Math.max(0, Math.min(1, progress));
-  
-  const smooth = progress * progress * (3 - 2 * progress);
-  
-  const color = {
-    r: Math.round(p1.color.r + (p2.color.r - p1.color.r) * smooth),
-    g: Math.round(p1.color.g + (p2.color.g - p1.color.g) * smooth),
-    b: Math.round(p1.color.b + (p2.color.b - p1.color.b) * smooth)
-  };
-  
-  return rgbToHex(color.r, color.g, color.b);
-}
-
-// ========================================
-// تحويل RGB إلى Hex
-// ========================================
-
-function rgbToHex(r, g, b) {
-  return '#' + [r, g, b].map(c => {
-    const hex = c.toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
-  }).join('');
-}
-
-// ========================================
-// دالة تحديد لون النص مع توهج قوي
-// ========================================
-
-function getTextStyle(hexColor) {
-  const r = parseInt(hexColor.slice(1, 3), 16);
-  const g = parseInt(hexColor.slice(3, 5), 16);
-  const b = parseInt(hexColor.slice(5, 7), 16);
-  
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  
-  if (luminance > 0.5) {
-    return {
-      color: '#1e293b',
-      textShadow: 'none',
-      labelColor: 'rgba(30, 41, 59, 0.5)'
-    };
-  } else {
-    return {
-      color: '#ffffff',
-      textShadow: '0 0 15px rgba(100, 180, 255, 0.5), 0 0 30px rgba(100, 180, 255, 0.2), 0 0 50px rgba(100, 180, 255, 0.1)',
-      labelColor: 'rgba(255, 255, 255, 0.8)'
-    };
-  }
-}
-
-// ========================================
-// دالة تنسيق الوقت بصيغة 12-hour
+// تنسيق الوقت مع دعم العربية
 // ========================================
 
 function formatTime12(hour, minute = 0) {
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const hour12 = hour % 12 || 12;
-  const minuteStr = minute.toString().padStart(2, '0');
-  return hour12 + ':' + minuteStr + ' ' + ampm;
+  const isArabic = localStorage.getItem('language') === 'ar';
+  const h12 = hour % 12 || 12;
+  const m = minute.toString().padStart(2, '0');
+  const ampm = isArabic ? (hour >= 12 ? 'مساءً' : 'صباحاً') : (hour >= 12 ? 'PM' : 'AM');
+  return h12 + ':' + m + ' ' + ampm;
 }
 
 // ========================================
-// دالة حساب فرق الساعات بين وقتين
+// دوال النوم
 // ========================================
 
-function calculateSleepDuration(sleepHour, sleepMinute, wakeHour, wakeMinute) {
-  // تحويل الأوقات إلى دقائق
-  const sleepTotal = sleepHour * 60 + sleepMinute;
-  const wakeTotal = wakeHour * 60 + wakeMinute;
-  
-  let diff = wakeTotal - sleepTotal;
-  
-  // إذا كان وقت الاستيقاظ قبل وقت النوم (نوم عبر منتصف الليل)
-  if (diff < 0) {
-    diff += 24 * 60;
-  }
-  
-  const hours = Math.floor(diff / 60);
-  const minutes = diff % 60;
-  
-  return { hours, minutes, totalMinutes: diff };
+function calcSleep(sh, sm, wh, wm) {
+  let diff = (wh * 60 + wm) - (sh * 60 + sm);
+  if (diff < 0) diff += 1440;
+  return { hours: Math.floor(diff / 60), minutes: diff % 60 };
 }
-
-// ========================================
-// دالة عرض مؤشر جودة النوم
-// ========================================
 
 function getSleepQuality(hours) {
-  if (hours >= 7 && hours <= 9) {
-    return { emoji: '🟢', label: 'Excellent' };
-  } else if (hours >= 6 && hours < 7) {
-    return { emoji: '🟡', label: 'Good' };
-  } else if (hours >= 5 && hours < 6) {
-    return { emoji: '🟠', label: 'Fair' };
-  } else {
-    return { emoji: '🔴', label: 'Poor' };
-  }
+  if (hours >= 7 && hours <= 9) return { emoji: '🟢', label: 'excellent' };
+  if (hours >= 6) return { emoji: '🟡', label: 'good' };
+  if (hours >= 5) return { emoji: '🟠', label: 'fair' };
+  return { emoji: '🔴', label: 'poor' };
+}
+
+function getLabel(key, fallback) {
+  return typeof t === 'function' ? t(key, fallback) : fallback;
+}
+
+function formatSleepDisplay(label, time, label2, time2) {
+  const isArabic = localStorage.getItem('language') === 'ar';
+  const icon1 = isArabic ? '🛌' : '🌙';
+  const icon2 = isArabic ? '☀️' : '🌅';
+  return `${icon1} ${label}: ${time}  |  ${icon2} ${label2}: ${time2}`;
 }
 
 // ========================================
-// دالة عرض إحصائيات اليوم مع Sleep Tracker (معدلة)
-// ========================================
-
-function renderDayStatistics(container, hoursArray, dayName) {
-  const stats = countActivities(hoursArray);
-
-  const statsTitle = document.createElement("h3");
-  statsTitle.textContent = "📊 Today's Statistics";
-  statsTitle.style.marginTop = "24px";
-  container.appendChild(statsTitle);
-
-  // ===== Sleep Tracker (معدل) =====
-  const dayData = getDayData(dayName);
-  
-  // إذا لم تكن هناك قيم مخزنة، استخدم null
-  const sleepHour = dayData.sleepHour !== undefined && dayData.sleepHour !== null ? dayData.sleepHour : null;
-  const sleepMinute = dayData.sleepMinute !== undefined && dayData.sleepMinute !== null ? dayData.sleepMinute : null;
-  const wakeHour = dayData.wakeHour !== undefined && dayData.wakeHour !== null ? dayData.wakeHour : null;
-  const wakeMinute = dayData.wakeMinute !== undefined && dayData.wakeMinute !== null ? dayData.wakeMinute : null;
-
-  const sleepCard = document.createElement("div");
-  sleepCard.style.cssText = `
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 16px 20px;
-    margin-bottom: 16px;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.2s ease;
-    cursor: pointer;
-  `;
-  
-  sleepCard.addEventListener('mouseenter', function() {
-    this.style.boxShadow = 'var(--shadow-md)';
-    this.style.transform = 'translateY(-2px)';
-  });
-  
-  sleepCard.addEventListener('mouseleave', function() {
-    this.style.boxShadow = 'var(--shadow-sm)';
-    this.style.transform = 'translateY(0)';
-  });
-
-  // عرض وقت النوم والاستيقاظ (بدون إيموجي)
-  const sleepRow = document.createElement("div");
-  sleepRow.style.cssText = `
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  `;
-
-  const sleepInfo = document.createElement("div");
-  sleepInfo.style.cssText = `
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-family: var(--font-handwritten);
-    font-size: 16px;
-    color: var(--text-primary);
-  `;
-
-  const sleepText = document.createElement("span");
-  if (sleepHour !== null && sleepMinute !== null) {
-    sleepText.textContent = "Sleep: " + formatTime12(sleepHour, sleepMinute);
-  } else {
-    sleepText.textContent = "Sleep: Not set";
-    sleepText.style.opacity = "0.6";
-  }
-  sleepText.style.fontWeight = "600";
-
-  sleepInfo.appendChild(sleepText);
-
-  const wakeInfo = document.createElement("div");
-  wakeInfo.style.cssText = `
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-family: var(--font-handwritten);
-    font-size: 16px;
-    color: var(--text-primary);
-  `;
-
-  const wakeText = document.createElement("span");
-  if (wakeHour !== null && wakeMinute !== null) {
-    wakeText.textContent = "Wake: " + formatTime12(wakeHour, wakeMinute);
-  } else {
-    wakeText.textContent = "Wake: Not set";
-    wakeText.style.opacity = "0.6";
-  }
-  wakeText.style.fontWeight = "600";
-
-  wakeInfo.appendChild(wakeText);
-
-  sleepRow.appendChild(sleepInfo);
-  sleepRow.appendChild(wakeInfo);
-
-  // عرض إجمالي ساعات النوم (إذا تم ضبط الوقت)
-  const durationRow = document.createElement("div");
-  durationRow.style.cssText = `
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border-light);
-    font-family: var(--font-handwritten);
-    font-size: 15px;
-    color: var(--text-secondary);
-    flex-wrap: wrap;
-    gap: 8px;
-  `;
-
-  if (sleepHour !== null && sleepMinute !== null && wakeHour !== null && wakeMinute !== null) {
-    const duration = calculateSleepDuration(sleepHour, sleepMinute, wakeHour, wakeMinute);
-    const quality = getSleepQuality(duration.hours);
-
-    const durationText = document.createElement("span");
-    durationText.textContent = `⏱️ Total Sleep: ${duration.hours}h ${duration.minutes > 0 ? duration.minutes + 'm' : ''}`;
-    durationText.style.fontWeight = "600";
-
-    const qualityText = document.createElement("span");
-    qualityText.textContent = `${quality.emoji} ${quality.label}`;
-    qualityText.style.cssText = `
-      padding: 4px 12px;
-      border-radius: 20px;
-      background: ${quality.emoji === '🟢' ? 'rgba(76, 175, 132, 0.15)' : 
-                  quality.emoji === '🟡' ? 'rgba(245, 166, 35, 0.15)' :
-                  quality.emoji === '🟠' ? 'rgba(255, 152, 0, 0.15)' :
-                  'rgba(231, 76, 94, 0.15)'};
-      color: ${quality.emoji === '🟢' ? '#2e7d5e' : 
-              quality.emoji === '🟡' ? '#b7791f' :
-              quality.emoji === '🟠' ? '#c77800' :
-              '#c0392b'};
-      font-weight: 600;
-      font-size: 13px;
-    `;
-
-    durationRow.appendChild(durationText);
-    durationRow.appendChild(qualityText);
-  } else {
-    const notSetText = document.createElement("span");
-    notSetText.textContent = "⏱️ Set sleep and wake times to track your sleep";
-    notSetText.style.opacity = "0.6";
-    durationRow.appendChild(notSetText);
-  }
-
-  sleepCard.appendChild(sleepRow);
-  sleepCard.appendChild(durationRow);
-
-  // ===== نافذة تعديل أوقات النوم (معدلة) =====
-  sleepCard.addEventListener("click", function() {
-    openSleepModal(dayName);
-  });
-
-  container.appendChild(sleepCard);
-
-  // ===== إحصائيات الأنشطة =====
-  const statsContainer = document.createElement("div");
-  statsContainer.id = "statistics-list";
-
-  if (Object.keys(stats).length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "empty-message";
-    empty.textContent = "No activities recorded yet. Add some!";
-    statsContainer.appendChild(empty);
-  } else {
-    const sortedStats = Object.entries(stats).sort((a, b) => b[1] - a[1]);
-    const maxCount = sortedStats[0][1];
-
-    sortedStats.forEach(function ([activity, count]) {
-      const item = document.createElement("div");
-      item.className = "statistics-item";
-
-      const name = document.createElement("span");
-      name.className = "statistics-item-name";
-      name.textContent = activity;
-
-      const barContainer = document.createElement("div");
-      barContainer.className = "statistics-bar-container";
-
-      const bar = document.createElement("div");
-      bar.className = "statistics-bar";
-      const percentage = (count / maxCount) * 100;
-      bar.style.width = percentage + "%";
-
-      barContainer.appendChild(bar);
-
-      const hoursCount = document.createElement("span");
-      hoursCount.className = "statistics-item-hours";
-      hoursCount.textContent = count + " hour" + (count > 1 ? "s" : "");
-
-      item.appendChild(name);
-      item.appendChild(barContainer);
-      item.appendChild(hoursCount);
-      statsContainer.appendChild(item);
-    });
-  }
-
-  container.appendChild(statsContainer);
-}
-
-// ========================================
-// نافذة تعديل أوقات النوم (معدلة - بدون إيموجي)
+// مودال النوم
 // ========================================
 
 function openSleepModal(dayName) {
-  const dayData = getDayData(dayName);
-  const sleepHour = dayData.sleepHour !== undefined && dayData.sleepHour !== null ? dayData.sleepHour : 23;
-  const sleepMinute = dayData.sleepMinute !== undefined && dayData.sleepMinute !== null ? dayData.sleepMinute : 0;
-  const wakeHour = dayData.wakeHour !== undefined && dayData.wakeHour !== null ? dayData.wakeHour : 6;
-  const wakeMinute = dayData.wakeMinute !== undefined && dayData.wakeMinute !== null ? dayData.wakeMinute : 0;
+  const data = getDayData(dayName);
+  const sH = data.sleepHour ?? 23, sM = data.sleepMinute ?? 0;
+  const wH = data.wakeHour ?? 6, wM = data.wakeMinute ?? 0;
 
-  const overlay = document.createElement("div");
-  overlay.id = "modal-overlay";
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-overlay';
+  const modal = document.createElement('div');
+  modal.id = 'hour-modal';
 
-  const modal = document.createElement("div");
-  modal.id = "hour-modal";
+  const t = (k, fb) => typeof window.t === 'function' ? window.t(k, fb) : fb;
 
-  const title = document.createElement("h3");
-  title.textContent = "Sleep Settings";
-  modal.appendChild(title);
+  modal.innerHTML = `
+    <h3>${t('sleep_settings', 'Sleep Settings')}</h3>
+    <p class="modal-subtitle">${t('set_sleep_wake', 'Set your sleep and wake-up times')}</p>
+    
+    <p class="modal-subtitle" style="font-weight:600;margin-top:8px;">${t('sleep_time', 'Sleep Time')}</p>
+    <div style="display:flex;gap:12px;margin-bottom:12px;">
+      <select id="sleep-hour" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border-input);background:var(--bg-input);color:var(--text-primary);">
+        ${Array.from({length:24}, (_,i) => `<option value="${i}" ${i===sH?'selected':''}>${String(i).padStart(2,'0')}:00</option>`).join('')}
+      </select>
+      <select id="sleep-minute" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border-input);background:var(--bg-input);color:var(--text-primary);">
+        ${Array.from({length:12}, (_,i) => i*5).map(i => `<option value="${i}" ${i===sM?'selected':''}>:${String(i).padStart(2,'0')}</option>`).join('')}
+      </select>
+    </div>
 
-  const subtitle = document.createElement("p");
-  subtitle.className = "modal-subtitle";
-  subtitle.textContent = "Set your sleep and wake-up times";
-  modal.appendChild(subtitle);
+    <p class="modal-subtitle" style="font-weight:600;margin-top:8px;">${t('wake_time', 'Wake Time')}</p>
+    <div style="display:flex;gap:12px;margin-bottom:16px;">
+      <select id="wake-hour" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border-input);background:var(--bg-input);color:var(--text-primary);">
+        ${Array.from({length:24}, (_,i) => `<option value="${i}" ${i===wH?'selected':''}>${String(i).padStart(2,'0')}:00</option>`).join('')}
+      </select>
+      <select id="wake-minute" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border-input);background:var(--bg-input);color:var(--text-primary);">
+        ${Array.from({length:12}, (_,i) => i*5).map(i => `<option value="${i}" ${i===wM?'selected':''}>:${String(i).padStart(2,'0')}</option>`).join('')}
+      </select>
+    </div>
 
-  // ===== وقت النوم =====
-  const sleepLabel = document.createElement("p");
-  sleepLabel.className = "modal-subtitle";
-  sleepLabel.textContent = "Sleep Time";
-  sleepLabel.style.fontWeight = "600";
-  sleepLabel.style.marginTop = "8px";
-  modal.appendChild(sleepLabel);
-
-  const sleepContainer = document.createElement("div");
-  sleepContainer.style.cssText = "display: flex; gap: 12px; margin-bottom: 12px;";
-
-  // ساعة النوم
-  const sleepHourSelect = document.createElement("select");
-  sleepHourSelect.id = "sleep-hour-select";
-  sleepHourSelect.style.cssText = "flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-input); background: var(--bg-input); color: var(--text-primary);";
-  for (let i = 0; i < 24; i++) {
-    const option = document.createElement("option");
-    option.value = i;
-    option.textContent = i.toString().padStart(2, '0') + ':00';
-    if (i === sleepHour) option.selected = true;
-    sleepHourSelect.appendChild(option);
-  }
-
-  // دقيقة النوم
-  const sleepMinuteSelect = document.createElement("select");
-  sleepMinuteSelect.id = "sleep-minute-select";
-  sleepMinuteSelect.style.cssText = "flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-input); background: var(--bg-input); color: var(--text-primary);";
-  for (let i = 0; i < 60; i += 5) {
-    const option = document.createElement("option");
-    option.value = i;
-    option.textContent = ':' + i.toString().padStart(2, '0');
-    if (i === sleepMinute) option.selected = true;
-    sleepMinuteSelect.appendChild(option);
-  }
-
-  sleepContainer.appendChild(sleepHourSelect);
-  sleepContainer.appendChild(sleepMinuteSelect);
-  modal.appendChild(sleepContainer);
-
-  // ===== وقت الاستيقاظ =====
-  const wakeLabel = document.createElement("p");
-  wakeLabel.className = "modal-subtitle";
-  wakeLabel.textContent = "Wake Time";
-  wakeLabel.style.fontWeight = "600";
-  wakeLabel.style.marginTop = "8px";
-  modal.appendChild(wakeLabel);
-
-  const wakeContainer = document.createElement("div");
-  wakeContainer.style.cssText = "display: flex; gap: 12px; margin-bottom: 16px;";
-
-  // ساعة الاستيقاظ
-  const wakeHourSelect = document.createElement("select");
-  wakeHourSelect.id = "wake-hour-select";
-  wakeHourSelect.style.cssText = "flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-input); background: var(--bg-input); color: var(--text-primary);";
-  for (let i = 0; i < 24; i++) {
-    const option = document.createElement("option");
-    option.value = i;
-    option.textContent = i.toString().padStart(2, '0') + ':00';
-    if (i === wakeHour) option.selected = true;
-    wakeHourSelect.appendChild(option);
-  }
-
-  // دقيقة الاستيقاظ
-  const wakeMinuteSelect = document.createElement("select");
-  wakeMinuteSelect.id = "wake-minute-select";
-  wakeMinuteSelect.style.cssText = "flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-input); background: var(--bg-input); color: var(--text-primary);";
-  for (let i = 0; i < 60; i += 5) {
-    const option = document.createElement("option");
-    option.value = i;
-    option.textContent = ':' + i.toString().padStart(2, '0');
-    if (i === wakeMinute) option.selected = true;
-    wakeMinuteSelect.appendChild(option);
-  }
-
-  wakeContainer.appendChild(wakeHourSelect);
-  wakeContainer.appendChild(wakeMinuteSelect);
-  modal.appendChild(wakeContainer);
-
-  // ===== أزرار الإجراءات =====
-  const buttonContainer = document.createElement("div");
-  buttonContainer.style.cssText = "display: flex; gap: 8px; margin-top: 8px;";
-
-  const saveBtn = document.createElement("button");
-  saveBtn.textContent = "💾 Save";
-  saveBtn.id = "save-custom-btn";
-  saveBtn.style.flex = "1";
-  saveBtn.addEventListener("click", function() {
-    const newSleepHour = parseInt(sleepHourSelect.value);
-    const newSleepMinute = parseInt(sleepMinuteSelect.value);
-    const newWakeHour = parseInt(wakeHourSelect.value);
-    const newWakeMinute = parseInt(wakeMinuteSelect.value);
-
-    const dayData = getDayData(dayName);
-    dayData.sleepHour = newSleepHour;
-    dayData.sleepMinute = newSleepMinute;
-    dayData.wakeHour = newWakeHour;
-    dayData.wakeMinute = newWakeMinute;
-    saveDayData(dayName, dayData);
-
-    closeModal();
-    openDay(dayName);
-  });
-
-  const cancelBtn = document.createElement("button");
-  cancelBtn.textContent = "Cancel";
-  cancelBtn.style.cssText = "flex: 1; padding: 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-secondary); cursor: pointer; font-family: var(--font-handwritten); font-size: 16px; font-weight: 600; transition: 0.2s;";
-  cancelBtn.addEventListener("mouseenter", function() {
-    this.style.backgroundColor = "var(--bg-hover)";
-  });
-  cancelBtn.addEventListener("mouseleave", function() {
-    this.style.backgroundColor = "var(--bg-input)";
-  });
-  cancelBtn.addEventListener("click", closeModal);
-
-  buttonContainer.appendChild(cancelBtn);
-  buttonContainer.appendChild(saveBtn);
-  modal.appendChild(buttonContainer);
-
-  // ===== زر الإغلاق =====
-  const closeBtn = document.createElement("button");
-  closeBtn.textContent = "✕";
-  closeBtn.id = "close-modal-btn";
-  closeBtn.addEventListener("click", closeModal);
-  modal.appendChild(closeBtn);
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button id="sleep-cancel" style="flex:1;padding:12px;border:1px solid var(--border-input);border-radius:6px;background:var(--bg-input);color:var(--text-secondary);cursor:pointer;font-family:var(--font-handwritten);font-size:16px;font-weight:600;">${t('cancel', 'Cancel')}</button>
+      <button id="sleep-save" style="flex:1;padding:12px;background:var(--primary-gradient);color:white;border:none;border-radius:6px;cursor:pointer;font-family:var(--font-handwritten);font-size:16px;font-weight:600;">💾 ${t('save', 'Save')}</button>
+    </div>
+    <button id="close-modal-btn" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);padding:4px 8px;border-radius:6px;line-height:1;">✕</button>
+  `;
 
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  overlay.addEventListener("click", function(e) {
-    if (e.target === overlay) closeModal();
-  });
+  const close = () => overlay.remove();
 
-  function closeModal() {
-    overlay.remove();
-  }
-}
+  modal.querySelector('#sleep-save').onclick = () => {
+    const data = getDayData(dayName);
+    data.sleepHour = +modal.querySelector('#sleep-hour').value;
+    data.sleepMinute = +modal.querySelector('#sleep-minute').value;
+    data.wakeHour = +modal.querySelector('#wake-hour').value;
+    data.wakeMinute = +modal.querySelector('#wake-minute').value;
+    saveDayData(dayName, data);
+    close();
+    openDay(dayName);
+  };
 
-// ========================================
-// ✅ دالة معالجة النقر على الساعات (Event Delegation)
-// ========================================
-
-function handleHourClick(event) {
-  const hourBox = event.target.closest(".hour-box");
-  if (!hourBox) return;
-  
-  const dayName = hourBox.closest("#hours-grid")?.dataset.dayName;
-  if (!dayName) return;
-  
-  const hourIndex = parseInt(hourBox.dataset.hour);
-  const label = hourBox.dataset.label;
-  const activity = hourBox.dataset.activity || "";
-  
-  openHourModal(dayName, hourIndex, label, activity);
+  modal.querySelector('#sleep-cancel').onclick = close;
+  modal.querySelector('#close-modal-btn').onclick = close;
+  overlay.onclick = e => { if (e.target === overlay) close(); };
 }
 
 // ========================================
@@ -552,259 +144,279 @@ function handleHourClick(event) {
 // ========================================
 
 function openDay(dayName) {
-  const app = document.getElementById("app");
-  app.innerHTML = "";
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  const data = getDayData(dayName);
+  const isToday = dayName === ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
+  const currentHour = isToday ? new Date().getHours() : -1;
 
-  const backBtn = document.createElement("button");
-  backBtn.textContent = "← Back";
-  backBtn.id = "back-btn";
-  backBtn.addEventListener("click", function () { renderWeek(); });
-  app.appendChild(backBtn);
+  // Back button
+  const back = document.createElement('button');
+  back.id = 'back-btn';
+  back.textContent = '← ' + (typeof t === 'function' ? t('back', 'Back') : 'Back');
+  back.onclick = () => renderWeek();
+  app.appendChild(back);
 
-  const title = document.createElement("h2");
-  title.textContent = dayName;
+  // Title
+  const title = document.createElement('h2');
+  title.textContent = typeof translateDay === 'function' ? translateDay(dayName) : dayName;
   app.appendChild(title);
 
-  const dayData = getDayData(dayName);
-
-  const hoursGrid = document.createElement("div");
-  hoursGrid.id = "hours-grid";
-  hoursGrid.dataset.dayName = dayName;
-
-  // ✅ استخدام DocumentFragment لتجميع جميع الساعات
-  const fragment = document.createDocumentFragment();
+  // Hours grid
+  const grid = document.createElement('div');
+  grid.id = 'hours-grid';
+  grid.dataset.dayName = dayName;
 
   for (let i = 0; i < 24; i++) {
-    const hourBox = document.createElement("div");
-    hourBox.className = "hour-box";
-    
-    const label = formatHourRange(i);
-    const activity = dayData.hours[i] ? dayData.hours[i] : "";
-    
-    // تخزين البيانات في dataset
-    hourBox.dataset.hour = i;
-    hourBox.dataset.label = label;
-    hourBox.dataset.activity = activity;
-    
-    const bgColor = getHourColor(i);
-    const textStyle = getTextStyle(bgColor);
-    
-    hourBox.style.backgroundColor = bgColor;
-    hourBox.style.color = textStyle.color;
-    hourBox.style.textShadow = textStyle.textShadow;
-    hourBox.style.borderColor = textStyle.color === '#ffffff' 
-      ? 'rgba(255, 255, 255, 0.15)' 
-      : 'rgba(79, 142, 219, 0.2)';
+    const box = document.createElement('div');
+    box.className = 'hour-box' + (isToday && i === currentHour ? ' current-hour' : '');
+    box.dataset.hour = i;
+    box.dataset.label = formatHourRange(i);
+    box.dataset.activity = data.hours[i] || '';
+    box.style.cssText = 'background:#dbeafe;color:#1e293b;border-color:rgba(79,142,219,0.2)';
 
-    const labelSpan = document.createElement("span");
-    labelSpan.className = "hour-label";
-    labelSpan.textContent = label;
-    labelSpan.style.color = textStyle.labelColor || (textStyle.color === '#ffffff' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(30, 41, 59, 0.5)');
-    labelSpan.style.textShadow = textStyle.textShadow;
+    const label = document.createElement('span');
+    label.className = 'hour-label';
+    label.textContent = formatHourRange(i);
+    label.style.color = 'rgba(30,41,59,0.5)';
+    box.appendChild(label);
 
-    const activitySpan = document.createElement("span");
-    activitySpan.className = "hour-activity";
-    activitySpan.textContent = activity;
-    activitySpan.style.color = textStyle.color;
-    activitySpan.style.textShadow = textStyle.textShadow;
+    const act = document.createElement('div');
+    act.className = 'hour-activity';
+    act.style.cssText = 'display:flex;align-items:center;gap:6px;color:#1e293b;font-family:var(--font-handwritten);font-size:var(--font-sm);font-weight:600;';
 
-    hourBox.appendChild(labelSpan);
-    hourBox.appendChild(activitySpan);
-
-    fragment.appendChild(hourBox);
+    if (data.hours[i]) {
+      const icon = document.createElement('span');
+      icon.setAttribute('data-lucide', getActivityIcon(data.hours[i]));
+      icon.style.cssText = 'width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;';
+      act.appendChild(icon);
+      const txt = document.createElement('span');
+      txt.textContent = data.hours[i];
+      act.appendChild(txt);
+    }
+    box.appendChild(act);
+    grid.appendChild(box);
   }
 
-  // ✅ إضافة جميع الساعات دفعة واحدة
-  hoursGrid.appendChild(fragment);
-  
-  // ✅ إضافة Event Delegation واحد فقط على الحاوية
-  hoursGrid.addEventListener("click", handleHourClick);
+  grid.onclick = e => {
+    const box = e.target.closest('.hour-box');
+    if (!box) return;
+    const day = box.closest('#hours-grid')?.dataset.dayName;
+    if (!day) return;
+    openHourModal(day, +box.dataset.hour, box.dataset.label, box.dataset.activity);
+  };
 
-  app.appendChild(hoursGrid);
+  app.appendChild(grid);
 
-  // ===== Day For? =====
-  const dayForBox = document.createElement("div");
-  dayForBox.id = "day-for-box";
+  // Day For
+  const dfBox = document.createElement('div');
+  dfBox.id = 'day-for-box';
+  const dfLabel = document.createElement('span');
+  dfLabel.style.cssText = 'font-weight:600;color:var(--text-primary);';
+  dfLabel.textContent = typeof t === 'function' ? t('day_for', 'Day For? ') : 'Day For? ';
+  const dfValue = document.createElement('span');
+  dfValue.id = 'day-for-value';
+  dfValue.style.cssText = 'color:var(--text-secondary);font-weight:500;';
+  dfValue.textContent = data.dayFor || (typeof t === 'function' ? t('click_to_set', 'Click to set') : 'Click to set');
+  dfBox.append(dfLabel, dfValue);
+  dfBox.onclick = () => {
+    const val = prompt(typeof t === 'function' ? t('what_is_day_for', 'What is this day for?') : 'What is this day for?', data.dayFor || '');
+    if (val !== null) { data.dayFor = val; saveDayData(dayName, data); openDay(dayName); }
+  };
+  app.appendChild(dfBox);
 
-  const dayForLabel = document.createElement("strong");
-  dayForLabel.textContent = "Day For? ";
+  // Sleep card
+  const sH = data.sleepHour, sM = data.sleepMinute, wH = data.wakeHour, wM = data.wakeMinute;
+  const hasSleep = sH !== undefined && sH !== null && sM !== undefined && sM !== null;
+  const hasWake = wH !== undefined && wH !== null && wM !== undefined && wM !== null;
 
-  const dayForValue = document.createElement("span");
-  dayForValue.id = "day-for-value";
-  dayForValue.textContent = dayData.dayFor ? dayData.dayFor : "Click to set";
+  const card = document.createElement('div');
+  card.className = 'sleep-card';
+  card.style.cssText = 'background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px 20px;margin-top:16px;box-shadow:var(--shadow-sm);transition:all 0.2s ease;cursor:pointer;';
+  card.onmouseenter = function() { this.style.boxShadow = 'var(--shadow-md)'; this.style.transform = 'translateY(-2px)'; };
+  card.onmouseleave = function() { this.style.boxShadow = 'var(--shadow-sm)'; this.style.transform = 'translateY(0)'; };
+  card.onclick = () => openSleepModal(dayName);
 
-  dayForBox.appendChild(dayForLabel);
-  dayForBox.appendChild(dayForValue);
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
+  const info = document.createElement('div');
+  info.style.cssText = 'display:flex;align-items:center;gap:12px;font-family:var(--font-handwritten);font-size:16px;color:var(--text-primary);flex:1;';
+  const txt = document.createElement('span');
+  txt.style.cssText = 'font-weight:600;direction:ltr;';
 
-  dayForBox.addEventListener("click", function () {
-    const current = dayData.dayFor ? dayData.dayFor : "";
-    const newDayFor = prompt("What is this day for?", current);
-    if (newDayFor !== null) {
-      dayData.dayFor = newDayFor;
-      saveDayData(dayName, dayData);
-      openDay(dayName);
-    }
-  });
+  const sl = getLabel('sleep', 'Sleep');
+  const wl = getLabel('wake', 'Wake');
+  const ns = getLabel('not_set', 'Not set');
 
-  app.appendChild(dayForBox);
-
-  // ===== 📊 Today's Statistics =====
-  renderDayStatistics(app, dayData.hours, dayName);
-}
-
-// ===== دالة حساب تكرار الأنشطة =====
-function countActivities(hoursArray) {
-  const counts = {};
-
-  hoursArray.forEach(function (activity) {
-    if (activity && activity.trim() !== "") {
-      counts[activity] = (counts[activity] || 0) + 1;
-    }
-  });
-
-  return counts;
-}
-
-// ===== دالة فتح المودال =====
-function openHourModal(dayName, hourIndex, label, currentActivity) {
-  const overlay = document.createElement("div");
-  overlay.id = "modal-overlay";
-
-  const modal = document.createElement("div");
-  modal.id = "hour-modal";
-
-  const title = document.createElement("h3");
-  title.textContent = label;
-  modal.appendChild(title);
-
-  const currentActivityDisplay = document.createElement("p");
-  currentActivityDisplay.className = "modal-subtitle";
-  if (currentActivity) {
-    currentActivityDisplay.textContent = "Current: " + currentActivity;
-    currentActivityDisplay.style.color = "#3b82f6";
-    currentActivityDisplay.style.fontWeight = "500";
+  if (hasSleep && hasWake) {
+    txt.textContent = formatSleepDisplay(sl, formatTime12(sH, sM), wl, formatTime12(wH, wM));
+  } else if (hasSleep) {
+    txt.textContent = `${sl}: ${formatTime12(sH, sM)} | ${wl}: ${ns}`;
+  } else if (hasWake) {
+    txt.textContent = `${sl}: ${ns} | ${wl}: ${formatTime12(wH, wM)}`;
   } else {
-    currentActivityDisplay.textContent = "No activity selected";
-    currentActivityDisplay.style.color = "#9ca3af";
+    txt.textContent = `${sl}: ${ns} | ${wl}: ${ns}`;
+    txt.style.opacity = '0.6';
   }
-  modal.appendChild(currentActivityDisplay);
+  info.appendChild(txt);
+  row.appendChild(info);
 
-  const subtitle = document.createElement("p");
-  subtitle.className = "modal-subtitle";
-  subtitle.textContent = "Choose an activity";
-  modal.appendChild(subtitle);
+  const durRow = document.createElement('div');
+  durRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-light);font-family:var(--font-handwritten);font-size:15px;color:var(--text-secondary);flex-wrap:wrap;gap:8px;';
 
-  const suggestionsGrid = document.createElement("div");
-  suggestionsGrid.id = "suggestions-grid";
+  if (hasSleep && hasWake) {
+    const dur = calcSleep(sH, sM, wH, wM);
+    const q = getSleepQuality(dur.hours);
+    const qLabel = typeof t === 'function' && t(q.label) ? t(q.label) : q.label.charAt(0).toUpperCase() + q.label.slice(1);
+    const isArabic = localStorage.getItem('language') === 'ar';
+    const durStr = isArabic 
+      ? `${dur.hours} ساعة${dur.hours > 1 ? 'ات' : ''}${dur.minutes > 0 ? ' و ' + dur.minutes + ' دقيقة' : ''}`
+      : `${dur.hours}h${dur.minutes > 0 ? ' ' + dur.minutes + 'm' : ''}`;
+    
+    const dText = document.createElement('span');
+    dText.textContent = '⏱️ ' + (typeof t === 'function' ? t('total_sleep', 'Total Sleep') : 'Total Sleep') + ': ' + durStr;
+    dText.style.fontWeight = '600';
 
-  activitySuggestions.forEach(function (item) {
-    const btn = document.createElement("button");
-    btn.className = "suggestion-btn";
-    if (item.name === currentActivity) {
-      btn.classList.add("selected");
-    }
-
-    const iconSpan = document.createElement("span");
-    iconSpan.className = "suggestion-icon";
-    iconSpan.textContent = item.icon;
-
-    const nameSpan = document.createElement("span");
-    nameSpan.textContent = item.name;
-
-    btn.appendChild(iconSpan);
-    btn.appendChild(nameSpan);
-
-    btn.addEventListener("click", function () {
-      saveHourActivity(dayName, hourIndex, item.name);
-      closeModal();
-    });
-
-    suggestionsGrid.appendChild(btn);
-  });
-  modal.appendChild(suggestionsGrid);
-
-  const customInput = document.createElement("input");
-  customInput.type = "text";
-  customInput.placeholder = "Or type your own...";
-  customInput.value = "";
-  customInput.id = "custom-activity-input";
-  modal.appendChild(customInput);
-
-  const buttonContainer = document.createElement("div");
-  buttonContainer.style.display = "flex";
-  buttonContainer.style.gap = "8px";
-  buttonContainer.style.marginTop = "8px";
-
-  const customBtn = document.createElement("button");
-  customBtn.textContent = "💾 Save";
-  customBtn.id = "save-custom-btn";
-  customBtn.style.flex = "1";
-  customBtn.addEventListener("click", function () {
-    if (customInput.value.trim() !== "") {
-      saveHourActivity(dayName, hourIndex, customInput.value.trim());
-    }
-    closeModal();
-  });
-  buttonContainer.appendChild(customBtn);
-
-  const removeBtn = document.createElement("button");
-  removeBtn.textContent = "🗑️ Remove";
-  removeBtn.style.flex = "1";
-  removeBtn.style.backgroundColor = "#ef4444";
-  removeBtn.style.color = "#fff";
-  removeBtn.style.border = "none";
-  removeBtn.style.borderRadius = "6px";
-  removeBtn.style.padding = "10px";
-  removeBtn.style.cursor = "pointer";
-  removeBtn.style.fontSize = "14px";
-  removeBtn.style.fontWeight = "500";
-  removeBtn.style.transition = "0.2s";
-
-  removeBtn.addEventListener("mouseenter", function () {
-    removeBtn.style.backgroundColor = "#dc2626";
-  });
-  removeBtn.addEventListener("mouseleave", function () {
-    removeBtn.style.backgroundColor = "#ef4444";
-  });
-
-  removeBtn.addEventListener("click", function () {
-    const dayData = getDayData(dayName);
-    dayData.hours[hourIndex] = "";
-    saveDayData(dayName, dayData);
-    closeModal();
-    openDay(dayName);
-  });
-
-  if (currentActivity) {
-    buttonContainer.appendChild(removeBtn);
+    const qText = document.createElement('span');
+    qText.textContent = q.emoji + ' ' + qLabel;
+    qText.style.cssText = `
+      padding:4px 12px;border-radius:20px;
+      background:${q.emoji === '🟢' ? 'rgba(76,175,132,0.15)' : q.emoji === '🟡' ? 'rgba(245,166,35,0.15)' : q.emoji === '🟠' ? 'rgba(255,152,0,0.15)' : 'rgba(231,76,94,0.15)'};
+      color:${q.emoji === '🟢' ? '#2e7d5e' : q.emoji === '🟡' ? '#b7791f' : q.emoji === '🟠' ? '#c77800' : '#c0392b'};
+      font-weight:600;font-size:13px;
+    `;
+    durRow.append(dText, qText);
+  } else {
+    const nt = document.createElement('span');
+    nt.textContent = typeof t === 'function' ? t('track_sleep', '⏱️ Set sleep and wake times to track your sleep') : '⏱️ Set sleep and wake times to track your sleep';
+    nt.style.opacity = '0.6';
+    durRow.appendChild(nt);
   }
 
-  modal.appendChild(buttonContainer);
+  card.append(row, durRow);
+  app.appendChild(card);
 
-  const closeBtn = document.createElement("button");
-  closeBtn.textContent = "✕";
-  closeBtn.id = "close-modal-btn";
-  closeBtn.addEventListener("click", function () { closeModal(); });
-  modal.appendChild(closeBtn);
+  // Lucide icons
+  setTimeout(() => { if (typeof initLucideIcons === 'function') initLucideIcons(); }, 50);
+}
+
+// ========================================
+// مودال النشاط
+// ========================================
+
+function openHourModal(dayName, hourIndex, label, currentActivity) {
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-overlay';
+  const modal = document.createElement('div');
+  modal.id = 'hour-modal';
+
+  const t = (k, fb) => typeof window.t === 'function' ? window.t(k, fb) : fb;
+
+  modal.innerHTML = `
+    <h3>${label}</h3>
+    <p class="modal-subtitle" style="color:${currentActivity ? '#3b82f6' : '#9ca3af'};font-weight:500;">
+      ${currentActivity ? t('current_activity', 'Current') + ': ' + currentActivity : t('no_activity_selected', 'No activity selected')}
+    </p>
+    <p class="modal-subtitle">${t('choose_activity', 'Choose an activity')}</p>
+    
+    <div id="suggestions-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
+      ${activitySuggestions.map(item => `
+        <button class="suggestion-btn${item.name === currentActivity ? ' selected' : ''}" 
+                style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px 8px;
+                       border:2px solid ${item.name === currentActivity ? 'var(--primary)' : 'var(--border-light)'};
+                       border-radius:12px;background:${item.name === currentActivity ? 'var(--primary-light)' : 'var(--bg-surface)'};
+                       cursor:pointer;transition:all 0.25s ease;font-family:var(--font-handwritten);font-size:12px;font-weight:600;
+                       color:${item.name === currentActivity ? 'var(--primary-dark)' : 'var(--text-secondary)'};
+                       min-height:64px;position:relative;box-shadow:${item.name === currentActivity ? '0 0 20px rgba(79,142,219,0.15)' : 'none'};"
+                data-activity="${item.name}">
+          <span data-lucide="${item.lucide}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:${item.name === currentActivity ? 'var(--primary)' : 'var(--text-muted)'};"></span>
+          <span style="font-size:11px;font-weight:600;text-align:center;line-height:1.2;color:${item.name === currentActivity ? 'var(--primary-dark)' : 'var(--text-secondary)'};">${item.name}</span>
+        </button>
+      `).join('')}
+    </div>
+
+    <input type="text" id="custom-activity-input" placeholder="${t('type_own_activity', 'Or type your own...')}" 
+           style="width:100%;padding:10px 14px;border:2px solid var(--border-input);border-radius:10px;font-family:var(--font-body);font-size:14px;background:var(--bg-input);color:var(--text-primary);transition:all 0.2s ease;margin-bottom:12px;">
+
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button id="save-custom-btn" style="flex:1;padding:12px;background:var(--primary-gradient);color:white;border:none;border-radius:10px;font-family:var(--font-handwritten);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s ease;box-shadow:var(--shadow-sm);">💾 ${t('save', 'Save')}</button>
+      ${currentActivity ? `<button id="remove-activity-btn" style="flex:1;padding:12px;background:#ef4444;color:white;border:none;border-radius:10px;font-family:var(--font-handwritten);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s ease;">🗑️ ${t('remove', 'Remove')}</button>` : ''}
+    </div>
+    <button id="close-modal-btn" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);transition:all 0.2s ease;padding:4px 8px;border-radius:6px;line-height:1;">✕</button>
+  `;
 
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  overlay.addEventListener("click", function (e) {
-    if (e.target === overlay) closeModal();
+  const close = () => overlay.remove();
+
+  // Suggestions
+  modal.querySelectorAll('#suggestions-grid .suggestion-btn').forEach(btn => {
+    btn.onclick = () => {
+      const name = btn.dataset.activity;
+      const data = getDayData(dayName);
+      data.hours[hourIndex] = name;
+      saveDayData(dayName, data);
+      close();
+      openDay(dayName);
+    };
+    btn.onmouseenter = function() { if (!this.classList.contains('selected')) { this.style.borderColor = 'var(--primary)'; this.style.background = 'var(--bg-hover)'; this.style.transform = 'translateY(-3px)'; this.style.boxShadow = 'var(--shadow-sm)'; } };
+    btn.onmouseleave = function() { if (!this.classList.contains('selected')) { this.style.borderColor = 'var(--border-light)'; this.style.background = 'var(--bg-surface)'; this.style.transform = 'translateY(0)'; this.style.boxShadow = 'none'; } };
   });
+
+  // Custom activity
+  const customInput = modal.querySelector('#custom-activity-input');
+  modal.querySelector('#save-custom-btn').onclick = () => {
+    if (customInput.value.trim()) {
+      const data = getDayData(dayName);
+      data.hours[hourIndex] = customInput.value.trim();
+      saveDayData(dayName, data);
+      close();
+      openDay(dayName);
+    }
+  };
+
+  // Remove
+  const removeBtn = modal.querySelector('#remove-activity-btn');
+  if (removeBtn) {
+    removeBtn.onclick = () => {
+      const data = getDayData(dayName);
+      data.hours[hourIndex] = '';
+      saveDayData(dayName, data);
+      close();
+      openDay(dayName);
+    };
+  }
+
+  modal.querySelector('#close-modal-btn').onclick = close;
+  overlay.onclick = e => { if (e.target === overlay) close(); };
+
+  setTimeout(() => { if (typeof initLucideIcons === 'function') initLucideIcons(); }, 50);
 }
 
-// ===== دالة حفظ النشاط =====
+// ========================================
+// دوال التصدير
+// ========================================
+
 function saveHourActivity(dayName, hourIndex, activityName) {
-  const dayData = getDayData(dayName);
-  dayData.hours[hourIndex] = activityName;
-  saveDayData(dayName, dayData);
+  const data = getDayData(dayName);
+  data.hours[hourIndex] = activityName;
+  saveDayData(dayName, data);
   openDay(dayName);
 }
 
-// ===== دالة إغلاق المودال =====
 function closeModal() {
-  const overlay = document.getElementById("modal-overlay");
-  if (overlay) overlay.remove();
+  document.getElementById('modal-overlay')?.remove();
 }
+
+// ========================================
+// تصدير للاستخدام الخارجي
+// ========================================
+
+window.openDay = openDay;
+window.openHourModal = openHourModal;
+window.saveHourActivity = saveHourActivity;
+window.closeModal = closeModal;
+window.openSleepModal = openSleepModal;
+
+console.log('✅ Day.js loaded successfully!');

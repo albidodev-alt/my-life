@@ -8,34 +8,39 @@ function renderWeek() {
   app.innerHTML = "";
 
   const title = document.createElement("h2");
-  title.textContent = "My Routine";
+  // استخدام الترجمة لـ "My Routine"
+  title.textContent = typeof t === 'function' ? t('my_routine', 'My Routine') : "My Routine";
   app.appendChild(title);
 
   const weekContainer = document.createElement("div");
   weekContainer.id = "week-container";
 
+  const today = new Date();
+  const todayName = days[today.getDay()];
+
   days.forEach(function (day) {
-    // ===== جلب بيانات اليوم =====
     const dayData = getDayData(day);
     const dayForText = dayData.dayFor || "";
 
-    // ===== إنشاء بطاقة اليوم =====
     const dayCard = document.createElement("div");
     dayCard.className = "day-card";
 
-    // ===== زر اليوم =====
+    if (day === todayName) {
+      dayCard.classList.add("today-card");
+    }
+
     const dayBtn = document.createElement("button");
-    dayBtn.textContent = day;
+    // ترجمة اسم اليوم
+    const translatedDay = typeof translateDay === 'function' ? translateDay(day) : day;
+    dayBtn.textContent = translatedDay;
     dayBtn.classList.add("day-btn");
     dayBtn.addEventListener("click", function () { openDay(day); });
     dayCard.appendChild(dayBtn);
 
-    // ===== عرض Day For (إن وجد) =====
     if (dayForText) {
       const dayForSpan = document.createElement("span");
       dayForSpan.className = "day-for-label";
       
-      // إضافة أيقونة
       const iconSpan = document.createElement("span");
       iconSpan.textContent = "📌 ";
       
@@ -51,4 +56,13 @@ function renderWeek() {
   });
 
   app.appendChild(weekContainer);
+  
+  // ✅ إعادة تهيئة أيقونات Lucide
+  setTimeout(function() {
+    if (typeof initLucideIcons === 'function') {
+      initLucideIcons();
+    }
+  }, 50);
 }
+
+console.log("✅ Week.js loaded successfully!");

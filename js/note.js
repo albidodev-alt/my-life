@@ -135,11 +135,11 @@ function formatNoteDate(dateString) {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) {
-    return "Today " + date.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' });
+    return (typeof t === 'function' ? t('today', 'Today') : 'Today') + " " + date.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' });
   } else if (diffDays === 1) {
-    return "Yesterday " + date.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' });
+    return (typeof t === 'function' ? t('yesterday', 'Yesterday') : 'Yesterday') + " " + date.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' });
   } else if (diffDays < 7) {
-    return `${diffDays} days ago`;
+    return `${diffDays} ` + (typeof t === 'function' ? t('days_ago', 'days ago') : 'days ago');
   } else {
     return date.toLocaleDateString("en-US", {
       month: 'short',
@@ -149,26 +149,29 @@ function formatNoteDate(dateString) {
   }
 }
 
+function tr(key, fallback) {
+  return typeof t === 'function' ? t(key, fallback) : fallback;
+}
+
 // ========================================
-// عرض صفحة الملاحظات الرئيسية
+// عرض صفحة الملاحظات الرئيسية (مع الترجمة)
 // ========================================
 
 function renderNotesPageV2() {
   const app = document.getElementById("app");
   if (!app) return;
 
-  // بناء هيكل الصفحة
   app.innerHTML = `
     <div id="notes-app-container">
       <!-- Header Section -->
       <div class="notes-header-section">
         <div class="notes-title-area">
-          <h2 class="notes-main-title"> Notes</h2>
-          <p class="notes-main-subtitle">Capture your thoughts, ideas, and reminders</p>
+          <h2 class="notes-main-title">${tr('notes', '📝 Notes')}</h2>
+          <p class="notes-main-subtitle">${tr('notes_subtitle', 'Capture your thoughts, ideas, and reminders')}</p>
         </div>
         <button class="notes-add-main-btn" id="notes-open-add-btn">
           <span class="notes-add-icon">＋</span>
-          New Note
+          ${tr('add_note', 'New Note')}
         </button>
       </div>
 
@@ -180,12 +183,12 @@ function renderNotesPageV2() {
             type="text" 
             class="notes-search-input" 
             id="notes-search-input"
-            placeholder="Search notes by title or content..."
-            aria-label="Search notes"
+            placeholder="${tr('search_notes', 'Search notes by title or content...')}"
+            aria-label="${tr('search_notes', 'Search notes')}"
           />
         </div>
         <div class="notes-stats">
-          <span id="notes-count">0 notes</span>
+          <span id="notes-count">0 ${tr('notes', 'notes')}</span>
         </div>
       </div>
 
@@ -194,7 +197,6 @@ function renderNotesPageV2() {
     </div>
   `;
 
-  // إضافة حدث البحث
   const searchInput = document.getElementById("notes-search-input");
   if (searchInput) {
     searchInput.addEventListener("input", function() {
@@ -202,7 +204,6 @@ function renderNotesPageV2() {
     });
   }
 
-  // إضافة حدث زر الإضافة
   const addBtn = document.getElementById("notes-open-add-btn");
   if (addBtn) {
     addBtn.addEventListener("click", function() {
@@ -210,12 +211,11 @@ function renderNotesPageV2() {
     });
   }
 
-  // عرض قائمة الملاحظات
   renderNotesList("");
 }
 
 // ========================================
-// عرض قائمة الملاحظات
+// عرض قائمة الملاحظات (مع الترجمة)
 // ========================================
 
 function renderNotesList(searchTerm = "") {
@@ -226,16 +226,13 @@ function renderNotesList(searchTerm = "") {
   const allNotes = getAllNotes();
   const filteredNotes = searchNotes(allNotes, searchTerm);
 
-  // تحديث العدد
   if (countEl) {
     const count = filteredNotes.length;
-    countEl.textContent = `${count} note${count !== 1 ? 's' : ''}`;
+    countEl.textContent = `${count} ${tr('notes', 'notes')}`;
   }
 
-  // ===== ✅ استخدام DocumentFragment لتجميع البطاقات =====
   const fragment = document.createDocumentFragment();
 
-  // حالة عدم وجود ملاحظات
   if (filteredNotes.length === 0) {
     const emptyState = document.createElement("div");
     emptyState.className = "notes-empty-state";
@@ -246,33 +243,31 @@ function renderNotesList(searchTerm = "") {
 
     const title = document.createElement("h3");
     title.className = "notes-empty-title";
-    title.textContent = searchTerm ? "No notes found" : "Your notes will appear here";
+    title.textContent = searchTerm ? tr('no_notes_found', 'No notes found') : tr('notes_empty_title', 'Your notes will appear here');
 
     const desc = document.createElement("p");
     desc.className = "notes-empty-desc";
     desc.textContent = searchTerm 
-      ? "Try searching with a different keyword" 
-      : "Click the 'New Note' button to create your first note";
+      ? tr('try_different_keyword', 'Try searching with a different keyword')
+      : tr('create_first_note', "Click the 'New Note' button to create your first note");
 
     emptyState.appendChild(icon);
     emptyState.appendChild(title);
     emptyState.appendChild(desc);
     fragment.appendChild(emptyState);
   } else {
-    // عرض الملاحظات
     filteredNotes.forEach(note => {
       const card = createNoteCard(note);
       fragment.appendChild(card);
     });
   }
 
-  // ===== ✅ إضافة جميع البطاقات دفعة واحدة =====
   grid.innerHTML = "";
   grid.appendChild(fragment);
 }
 
 // ========================================
-// إنشاء بطاقة ملاحظة واحدة
+// إنشاء بطاقة ملاحظة واحدة (مع الترجمة)
 // ========================================
 
 function createNoteCard(note) {
@@ -282,7 +277,6 @@ function createNoteCard(note) {
     card.classList.add("notes-card-pinned");
   }
 
-  // رأس البطاقة
   const header = document.createElement("div");
   header.className = "notes-card-header";
 
@@ -291,25 +285,24 @@ function createNoteCard(note) {
 
   const title = document.createElement("h3");
   title.className = "notes-card-title";
-  title.textContent = note.title || "Untitled";
+  title.textContent = note.title || tr('untitled', 'Untitled');
 
   titleArea.appendChild(title);
 
   if (note.pinned) {
     const pinBadge = document.createElement("span");
     pinBadge.className = "notes-card-pin-badge";
-    pinBadge.textContent = "📌 Pinned";
+    pinBadge.textContent = "📌 " + tr('pinned', 'Pinned');
     titleArea.appendChild(pinBadge);
   }
 
   const actions = document.createElement("div");
   actions.className = "notes-card-actions";
 
-  // زر التثبيت
   const pinBtn = document.createElement("button");
   pinBtn.className = "notes-card-action-btn";
   pinBtn.textContent = note.pinned ? "📌" : "📍";
-  pinBtn.title = note.pinned ? "Unpin note" : "Pin note";
+  pinBtn.title = note.pinned ? tr('unpin', 'Unpin note') : tr('pin', 'Pin note');
   pinBtn.setAttribute("aria-label", pinBtn.title);
 
   pinBtn.addEventListener("click", function(e) {
@@ -318,11 +311,10 @@ function createNoteCard(note) {
     renderNotesList(document.getElementById("notes-search-input")?.value || "");
   });
 
-  // زر التعديل
   const editBtn = document.createElement("button");
   editBtn.className = "notes-card-action-btn";
   editBtn.textContent = "✏️";
-  editBtn.title = "Edit note";
+  editBtn.title = tr('edit', 'Edit note');
   editBtn.setAttribute("aria-label", "Edit note");
 
   editBtn.addEventListener("click", function(e) {
@@ -330,16 +322,15 @@ function createNoteCard(note) {
     openNoteModal(note);
   });
 
-  // زر الحذف
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "notes-card-action-btn notes-delete-btn";
   deleteBtn.textContent = "🗑️";
-  deleteBtn.title = "Delete note";
+  deleteBtn.title = tr('delete', 'Delete note');
   deleteBtn.setAttribute("aria-label", "Delete note");
 
   deleteBtn.addEventListener("click", function(e) {
     e.stopPropagation();
-    if (confirm(`Delete "${note.title}"?`)) {
+    if (confirm(tr('delete_note_confirm', 'Delete "') + note.title + '"?')) {
       deleteNote(note.id);
       renderNotesList(document.getElementById("notes-search-input")?.value || "");
     }
@@ -352,12 +343,10 @@ function createNoteCard(note) {
   header.appendChild(titleArea);
   header.appendChild(actions);
 
-  // محتوى الملاحظة
   const content = document.createElement("p");
   content.className = "notes-card-content";
   content.textContent = note.content || "";
 
-  // تذييل البطاقة
   const footer = document.createElement("div");
   footer.className = "notes-card-footer";
 
@@ -368,20 +357,17 @@ function createNoteCard(note) {
   const editIndicator = document.createElement("span");
   editIndicator.className = "notes-card-edit-indicator";
   if (note.updatedAt && note.updatedAt !== note.createdAt) {
-    editIndicator.textContent = " (edited)";
+    editIndicator.textContent = " (" + tr('edited', 'edited') + ")";
   }
 
   footer.appendChild(dateSpan);
   footer.appendChild(editIndicator);
 
-  // تجميع البطاقة
   card.appendChild(header);
   card.appendChild(content);
   card.appendChild(footer);
 
-  // إمكانية التعديل عند النقر على البطاقة
   card.addEventListener("click", function(e) {
-    // منع التنفيذ إذا تم النقر على زر
     if (e.target.closest("button")) return;
     openNoteModal(note);
   });
@@ -390,7 +376,7 @@ function createNoteCard(note) {
 }
 
 // ========================================
-// نافذة إضافة/تعديل ملاحظة
+// نافذة إضافة/تعديل ملاحظة (مع الترجمة)
 // ========================================
 
 function openNoteModal(editNote = null) {
@@ -403,58 +389,52 @@ function openNoteModal(editNote = null) {
   modal.className = "notes-modal";
   modal.id = "notes-modal";
 
-  // عنوان النافذة
   const title = document.createElement("h3");
   title.className = "notes-modal-title";
-  title.textContent = isEditing ? "✏️ Edit Note" : "➕ New Note";
+  title.textContent = isEditing ? ("✏️ " + tr('edit_note', 'Edit Note')) : ("➕ " + tr('new_note', 'New Note'));
 
-  // حقل العنوان
   const titleLabel = document.createElement("label");
   titleLabel.className = "notes-modal-label";
-  titleLabel.textContent = "Title";
+  titleLabel.textContent = tr('title', 'Title');
   titleLabel.setAttribute("for", "notes-modal-title-input");
 
   const titleInput = document.createElement("input");
   titleInput.type = "text";
   titleInput.id = "notes-modal-title-input";
   titleInput.className = "notes-modal-input";
-  titleInput.placeholder = "Enter note title...";
+  titleInput.placeholder = tr('enter_note_title', 'Enter note title...');
   titleInput.maxLength = 120;
   titleInput.value = isEditing ? editNote.title : "";
 
-  // حقل المحتوى
   const contentLabel = document.createElement("label");
   contentLabel.className = "notes-modal-label";
-  contentLabel.textContent = "Content";
+  contentLabel.textContent = tr('content', 'Content');
   contentLabel.setAttribute("for", "notes-modal-content-input");
 
   const contentInput = document.createElement("textarea");
   contentInput.id = "notes-modal-content-input";
   contentInput.className = "notes-modal-textarea";
-  contentInput.placeholder = "Write your note here...";
+  contentInput.placeholder = tr('write_note_here', 'Write your note here...');
   contentInput.rows = 6;
   contentInput.maxLength = 5000;
   contentInput.value = isEditing ? editNote.content : "";
 
-  // أزرار الإجراءات
   const actionsDiv = document.createElement("div");
   actionsDiv.className = "notes-modal-actions";
 
   const saveBtn = document.createElement("button");
   saveBtn.className = "notes-modal-save-btn";
-  saveBtn.textContent = isEditing ? "💾 Update Note" : "➕ Add Note";
+  saveBtn.textContent = isEditing ? ("💾 " + tr('update_note', 'Update Note')) : ("➕ " + tr('add_note_btn', 'Add Note'));
 
   const cancelBtn = document.createElement("button");
   cancelBtn.className = "notes-modal-cancel-btn";
-  cancelBtn.textContent = "Cancel";
+  cancelBtn.textContent = tr('cancel', 'Cancel');
 
-  // زر الإغلاق
   const closeBtn = document.createElement("button");
   closeBtn.className = "notes-modal-close-btn";
   closeBtn.textContent = "✕";
   closeBtn.setAttribute("aria-label", "Close modal");
 
-  // تجميع النافذة
   modal.appendChild(closeBtn);
   modal.appendChild(title);
   modal.appendChild(titleLabel);
@@ -469,7 +449,6 @@ function openNoteModal(editNote = null) {
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  // ===== دوال الإغلاق =====
   function closeModal() {
     overlay.remove();
   }
@@ -478,7 +457,6 @@ function openNoteModal(editNote = null) {
     const newTitle = titleInput.value.trim();
     const newContent = contentInput.value.trim();
 
-    // التحقق من صحة الإدخال
     if (!newTitle) {
       titleInput.classList.add("notes-modal-input-error");
       titleInput.focus();
@@ -507,7 +485,6 @@ function openNoteModal(editNote = null) {
     }
   }
 
-  // ===== إضافة الأحداث =====
   saveBtn.addEventListener("click", handleSave);
 
   cancelBtn.addEventListener("click", closeModal);
@@ -518,7 +495,6 @@ function openNoteModal(editNote = null) {
     if (e.target === overlay) closeModal();
   });
 
-  // اختصارات لوحة المفاتيح
   titleInput.addEventListener("keydown", function(e) {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -539,16 +515,14 @@ function openNoteModal(editNote = null) {
     }
   });
 
-  // تركيز على حقل العنوان
   setTimeout(() => titleInput.focus(), 100);
 }
 
 // ========================================
-// دالة مساعدة: تحديث الصفحة عند التبديل
+// تصدير الدوال للاستخدام من ملفات أخرى
 // ========================================
 
-// استبدال الدالة القديمة في main.js
-// يجب تعديل function renderNotesPage() في main.js
-// لاستدعاء هذه الدالة بدلاً من القديمة
+window.renderNotesPageV2 = renderNotesPageV2;
+window.renderNotesList = renderNotesList;
 
 console.log("✅ Notes v2.0 loaded successfully!");

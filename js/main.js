@@ -6,6 +6,13 @@ let mainAbortController = null;
 
 document.addEventListener("DOMContentLoaded", function () {
 
+  // ===== تهيئة نظام الترجمة =====
+  if (typeof initTranslations === 'function') {
+    initTranslations().then(function() {
+      console.log('✅ Translations ready');
+    });
+  }
+
   updateUserHeader();
 
   setupNavigation();
@@ -21,12 +28,24 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  // ===== ✅ تهيئة زر الإشعارات =====
+  if (typeof setupNotificationButton === "function") {
+    setupNotificationButton();
+  }
+
+  // ===== ✅ تحديث الإشعارات =====
+  if (typeof refreshNotifications === "function") {
+    refreshNotifications();
+    setInterval(refreshNotifications, 5 * 60 * 1000);
+  }
+
+  // ===== ✅ تهيئة PWA =====
+  initPWA();
+
   navigateTo("routine");
 
-  // تهيئة أيقونات Lucide
   initLucideIcons();
 });
-
 
 // ========================================
 // INITIALIZE LUCDIE ICONS
@@ -49,7 +68,6 @@ function initLucideIcons() {
   }
 }
 
-// جعل الدالة متاحة عالمياً
 window.initLucideIcons = initLucideIcons;
 
 
@@ -102,6 +120,9 @@ function navigateTo(page) {
     );
   });
 
+  // تحديث أسماء الأزرار المترجمة
+  updateNavTranslations();
+
   switch (page) {
     case "routine":
       if (typeof renderWeek === "function") {
@@ -151,10 +172,38 @@ function navigateTo(page) {
       renderNotFoundPage();
   }
 
-  // ✅ إعادة تهيئة أيقونات Lucide بعد تغيير الصفحة
   setTimeout(function() {
     initLucideIcons();
   }, 50);
+}
+
+// ========================================
+// تحديث ترجمة أزرار التنقل
+// ========================================
+
+function updateNavTranslations() {
+  if (typeof t !== 'function') return;
+
+  const navTargets = ['routine', 'task', 'completed', 'notes', 'events', 'program'];
+  const navBtns = document.querySelectorAll(".nav-btn");
+  navBtns.forEach(function(btn, index) {
+    if (index < navTargets.length) {
+      const target = navTargets[index];
+      btn.textContent = t(target, target.charAt(0).toUpperCase() + target.slice(1));
+    }
+  });
+
+  const bottomTargets = ['routine', 'task', 'events', 'program'];
+  const bottomBtns = document.querySelectorAll(".bottom-nav-btn");
+  bottomBtns.forEach(function(btn, index) {
+    if (index < bottomTargets.length) {
+      const target = bottomTargets[index];
+      const label = btn.querySelector('.bn-label');
+      if (label) {
+        label.textContent = t(target, target.charAt(0).toUpperCase() + target.slice(1));
+      }
+    }
+  });
 }
 
 
@@ -173,12 +222,12 @@ function renderNotesPage() {
   section.className = "page-section";
 
   const h2 = document.createElement("h2");
-  h2.textContent = "📝 Notes";
+  h2.textContent = typeof t === 'function' ? t('notes', '📝 Notes') : "📝 Notes";
   section.appendChild(h2);
 
   const p = document.createElement("p");
   p.className = "page-description";
-  p.textContent = "Write down anything you want to remember.";
+  p.textContent = typeof t === 'function' ? t('notes', 'Write down anything you want to remember.') : "Write down anything you want to remember.";
   section.appendChild(p);
 
   const notesDiv = document.createElement("div");
@@ -318,6 +367,7 @@ window.renderNotesPage = renderNotesPage;
 window.updateUserHeader = updateUserHeader;
 window.createDefaultAvatar = createDefaultAvatar;
 window.initLucideIcons = initLucideIcons;
+window.updateNavTranslations = updateNavTranslations;
 
 
 function cleanupElement(element) {
@@ -340,5 +390,156 @@ function cleanupGlobalListeners(controller) {
     controller.abort();
   }
 }
+
+
+// ========================================
+// ===== PWA SUPPORT =====
+// ========================================
+
+let deferredPrompt = null;
+
+function initPWA() {
+  // ===== مراقبة حدث beforeinstallprompt =====
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    console.log('📌 App install prompt available');
+    
+    // إظهار زر التثبيت في البروفايل فقط
+    showInstallButtons(true);
+  });
+
+  // ===== مراقبة حدث appinstalled =====
+  window.addEventListener('appinstalled', function() {
+    console.log('✅ App installed successfully!');
+    deferredPrompt = null;
+    showInstallButtons(false);
+  });
+
+  // ===== تسجيل Service Worker =====
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(function(registration) {
+        console.log('✅ ServiceWorker registered successfully');
+        
+        // التحقق من وجود تحديث
+        if (registration.waiting) {
+          setTimeout(function() {
+            if (typeof showUpdateNotification === 'function') {
+              showUpdateNotification();
+            }
+          }, 2000);
+        }
+      })
+      .catch(function(error) {
+        console.warn('⚠️ ServiceWorker registration failed:', error);
+      });
+  }
+
+  // ===== إضافة زر التثبيت في البروفايل فقط =====
+  addProfileInstallButton();
+}
+
+// ===== إظهار/إخفاء أزرار التثبيت =====
+function showInstallButtons(show) {
+  // زر البروفايل فقط
+  const profileBtn = document.getElementById('profile-install-btn');
+  if (profileBtn) {
+    profileBtn.style.display = show ? 'flex' : 'none';
+  }
+}
+
+// ===== إضافة زر التثبيت في البروفايل =====
+function addProfileInstallButton() {
+  // ننتظر حتى يتم تحميل البروفايل
+  const observer = new MutationObserver(function(mutations) {
+    const profileSection = document.getElementById('settings-section');
+    if (profileSection) {
+      // التحقق من وجود الزر بالفعل
+      if (document.getElementById('profile-install-btn')) return;
+      
+      const installBtn = document.createElement('button');
+      installBtn.id = 'profile-install-btn';
+      installBtn.style.cssText = `
+        width: 100%;
+        padding: 12px 20px;
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-family: var(--font-handwritten);
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 12px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      `;
+      installBtn.innerHTML = '📲 Install App';
+      
+      installBtn.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-2px)';
+        this.style.boxShadow = 'var(--shadow-md)';
+      });
+      installBtn.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+        this.style.boxShadow = 'none';
+      });
+      
+      installBtn.addEventListener('click', function() {
+        handleInstallClick();
+      });
+      
+      // إضافة الزر بعد قسم الإعدادات
+      profileSection.parentNode.insertBefore(installBtn, profileSection.nextSibling);
+      
+      // إذا كان التطبيق غير مثبت، نعرض الزر
+      if (!window.matchMedia('(display-mode: standalone)').matches && deferredPrompt) {
+        installBtn.style.display = 'flex';
+      }
+    }
+  });
+  
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// ===== معالجة زر التثبيت =====
+function handleInstallClick() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(choice) {
+      if (choice.outcome === 'accepted') {
+        console.log('✅ User installed the app');
+        showInstallButtons(false);
+      } else {
+        console.log('❌ User dismissed the install prompt');
+      }
+      deferredPrompt = null;
+    });
+  } else {
+    // إذا لم يكن هناك deferredPrompt، نعرض رسالة
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    if (isStandalone) {
+      alert('✅ App is already installed!');
+    } else {
+      alert('📲 To install this app:\n\n' +
+            '• On Chrome: Tap the menu (⋮) → "Install App"\n' +
+            '• On Safari: Tap Share → "Add to Home Screen"\n' +
+            '• On Firefox: Tap the menu → "Install"');
+    }
+  }
+}
+
+// ========================================
+// تصدير الدوال للاستخدام من ملفات أخرى
+// ========================================
+
+window.initPWA = initPWA;
+window.showInstallButtons = showInstallButtons;
+window.handleInstallClick = handleInstallClick;
+window.deferredPrompt = deferredPrompt;
 
 console.log("📌 Main.js loaded successfully");

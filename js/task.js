@@ -1,11 +1,18 @@
 const priorityOptions = [
-  { value: "high", label: "🔴 High" },
-  { value: "medium", label: "🟡 Medium" },
-  { value: "low", label: "🟢 Low" }
+  { value: "high", label: "🔴 " + (typeof t === 'function' ? t('high', 'High') : "High") },
+  { value: "medium", label: "🟡 " + (typeof t === 'function' ? t('medium', 'Medium') : "Medium") },
+  { value: "low", label: "🟢 " + (typeof t === 'function' ? t('low', 'Low') : "Low") }
 ];
 
-const categoryOptions = ["University", "Programming", "Fitness", "Personal", "Work", "Home"];
-const difficultyOptions = ["Easy", "Medium", "Hard"];
+const categoryOptions = [
+  "University", "Programming", "Fitness", "Personal", "Work", "Home"
+];
+
+const difficultyOptions = [
+  (typeof t === 'function' ? t('easy', 'Easy') : "Easy"),
+  (typeof t === 'function' ? t('medium', 'Medium') : "Medium"),
+  (typeof t === 'function' ? t('hard', 'Hard') : "Hard")
+];
 
 function renderTasks() {
   const app = document.getElementById("app");
@@ -18,14 +25,35 @@ function renderTasks() {
   headerDiv.style.alignItems = "center";
   headerDiv.style.marginBottom = "16px";
 
+  const titleWrapper = document.createElement("div");
+  titleWrapper.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  `;
+
+  const titleIcon = document.createElement("span");
+  titleIcon.setAttribute("data-lucide", "list-checks");
+  titleIcon.style.cssText = `
+    width: 28px;
+    height: 28px;
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  `;
+
   const title = document.createElement("h2");
-  title.textContent = "📋 Tasks";
+  title.textContent = typeof t === 'function' ? t('task_title', 'Tasks') : "Tasks";
   title.style.marginBottom = "0";
-  headerDiv.appendChild(title);
+
+  titleWrapper.appendChild(titleIcon);
+  titleWrapper.appendChild(title);
+  headerDiv.appendChild(titleWrapper);
 
   const addBtn = document.createElement("button");
   addBtn.id = "add-task-btn";
-  addBtn.textContent = "+ Add Task";
+  addBtn.textContent = "+ " + (typeof t === 'function' ? t('add_task', 'Add Task') : "Add Task");
   addBtn.style.marginBottom = "0";
   addBtn.addEventListener("click", function () { openAddTaskModal(); });
   headerDiv.appendChild(addBtn);
@@ -41,13 +69,13 @@ function renderTasks() {
   filterDiv.style.flexWrap = "wrap";
 
   const filterLabel = document.createElement("span");
-  filterLabel.textContent = "Filter by priority:";
+  filterLabel.textContent = (typeof t === 'function' ? t('filter_by_priority', 'Filter by priority:') : "Filter by priority:");
   filterLabel.style.fontSize = "14px";
   filterLabel.style.fontWeight = "500";
   filterDiv.appendChild(filterLabel);
 
   const filterAll = document.createElement("button");
-  filterAll.textContent = "All";
+  filterAll.textContent = typeof t === 'function' ? t('all', 'All') : "All";
   filterAll.className = "filter-btn active";
   filterAll.dataset.filter = "all";
   filterDiv.appendChild(filterAll);
@@ -79,6 +107,12 @@ function renderTasks() {
   });
 
   renderTaskList("all");
+  
+  setTimeout(function() {
+    if (typeof initLucideIcons === 'function') {
+      initLucideIcons();
+    }
+  }, 50);
 }
 
 function renderTaskList(filter = "all") {
@@ -87,31 +121,27 @@ function renderTaskList(filter = "all") {
 
   let tasks = getAllTasks().filter(function (t) { return !t.completed; });
 
-  // تطبيق الفلتر
   if (filter !== "all") {
     tasks = tasks.filter(function (t) { return t.priority === filter; });
   }
 
-  // ترتيب حسب الأولوية (High → Medium → Low)
   const priorityOrder = { high: 0, medium: 1, low: 2 };
   tasks.sort(function (a, b) {
     return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
 
-  // ===== ✅ استخدام DocumentFragment لتجميع العناصر =====
   const fragment = document.createDocumentFragment();
 
   if (tasks.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty-message";
-    empty.textContent = filter === "all" ? "No tasks yet. Add one!" : "No tasks with this priority.";
+    empty.textContent = filter === "all" ? (typeof t === 'function' ? t('no_tasks', 'No tasks yet. Add one!') : "No tasks yet. Add one!") : (typeof t === 'function' ? t('no_tasks_priority', 'No tasks with this priority.') : "No tasks with this priority.");
     fragment.appendChild(empty);
   } else {
     tasks.forEach(function (task) {
       const item = document.createElement("div");
       item.className = "task-item priority-" + task.priority;
 
-      // ===== الجانب الأيسر (دائرة + نص) =====
       const leftDiv = document.createElement("div");
       leftDiv.style.display = "flex";
       leftDiv.style.alignItems = "center";
@@ -120,7 +150,7 @@ function renderTaskList(filter = "all") {
 
       const circleBtn = document.createElement("button");
       circleBtn.className = "task-circle";
-      circleBtn.title = "Mark as completed";
+      circleBtn.title = typeof t === 'function' ? t('complete_task', 'Mark as completed') : "Mark as completed";
       circleBtn.addEventListener("click", function () {
         openCompleteTaskModal(task);
       });
@@ -141,11 +171,13 @@ function renderTaskList(filter = "all") {
 
       const categorySpan = document.createElement("span");
       categorySpan.className = "task-category";
-      categorySpan.textContent = task.category;
+      // ترجمة التصنيف إذا كان موجوداً في الترجمة
+      const categoryKey = task.category ? task.category.toLowerCase() : "";
+      const translatedCategory = (typeof t === 'function' && t(categoryKey) !== categoryKey) ? t(categoryKey, task.category) : task.category;
+      categorySpan.textContent = translatedCategory || task.category;
 
       metaDiv.appendChild(categorySpan);
 
-      // عرض التاريخ إذا موجود
       if (task.dueDate) {
         const dateSpan = document.createElement("span");
         dateSpan.className = "task-date";
@@ -155,10 +187,10 @@ function renderTaskList(filter = "all") {
         
         if (dueDate < today) {
           dateSpan.style.color = "#ef4444";
-          dateSpan.textContent = "🔴 Overdue: " + task.dueDate;
+          dateSpan.textContent = "🔴 " + (typeof t === 'function' ? t('overdue', 'Overdue') : "Overdue") + ": " + task.dueDate;
         } else if (dueDate.getTime() === today.getTime()) {
           dateSpan.style.color = "#f59e0b";
-          dateSpan.textContent = "🟡 Today";
+          dateSpan.textContent = "🟡 " + (typeof t === 'function' ? t('today', 'Today') : "Today");
         } else {
           dateSpan.textContent = "📅 " + task.dueDate;
         }
@@ -172,7 +204,6 @@ function renderTaskList(filter = "all") {
       leftDiv.appendChild(circleBtn);
       leftDiv.appendChild(textDiv);
 
-      // ===== الجانب الأيمن (أزرار Edit + Delete) =====
       const rightDiv = document.createElement("div");
       rightDiv.style.display = "flex";
       rightDiv.style.gap = "6px";
@@ -180,7 +211,7 @@ function renderTaskList(filter = "all") {
       const editBtn = document.createElement("button");
       editBtn.textContent = "✏️";
       editBtn.className = "task-action-btn";
-      editBtn.title = "Edit task";
+      editBtn.title = typeof t === 'function' ? t('edit_task', 'Edit task') : "Edit task";
       editBtn.addEventListener("click", function (e) {
         e.stopPropagation();
         openEditTaskModal(task);
@@ -189,7 +220,7 @@ function renderTaskList(filter = "all") {
       const deleteBtn = document.createElement("button");
       deleteBtn.textContent = "🗑️";
       deleteBtn.className = "task-action-btn";
-      deleteBtn.title = "Delete task";
+      deleteBtn.title = typeof t === 'function' ? t('delete_task', 'Delete task') : "Delete task";
       deleteBtn.addEventListener("click", function (e) {
         e.stopPropagation();
         if (confirm("Delete this task?")) {
@@ -207,9 +238,14 @@ function renderTaskList(filter = "all") {
     });
   }
 
-  // ===== ✅ إضافة جميع العناصر دفعة واحدة =====
   taskList.innerHTML = "";
   taskList.appendChild(fragment);
+  
+  setTimeout(function() {
+    if (typeof initLucideIcons === 'function') {
+      initLucideIcons();
+    }
+  }, 50);
 }
 
 // ===== دوال CRUD =====
@@ -228,7 +264,7 @@ function updateTask(taskId, updatedData) {
   }
 }
 
-// ===== نافذة إضافة مهمة (معدلة مع تاريخ) =====
+// ===== نافذة إضافة مهمة (مع دعم الترجمة) =====
 function openAddTaskModal() {
   const overlay = document.createElement("div");
   overlay.id = "modal-overlay";
@@ -237,20 +273,18 @@ function openAddTaskModal() {
   modal.id = "hour-modal";
 
   const title = document.createElement("h3");
-  title.textContent = "➕ New Task";
+  title.textContent = "➕ " + (typeof t === 'function' ? t('add_task', 'New Task') : "New Task");
   modal.appendChild(title);
 
-  // نص المهمة
   const textInput = document.createElement("input");
   textInput.type = "text";
-  textInput.placeholder = "Task description";
+  textInput.placeholder = typeof t === 'function' ? t('task_description', 'Task description') : "Task description";
   textInput.id = "task-text-input";
   modal.appendChild(textInput);
 
-  // الأولوية
   const priorityLabel = document.createElement("p");
   priorityLabel.className = "modal-subtitle";
-  priorityLabel.textContent = "Priority";
+  priorityLabel.textContent = typeof t === 'function' ? t('priority', 'Priority') : "Priority";
   modal.appendChild(priorityLabel);
 
   const priorityGrid = document.createElement("div");
@@ -275,10 +309,9 @@ function openAddTaskModal() {
   });
   modal.appendChild(priorityGrid);
 
-  // التصنيف
   const categoryLabel = document.createElement("p");
   categoryLabel.className = "modal-subtitle";
-  categoryLabel.textContent = "Category";
+  categoryLabel.textContent = typeof t === 'function' ? t('category', 'Category') : "Category";
   modal.appendChild(categoryLabel);
 
   const categorySelect = document.createElement("select");
@@ -286,15 +319,17 @@ function openAddTaskModal() {
   categoryOptions.forEach(function (cat) {
     const option = document.createElement("option");
     option.value = cat;
-    option.textContent = cat;
+    // ترجمة التصنيف
+    const catKey = cat.toLowerCase();
+    const translatedCat = (typeof t === 'function' && t(catKey) !== catKey) ? t(catKey, cat) : cat;
+    option.textContent = translatedCat;
     categorySelect.appendChild(option);
   });
   modal.appendChild(categorySelect);
 
-  // التاريخ (جديد)
   const dateLabel = document.createElement("p");
   dateLabel.className = "modal-subtitle";
-  dateLabel.textContent = "Due Date (optional)";
+  dateLabel.textContent = typeof t === 'function' ? t('due_date', 'Due Date (optional)') : "Due Date (optional)";
   modal.appendChild(dateLabel);
 
   const dateInput = document.createElement("input");
@@ -304,7 +339,7 @@ function openAddTaskModal() {
 
   const saveBtn = document.createElement("button");
   saveBtn.id = "save-custom-btn";
-  saveBtn.textContent = "Save Task";
+  saveBtn.textContent = typeof t === 'function' ? t('save_task', 'Save Task') : "Save Task";
   saveBtn.addEventListener("click", function () {
     if (textInput.value.trim() === "") return;
     addTask({
@@ -332,7 +367,7 @@ function openAddTaskModal() {
   });
 }
 
-// ===== نافذة تعديل المهمة (جديد) =====
+// ===== نافذة تعديل المهمة (مع دعم الترجمة) =====
 function openEditTaskModal(task) {
   const overlay = document.createElement("div");
   overlay.id = "modal-overlay";
@@ -341,21 +376,19 @@ function openEditTaskModal(task) {
   modal.id = "hour-modal";
 
   const title = document.createElement("h3");
-  title.textContent = "✏️ Edit Task";
+  title.textContent = "✏️ " + (typeof t === 'function' ? t('edit_task', 'Edit Task') : "Edit Task");
   modal.appendChild(title);
 
-  // نص المهمة
   const textInput = document.createElement("input");
   textInput.type = "text";
-  textInput.placeholder = "Task description";
+  textInput.placeholder = typeof t === 'function' ? t('task_description', 'Task description') : "Task description";
   textInput.id = "task-text-input";
   textInput.value = task.text;
   modal.appendChild(textInput);
 
-  // الأولوية
   const priorityLabel = document.createElement("p");
   priorityLabel.className = "modal-subtitle";
-  priorityLabel.textContent = "Priority";
+  priorityLabel.textContent = typeof t === 'function' ? t('priority', 'Priority') : "Priority";
   modal.appendChild(priorityLabel);
 
   const priorityGrid = document.createElement("div");
@@ -380,10 +413,9 @@ function openEditTaskModal(task) {
   });
   modal.appendChild(priorityGrid);
 
-  // التصنيف
   const categoryLabel = document.createElement("p");
   categoryLabel.className = "modal-subtitle";
-  categoryLabel.textContent = "Category";
+  categoryLabel.textContent = typeof t === 'function' ? t('category', 'Category') : "Category";
   modal.appendChild(categoryLabel);
 
   const categorySelect = document.createElement("select");
@@ -391,16 +423,17 @@ function openEditTaskModal(task) {
   categoryOptions.forEach(function (cat) {
     const option = document.createElement("option");
     option.value = cat;
-    option.textContent = cat;
+    const catKey = cat.toLowerCase();
+    const translatedCat = (typeof t === 'function' && t(catKey) !== catKey) ? t(catKey, cat) : cat;
+    option.textContent = translatedCat;
     if (cat === task.category) option.selected = true;
     categorySelect.appendChild(option);
   });
   modal.appendChild(categorySelect);
 
-  // التاريخ
   const dateLabel = document.createElement("p");
   dateLabel.className = "modal-subtitle";
-  dateLabel.textContent = "Due Date";
+  dateLabel.textContent = typeof t === 'function' ? t('due_date', 'Due Date') : "Due Date";
   modal.appendChild(dateLabel);
 
   const dateInput = document.createElement("input");
@@ -411,7 +444,7 @@ function openEditTaskModal(task) {
 
   const saveBtn = document.createElement("button");
   saveBtn.id = "save-custom-btn";
-  saveBtn.textContent = "Update Task";
+  saveBtn.textContent = typeof t === 'function' ? t('update', 'Update Task') : "Update Task";
   saveBtn.addEventListener("click", function () {
     if (textInput.value.trim() === "") return;
     updateTask(task.id, {
@@ -439,7 +472,7 @@ function openEditTaskModal(task) {
   });
 }
 
-// ===== نافذة إكمال المهمة (معدلة) =====
+// ===== نافذة إكمال المهمة (مع دعم الترجمة) =====
 function openCompleteTaskModal(task) {
   const overlay = document.createElement("div");
   overlay.id = "modal-overlay";
@@ -448,7 +481,7 @@ function openCompleteTaskModal(task) {
   modal.id = "hour-modal";
 
   const title = document.createElement("h3");
-  title.textContent = "✅ Complete Task";
+  title.textContent = "✅ " + (typeof t === 'function' ? t('complete_task', 'Complete Task') : "Complete Task");
   modal.appendChild(title);
 
   const taskNameP = document.createElement("p");
@@ -458,21 +491,27 @@ function openCompleteTaskModal(task) {
 
   const difficultyLabel = document.createElement("p");
   difficultyLabel.className = "modal-subtitle";
-  difficultyLabel.textContent = "Difficulty";
+  difficultyLabel.textContent = typeof t === 'function' ? t('difficulty', 'Difficulty') : "Difficulty";
   modal.appendChild(difficultyLabel);
 
   const difficultyGrid = document.createElement("div");
   difficultyGrid.id = "suggestions-grid";
   let selectedDifficulty = "Medium";
 
-  difficultyOptions.forEach(function (level) {
+  const diffOptions = [
+    { value: "Easy", label: typeof t === 'function' ? t('easy', '🟢 Easy') : "🟢 Easy" },
+    { value: "Medium", label: typeof t === 'function' ? t('medium', '🟡 Medium') : "🟡 Medium" },
+    { value: "Hard", label: typeof t === 'function' ? t('hard', '🔴 Hard') : "🔴 Hard" }
+  ];
+
+  diffOptions.forEach(function (level) {
     const btn = document.createElement("button");
     btn.className = "suggestion-btn";
-    btn.textContent = level;
-    if (level === selectedDifficulty) btn.classList.add("selected");
+    btn.textContent = level.label;
+    if (level.value === selectedDifficulty) btn.classList.add("selected");
 
     btn.addEventListener("click", function () {
-      selectedDifficulty = level;
+      selectedDifficulty = level.value;
       difficultyGrid.querySelectorAll(".suggestion-btn").forEach(function (b) {
         b.classList.remove("selected");
       });
@@ -485,7 +524,7 @@ function openCompleteTaskModal(task) {
 
   const dateLabel = document.createElement("p");
   dateLabel.className = "modal-subtitle";
-  dateLabel.textContent = "Completion date";
+  dateLabel.textContent = typeof t === 'function' ? t('completion_date', 'Completion date') : "Completion date";
   modal.appendChild(dateLabel);
 
   const dateInput = document.createElement("input");
@@ -496,7 +535,7 @@ function openCompleteTaskModal(task) {
 
   const doneBtn = document.createElement("button");
   doneBtn.id = "save-custom-btn";
-  doneBtn.textContent = "Done";
+  doneBtn.textContent = typeof t === 'function' ? t('done', 'Done') : "Done";
   doneBtn.addEventListener("click", function () {
     completeTask(task.id, selectedDifficulty, dateInput.value);
     closeModal();
@@ -517,3 +556,12 @@ function openCompleteTaskModal(task) {
     if (e.target === overlay) closeModal();
   });
 }
+
+// ========================================
+// ✅ تصدير الدوال للاستخدام من ملفات أخرى
+// ========================================
+
+window.renderTasks = renderTasks;
+window.renderTaskList = renderTaskList;
+
+console.log("✅ Tasks.js loaded successfully!");
