@@ -113,6 +113,26 @@ const translationsEN = {
     "time_to_go_to_bed": "Time to go to bed!",
 
     // ========================================
+    // الأنشطة - Activities
+    // ========================================
+    "Sleep": "Sleep",
+    "Study": "Study",
+    "University": "University",
+    "High School": "High School",
+    "Gym": "Gym",
+    "Sport": "Sport",
+    "Work": "Work",
+    "Food": "Food",
+    "Rest": "Rest",
+    "Commute": "Commute",
+    "Free Time": "Free Time",
+
+    // ========================================
+    // نظام الساعات - Hour System
+    // ========================================
+    "hour_system": "Hour System",
+
+    // ========================================
     // المهام - Tasks
     // ========================================
     "task_title": "Tasks",

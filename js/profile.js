@@ -344,6 +344,73 @@ function renderProfile() {
   languageRow.appendChild(languageSelect);
   displaySettings.appendChild(languageRow);
 
+  // ===== إعدادات نظام الساعات =====
+  const hourSystemRow = document.createElement("div");
+  hourSystemRow.style.cssText = `
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  `;
+
+  const hourSystemLabel = document.createElement("span");
+  hourSystemLabel.style.cssText = `
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+  `;
+  hourSystemLabel.textContent = "🕐 " + (typeof t === 'function' ? t('hour_system', 'Hour System') : 'Hour System');
+
+  const hourSystemSelect = document.createElement("select");
+  hourSystemSelect.id = "hour-system-select";
+  hourSystemSelect.style.cssText = `
+    padding: 6px 12px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border-input);
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  `;
+
+  const hourSystems = [
+    { value: "12h", label: "12 Hour (AM/PM)" },
+    { value: "24h", label: "24 Hour" }
+  ];
+
+  hourSystems.forEach(function(system) {
+    const option = document.createElement("option");
+    option.value = system.value;
+    option.textContent = system.label;
+    hourSystemSelect.appendChild(option);
+  });
+
+  const savedHourSystem = localStorage.getItem('hourSystem') || '12h';
+  hourSystemSelect.value = savedHourSystem;
+
+  hourSystemSelect.addEventListener("change", function() {
+    const selected = this.value;
+    if (typeof setHourSystem === 'function') {
+      setHourSystem(selected);
+    } else {
+      localStorage.setItem('hourSystem', selected);
+      showToast("🕐 Hour system changed to " + (selected === '24h' ? '24 Hour' : '12 Hour'), "info");
+      setTimeout(function() {
+        location.reload();
+      }, 500);
+    }
+  });
+
+  hourSystemRow.appendChild(hourSystemLabel);
+  hourSystemRow.appendChild(hourSystemSelect);
+  displaySettings.appendChild(hourSystemRow);
+
   settingsSection.appendChild(displaySettings);
 
   // ===== إعدادات البيانات =====

@@ -1,52 +1,44 @@
 // ========================================
-// MY LIFE - SERVICE WORKER v1.0
-// يدعم العمل دون اتصال والتحديثات التلقائية
+// MY LIFE - SERVICE WORKER v1.8
+// يدعم العمل دون اتصال + إدارة كاش محسّنة
 // ========================================
 
-const CACHE_NAME = 'my-life-v1';
+const CACHE_NAME = 'my-life-v8';
+const RUNTIME_CACHE = 'runtime-v1';
+
 const ASSETS_TO_CACHE = [
-  // الصفحة الرئيسية
-  '/my-life/index.html',
+  'index.html',
+  'css/style.css',
+  'css/notes.css',
+  'css/events.css',
+  'css/program.css',
+  'js/main.js',
+  'js/storage.js',
+  'js/week.js',
+  'js/day.js',
+  'js/task.js',
+  'js/Achievements.js',
+  'js/note.js',
+  'js/events.js',
+  'js/program.js',
+  'js/profile.js',
+  'js/notification.js',
+  'js/backup.js',
+  'js/translations.js',
+  'js/update.js',
+  'js/hour.js',
+  'lang/en.js',
+  'lang/ar.js',
+  'lang/fr.js',
+  'manifest.json',
+  'icons/icon-512.png',
+  'icons/icon-192.png',
+  'icons/icon-96.png',
   
-  // CSS
-  '/my-life/css/style.css',
-  '/my-life/css/notes.css',
-  '/my-life/css/events.css',
-  '/my-life/css/program.css',
-  
-  // JavaScript
-  '/my-life/js/main.js',
-  '/my-life/js/storage.js',
-  '/my-life/js/week.js',
-  '/my-life/js/day.js',
-  '/my-life/js/task.js',
-  '/my-life/js/Achievements.js',
-  '/my-life/js/note.js',
-  '/my-life/js/events.js',
-  '/my-life/js/program.js',
-  '/my-life/js/profile.js',
-  '/my-life/js/notification.js',
-  '/my-life/js/backup.js',
-  '/my-life/js/translations.js',
-  
-  // ===== ملفات الترجمة الجديدة =====
-  '/my-life/lang/en.js',
-  '/my-life/lang/ar.js',
-  '/my-life/lang/fr.js',
-  
-  // Lucide Icons (CDN)
+  // ===== الموارد الخارجية (CDN) =====
   'https://unpkg.com/lucide@latest',
-  
-  // Google Fonts
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap',
-  
-  // Manifest
-  '/my-life/manifest.json'
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap'
 ];
-
-// ========================================
-// تثبيت Service Worker
-// ========================================
 
 self.addEventListener('install', function(event) {
   console.log('[SW] Installing...');
@@ -63,13 +55,10 @@ self.addEventListener('install', function(event) {
       })
       .catch(function(error) {
         console.error('[SW] Installation failed:', error);
+        return self.skipWaiting();
       })
   );
 });
-
-// ========================================
-// تنشيط Service Worker
-// ========================================
 
 self.addEventListener('activate', function(event) {
   console.log('[SW] Activating...');
@@ -79,7 +68,7 @@ self.addEventListener('activate', function(event) {
       .then(function(cacheNames) {
         return Promise.all(
           cacheNames.map(function(cacheName) {
-            if (cacheName !== CACHE_NAME) {
+            if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
               console.log('[SW] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
@@ -93,78 +82,104 @@ self.addEventListener('activate', function(event) {
   );
 });
 
-// ========================================
-// استراتيجية: Stale-While-Revalidate + Network First
-// ========================================
-
 self.addEventListener('fetch', function(event) {
   const requestUrl = new URL(event.request.url);
   
-  // تجاهل طلبات التحليلات والإحصائيات
   if (requestUrl.pathname.includes('analytics') || 
       requestUrl.pathname.includes('beacon') ||
       requestUrl.pathname.includes('logging')) {
     return;
   }
   
-  // استراتيجية خاصة للملفات الثابتة
-  if (isStaticAsset(requestUrl)) {
+  // ===== معالجة CDN بشكل خاص (كاش منفصل) =====
+  if (requestUrl.hostname.includes('unpkg.com') || 
+      requestUrl.hostname.includes('fonts.googleapis.com') ||
+      requestUrl.hostname.includes('fonts.gstatic.com')) {
+    
     event.respondWith(
-      caches.match(event.request)
-        .then(function(cachedResponse) {
-          if (cachedResponse) {
-            // تحديث الكاش في الخلفية
-            fetch(event.request)
-              .then(function(networkResponse) {
-                if (networkResponse && networkResponse.status === 200) {
-                  caches.open(CACHE_NAME)
-                    .then(function(cache) {
-                      cache.put(event.request, networkResponse);
-                    });
-                }
-              })
-              .catch(function() {
-                // تجاهل أخطاء الشبكة
-              });
-            return cachedResponse;
-          }
-          
-          // إذا لم يكن في الكاش، حاول من الشبكة
-          return fetch(event.request)
-            .then(function(networkResponse) {
-              if (networkResponse && networkResponse.status === 200) {
-                caches.open(CACHE_NAME)
-                  .then(function(cache) {
-                    cache.put(event.request, networkResponse.clone());
-                  });
-              }
-              return networkResponse;
-            })
-            .catch(function() {
-              // عرض صفحة الخطأ المخصصة
-              return new Response('⚠️ You are offline. Please check your internet connection.', {
-                status: 503,
-                statusText: 'Service Unavailable'
-              });
-            });
-        })
-    );
-    return;
-  }
-  
-  // استراتيجية Network First للـ API والبيانات
-  if (requestUrl.pathname.includes('/api/') || 
-      requestUrl.pathname.includes('localStorage') ||
-      requestUrl.pathname.includes('indexedDB')) {
-    event.respondWith(
-      fetch(event.request)
-        .catch(function() {
-          return caches.match(event.request)
+      caches.open(RUNTIME_CACHE)
+        .then(function(cache) {
+          return cache.match(event.request)
             .then(function(cachedResponse) {
               if (cachedResponse) {
                 return cachedResponse;
               }
-              return new Response('⚠️ Offline - Data not available', {
+              
+              return fetch(event.request)
+                .then(function(networkResponse) {
+                  if (networkResponse && networkResponse.status === 200) {
+                    cache.put(event.request, networkResponse.clone());
+                  }
+                  return networkResponse;
+                })
+                .catch(function() {
+                  return new Response('', { status: 200, statusText: 'OK' });
+                });
+            });
+        })
+    );
+    return;
+  }
+  
+  // ===== الملفات الثابتة (كاش رئيسي) =====
+  if (isStaticAsset(requestUrl)) {
+    event.respondWith(
+      caches.open(CACHE_NAME)
+        .then(function(cache) {
+          return cache.match(event.request)
+            .then(function(cachedResponse) {
+              if (cachedResponse) {
+                // تحديث الكاش في الخلفية
+                fetch(event.request)
+                  .then(function(networkResponse) {
+                    if (networkResponse && networkResponse.status === 200) {
+                      cache.put(event.request, networkResponse.clone());
+                    }
+                  })
+                  .catch(function() {});
+                return cachedResponse;
+              }
+              
+              return fetch(event.request)
+                .then(function(networkResponse) {
+                  if (networkResponse && networkResponse.status === 200) {
+                    cache.put(event.request, networkResponse.clone());
+                  }
+                  return networkResponse;
+                })
+                .catch(function() {
+                  return new Response('⚠️ You are offline. Please check your internet connection.', {
+                    status: 503,
+                    statusText: 'Service Unavailable'
+                  });
+                });
+            });
+        })
+    );
+    return;
+  }
+  
+  // ===== Offline Fallback لصفحة index.html =====
+  if (requestUrl.pathname.endsWith('/') || requestUrl.pathname.endsWith('/index.html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(function(networkResponse) {
+          if (networkResponse && networkResponse.status === 200) {
+            const clonedResponse = networkResponse.clone();
+            caches.open(CACHE_NAME)
+              .then(function(cache) {
+                cache.put(event.request, clonedResponse);
+              });
+          }
+          return networkResponse;
+        })
+        .catch(function() {
+          return caches.match('index.html')
+            .then(function(cachedResponse) {
+              if (cachedResponse) {
+                return cachedResponse;
+              }
+              return new Response('⚠️ You are offline. The app has not been cached yet.', {
                 status: 503,
                 statusText: 'Service Unavailable'
               });
@@ -174,38 +189,15 @@ self.addEventListener('fetch', function(event) {
     return;
   }
   
-  // استراتيجية Cache First للصور والخطوط
-  if (isImageOrFont(requestUrl)) {
-    event.respondWith(
-      caches.match(event.request)
-        .then(function(cachedResponse) {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          return fetch(event.request)
-            .then(function(networkResponse) {
-              if (networkResponse && networkResponse.status === 200) {
-                caches.open(CACHE_NAME)
-                  .then(function(cache) {
-                    cache.put(event.request, networkResponse.clone());
-                  });
-              }
-              return networkResponse;
-            });
-        })
-    );
-    return;
-  }
-  
-  // استراتيجية افتراضية: Network First مع fallback إلى الكاش
+  // ===== استراتيجية افتراضية =====
   event.respondWith(
     fetch(event.request)
       .then(function(networkResponse) {
         if (networkResponse && networkResponse.status === 200) {
-          // تحديث الكاش
+          const clonedResponse = networkResponse.clone();
           caches.open(CACHE_NAME)
             .then(function(cache) {
-              cache.put(event.request, networkResponse.clone());
+              cache.put(event.request, clonedResponse);
             });
         }
         return networkResponse;
@@ -216,7 +208,6 @@ self.addEventListener('fetch', function(event) {
             if (cachedResponse) {
               return cachedResponse;
             }
-            // عرض صفحة بديلة
             return new Response('⚠️ Offline - Content not available', {
               status: 503,
               statusText: 'Service Unavailable'
@@ -225,10 +216,6 @@ self.addEventListener('fetch', function(event) {
       })
   );
 });
-
-// ========================================
-// دوال مساعدة
-// ========================================
 
 function isStaticAsset(url) {
   const staticExtensions = [
@@ -242,30 +229,16 @@ function isStaticAsset(url) {
   });
 }
 
-function isImageOrFont(url) {
-  const imageExtensions = ['.png', '.jpg', '.jpeg', '.svg', '.gif', '.ico', '.webp'];
-  const fontExtensions = ['.woff', '.woff2', '.ttf', '.otf'];
-  const allExtensions = imageExtensions.concat(fontExtensions);
-  
-  return allExtensions.some(function(ext) {
-    return url.pathname.endsWith(ext);
-  });
-}
-
-// ========================================
-// معالجة الإشعارات
-// ========================================
-
 self.addEventListener('push', function(event) {
   const data = event.data ? event.data.json() : {};
   const title = data.title || 'My Life';
   const options = {
     body: data.body || 'You have a new notification',
-    icon: data.icon || '/my-life/icons/icon-192.png',
-    badge: '/my-life/icons/icon-96.png',
+    icon: data.icon || 'icons/icon-192.png',
+    badge: 'icons/icon-96.png',
     vibrate: [200, 100, 200],
     data: {
-      url: data.url || '/my-life/index.html'
+      url: data.url || 'index.html'
     }
   };
   
@@ -277,7 +250,7 @@ self.addEventListener('push', function(event) {
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   
-  const urlToOpen = event.notification.data?.url || '/my-life/index.html';
+  const urlToOpen = event.notification.data?.url || 'index.html';
   
   event.waitUntil(
     clients.matchAll({
@@ -287,7 +260,7 @@ self.addEventListener('notificationclick', function(event) {
     .then(function(clientList) {
       for (let i = 0; i < clientList.length; i++) {
         const client = clientList[i];
-        if (client.url === urlToOpen && 'focus' in client) {
+        if (client.url.endsWith(urlToOpen) && 'focus' in client) {
           return client.focus();
         }
       }
@@ -297,10 +270,6 @@ self.addEventListener('notificationclick', function(event) {
     })
   );
 });
-
-// ========================================
-// تحديث التطبيق تلقائياً
-// ========================================
 
 self.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'SKIP_WAITING') {

@@ -37,18 +37,26 @@ function renderWeek() {
     dayBtn.addEventListener("click", function () { openDay(day); });
     dayCard.appendChild(dayBtn);
 
+    // ===== عرض "Day For" باللون الأخضر مثل التفاح =====
     if (dayForText) {
       const dayForSpan = document.createElement("span");
       dayForSpan.className = "day-for-label";
+      dayForSpan.textContent = dayForText;
       
-      const iconSpan = document.createElement("span");
-      iconSpan.textContent = "📌 ";
+      // تنسيق باللون الأخضر مثل التفاح
+      dayForSpan.style.cssText = `
+        display: block;
+        padding: 4px 8px;
+        margin: 4px 8px 8px 8px;
+        color: #228B22;  /* أخضر غامق مثل التفاح */
+        font-weight: 700;
+        font-size: 13px;
+        text-align: center;
+        background: rgba(34, 139, 34, 0.12);  /* خلفية خضراء فاتحة */
+        border-radius: 6px;
+        border: 1px solid rgba(34, 139, 34, 0.3);  /* حدود خضراء */
+      `;
       
-      const textSpan = document.createElement("span");
-      textSpan.textContent = dayForText;
-      
-      dayForSpan.appendChild(iconSpan);
-      dayForSpan.appendChild(textSpan);
       dayCard.appendChild(dayForSpan);
     }
 

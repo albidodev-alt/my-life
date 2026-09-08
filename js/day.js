@@ -17,6 +17,9 @@ const activitySuggestions = [
 // ========================================
 
 function formatHourRange(h) {
+  if (typeof getHourSystem === 'function' && getHourSystem() === '24h') {
+    return String(h).padStart(2, '0') + ':00 - ' + String(h + 1).padStart(2, '0') + ':00';
+  }
   const f = h => ((h % 12) || 12) + ':00 ' + (h >= 12 ? 'PM' : 'AM');
   return f(h) + ' - ' + f(h + 1);
 }
@@ -32,10 +35,13 @@ function getActivityIcon(name) {
 }
 
 // ========================================
-// تنسيق الوقت مع دعم العربية
+// تنسيق الوقت مع دعم العربية و 24 ساعة
 // ========================================
 
 function formatTime12(hour, minute = 0) {
+  if (typeof getHourSystem === 'function' && getHourSystem() === '24h') {
+    return String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
+  }
   const isArabic = localStorage.getItem('language') === 'ar';
   const h12 = hour % 12 || 12;
   const m = minute.toString().padStart(2, '0');
@@ -191,7 +197,8 @@ function openDay(dayName) {
       icon.style.cssText = 'width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;';
       act.appendChild(icon);
       const txt = document.createElement('span');
-      txt.textContent = data.hours[i];
+      // ترجمة النشاط
+      txt.textContent = typeof t === 'function' ? t(data.hours[i], data.hours[i]) : data.hours[i];
       act.appendChild(txt);
     }
     box.appendChild(act);
@@ -312,10 +319,13 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
 
   const t = (k, fb) => typeof window.t === 'function' ? window.t(k, fb) : fb;
 
+  // ترجمة النشاط الحالي
+  const translatedCurrentActivity = currentActivity ? t(currentActivity, currentActivity) : '';
+
   modal.innerHTML = `
     <h3>${label}</h3>
     <p class="modal-subtitle" style="color:${currentActivity ? '#3b82f6' : '#9ca3af'};font-weight:500;">
-      ${currentActivity ? t('current_activity', 'Current') + ': ' + currentActivity : t('no_activity_selected', 'No activity selected')}
+      ${currentActivity ? t('current_activity', 'Current') + ': ' + translatedCurrentActivity : t('no_activity_selected', 'No activity selected')}
     </p>
     <p class="modal-subtitle">${t('choose_activity', 'Choose an activity')}</p>
     
@@ -330,7 +340,7 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
                        min-height:64px;position:relative;box-shadow:${item.name === currentActivity ? '0 0 20px rgba(79,142,219,0.15)' : 'none'};"
                 data-activity="${item.name}">
           <span data-lucide="${item.lucide}" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:${item.name === currentActivity ? 'var(--primary)' : 'var(--text-muted)'};"></span>
-          <span style="font-size:11px;font-weight:600;text-align:center;line-height:1.2;color:${item.name === currentActivity ? 'var(--primary-dark)' : 'var(--text-secondary)'};">${item.name}</span>
+          <span style="font-size:11px;font-weight:600;text-align:center;line-height:1.2;color:${item.name === currentActivity ? 'var(--primary-dark)' : 'var(--text-secondary)'};">${t(item.name, item.name)}</span>
         </button>
       `).join('')}
     </div>

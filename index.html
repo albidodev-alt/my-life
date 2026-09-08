@@ -8,13 +8,14 @@
 
   <!-- ===== PWA Meta Tags ===== -->
   <meta name="theme-color" content="#4f8edb">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="My Life">
   <meta name="application-name" content="My Life">
   
   <!-- ===== PWA Icons ===== -->
-  <link rel="apple-touch-icon" href="icons/icon-512.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 
@@ -35,18 +36,12 @@
 
   <!-- Main website styles -->
   <link rel="stylesheet" href="css/style.css">
-
-  <!-- Notes styles -->
   <link rel="stylesheet" href="css/notes.css">
-
-  <!-- Events styles -->
   <link rel="stylesheet" href="css/events.css">
-
-  <!-- Program styles -->
   <link rel="stylesheet" href="css/program.css">
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Lucide Icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest" defer></script>
 </head>
 
 <body>
@@ -186,48 +181,30 @@
 
   <!-- ================= JAVASCRIPT ================= -->
 
-  <!-- Core storage -->
+  <!-- ===== الملفات الأساسية (تُحمّل أولاً) ===== -->
   <script src="js/storage.js"></script>
-
-  <!-- Routine -->
   <script src="js/week.js"></script>
   <script src="js/day.js"></script>
-
-  <!-- Tasks -->
   <script src="js/task.js"></script>
-  <script src="js/Achievements.js"></script>
-
-  <!-- Notes -->
   <script src="js/note.js"></script>
-
-  <!-- Events -->
   <script src="js/events.js"></script>
-
-  <!-- Program -->
   <script src="js/program.js"></script>
-
-  <!-- Profile -->
   <script src="js/profile.js"></script>
 
-  <!-- Notifications -->
-  <script src="js/notification.js"></script>
+  <!-- ===== الملفات الثانوية (تحميل كسول) ===== -->
+  <script src="js/notification.js" defer></script>
+  <script src="js/backup.js" defer></script>
+  <script src="js/update.js" defer></script>
+  <script src="js/hour.js" defer></script>
 
-  <!-- Backup System -->
-  <script src="js/backup.js"></script>
+  <!-- ===== الترجمات (تحميل كسول) ===== -->
+  <script src="lang/en.js" defer></script>
+  <script src="lang/ar.js" defer></script>
+  <script src="lang/fr.js" defer></script>
+  <script src="js/translations.js" defer></script>
 
-  <!-- ===== Translations (الملفات الجديدة المنفصلة) ===== -->
-  <script src="lang/en.js"></script>
-  <script src="lang/ar.js"></script>
-  <script src="lang/fr.js"></script>
-
-  <!-- Translations System -->
-  <script src="js/translations.js"></script>
-
-  <!-- PWA Update -->
-  <script src="js/update.js"></script>
-
-  <!-- Main application -->
-  <script src="js/main.js"></script>
+  <!-- ===== الملف الرئيسي (تحميل كسول) ===== -->
+  <script src="js/main.js" defer></script>
 
 </body>
 </html>
