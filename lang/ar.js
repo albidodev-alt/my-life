@@ -12,7 +12,7 @@ const translationsAR = {
     "completed": "المكتملة",
     "notes": "الملاحظات",
     "events": "الأحداث",
-    "program": "البرامج التعليمية",
+    "program": "البرامج ",
     "profile": "الملف الشخصي",
     "settings": "الإعدادات",
     "achievements": "الإنجازات",
@@ -63,6 +63,7 @@ const translationsAR = {
     "today": "اليوم",
     "yesterday": "أمس",
     "days_ago": "أيام مضت",
+    "drops": "قطرات",
 
     // ========================================
     // الروتين - Routine
@@ -155,6 +156,9 @@ const translationsAR = {
     "completion_date": "تاريخ الإكمال",
     "filter_by_priority": "تصفية حسب الأولوية",
     "overdue": "متأخر",
+    "search_tasks": "ابحث في المهام...",
+    "no_tasks_found": "لا توجد مهام مطابقة لبحثك",
+    "no_tasks_priority": "لا توجد مهام بهذه الأولوية",
 
     // ========================================
     // الإنجازات - Achievements
@@ -215,7 +219,6 @@ const translationsAR = {
     "no_steps_added_yet": "لا توجد خطوات مضافة بعد. أضف خطوتك الأولى أدناه!",
     "all_completed": "كل شيء مكتمل!",
     "no_description": "لا يوجد وصف",
-    "not_set": "غير محدد",
     "next": "التالي",
     "sessions": "جلسات",
     "steps": "خطوات",

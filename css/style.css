@@ -162,8 +162,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
     linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
   background-size: var(--grid-size) var(--grid-size);
   background-position: -1px -1px;
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  backdrop-filter: blur(4px) saturate(120%);
+  -webkit-backdrop-filter: blur(4px) saturate(120%);
   color: var(--text-primary);
   padding: var(--spacing-md) var(--spacing-2xl);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -193,8 +193,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   width: 38px;
   height: 38px;
   background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   border: 1.5px solid rgba(79, 142, 219, 0.12);
   border-radius: 8px;
   cursor: pointer;
@@ -244,8 +244,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   border: 2px solid rgba(79, 142, 219, 0.2);
   border-radius: 30px;
   background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   letter-spacing: 1px;
   display: inline-block;
   transition: all var(--transition-base);
@@ -269,8 +269,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   padding: 4px 16px 4px 4px;
   border-radius: 30px;
   background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   cursor: pointer;
   transition: var(--transition-base);
   border: 2px solid rgba(79, 142, 219, 0.2);
@@ -322,8 +322,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   gap: var(--spacing-sm);
   padding: var(--spacing-xl) var(--spacing-lg);
   background-color: var(--bg-sidebar);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   border-right: 1px solid var(--border-light);
   min-width: 200px;
   width: 200px;
@@ -445,14 +445,16 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   display: flex;
   flex-direction: column;
   background: var(--bg-card);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   transition: var(--transition-base);
   min-height: 80px;
+  will-change: transform;
+  contain: layout paint;
 }
 
 .day-card:hover {
@@ -515,8 +517,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   padding: var(--spacing-xs) var(--spacing-lg);
   border: 1px solid var(--border-color);
   background: var(--bg-surface);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: var(--transition-base);
@@ -544,8 +546,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
 
 .hour-box {
   background: var(--bg-card);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
   padding: var(--spacing-sm);
@@ -556,6 +558,10 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s ease, box-shadow 0.2s ease, text-shadow 0.2s ease;
   min-height: 55px;
+  will-change: transform;
+  contain: layout paint;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .hour-box:hover {
@@ -578,6 +584,19 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   font-size: var(--font-sm);
   font-weight: 600;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  min-width: 0;
+  display: block;
+}
+
+.hour-activity span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 /* ========================================
@@ -585,8 +604,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
    ======================================== */
 #day-for-box {
   background: var(--bg-card);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   padding: var(--spacing-md) var(--spacing-xl);
   border-radius: var(--radius-md);
   border-left: 3px solid var(--warning);
@@ -598,6 +617,9 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   font-family: var(--font-handwritten);
   font-size: var(--font-base);
   font-weight: 500;
+  overflow: hidden;
+  word-break: break-word;
+  line-height: 1.5;
 }
 
 #day-for-box:hover {
@@ -616,8 +638,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   right: 0;
   bottom: 0;
   background-color: var(--shadow-overlay);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -643,8 +665,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
 
 #hour-modal {
   background: var(--bg-modal);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   border-radius: var(--radius-xl);
   padding: var(--spacing-2xl);
   width: 90%;
@@ -688,8 +710,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   padding: var(--spacing-md) var(--spacing-sm);
   border: 1px solid var(--border-light);
   background: var(--bg-surface);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   border-radius: var(--radius-md);
   cursor: pointer;
   font-family: var(--font-handwritten);
@@ -822,8 +844,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
 
 .task-item {
   background: var(--bg-card);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   padding: var(--spacing-md) var(--spacing-lg);
   border-radius: var(--radius-md);
   display: flex;
@@ -833,6 +855,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
   transition: var(--transition-base);
+  will-change: transform;
+  contain: layout paint;
 }
 
 .task-item:hover {
@@ -913,8 +937,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   border: 1px solid var(--border-light);
   border-radius: var(--radius-2xl);
   background: var(--bg-surface);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   cursor: pointer;
   font-family: var(--font-handwritten);
   font-size: var(--font-sm);
@@ -974,8 +998,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   gap: var(--spacing-md);
   padding: var(--spacing-sm) var(--spacing-md);
   background: var(--bg-card);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-xs);
@@ -1025,8 +1049,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
    ======================================== */
 .profile-card {
   background: var(--bg-card);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-2xl);
   padding: var(--spacing-3xl) var(--spacing-2xl);
@@ -1047,6 +1071,7 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   height: 120px;
 }
 
+/* ✅ صورة البروفايل قابلة للنقر */
 .profile-avatar-img {
   width: 120px;
   height: 120px;
@@ -1055,30 +1080,17 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   border: 3px solid var(--primary);
   background-color: var(--border-light);
   box-shadow: var(--shadow-sm);
-}
-
-.profile-camera-btn {
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-full);
-  background: var(--primary-gradient);
-  color: var(--text-light);
-  border: 2px solid var(--paper-white);
-  font-size: var(--font-base);
   cursor: pointer;
-  transition: var(--transition-base);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.profile-camera-btn:hover {
-  transform: scale(1.08) rotate(-8deg);
+.profile-avatar-img:hover {
+  transform: scale(1.05);
   box-shadow: var(--shadow-md);
+}
+
+.profile-avatar-img:active {
+  transform: scale(0.98);
 }
 
 .profile-name {
@@ -1097,6 +1109,7 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   margin-bottom: var(--spacing-xl);
 }
 
+/* ✅ الإحصائيات - مع مسافة كافية من الشريط */
 .profile-stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1104,7 +1117,7 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   padding-top: var(--spacing-xl);
   border-top: 1px solid var(--border-light);
   max-width: 400px;
-  margin: 0 auto;
+  margin: 24px auto 0 auto; /* ✅ مسافة كافية من الأعلى */
 }
 
 .profile-stat-box {
@@ -1126,8 +1139,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
 
 .profile-section {
   background: var(--bg-card);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-2xl);
   padding: var(--spacing-xl) var(--spacing-2xl);
@@ -1196,6 +1209,87 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
 }
 
 /* ========================================
+   ✅ COMPLETED TASKS COUNTER BAR (Profile)
+   ======================================== */
+
+.completed-counter-bar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 22px;
+  margin-top: 16px;
+  margin-bottom: 8px; /* ✅ مسافة إضافية من الأسفل */
+  background: linear-gradient(135deg, rgba(79, 142, 219, 0.08), rgba(109, 168, 232, 0.15));
+  border: 1.5px solid rgba(79, 142, 219, 0.25);
+  border-radius: 30px;
+  box-shadow: 0 2px 12px rgba(79, 142, 219, 0.08);
+  transition: all 0.3s ease;
+  cursor: default;
+  font-family: var(--font-handwritten);
+}
+
+.completed-counter-bar:hover {
+  background: linear-gradient(135deg, rgba(79, 142, 219, 0.15), rgba(109, 168, 232, 0.25));
+  border-color: rgba(79, 142, 219, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(79, 142, 219, 0.15);
+}
+
+/* 💧 أيقونة قطرة الماء (Lucide) */
+.completed-counter-drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: #4f8edb;
+  flex-shrink: 0;
+  animation: dropBounce 2.5s ease-in-out infinite;
+}
+
+.completed-counter-drop svg {
+  width: 22px;
+  height: 22px;
+  stroke: #4f8edb;
+  stroke-width: 2;
+  fill: rgba(79, 142, 219, 0.2);
+  filter: drop-shadow(0 0 4px rgba(79, 142, 219, 0.4));
+}
+
+/* ✨ تأثير نبض خفيف للقطرة */
+@keyframes dropBounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.05);
+  }
+}
+
+/* 🔢 الرقم */
+.completed-counter-number {
+  font-family: var(--font-handwritten);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(79, 142, 219, 0.15);
+  min-width: 24px;
+  text-align: center;
+}
+
+/* 📝 النص */
+.completed-counter-label {
+  font-family: var(--font-handwritten);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+/* ========================================
    BOTTOM NAVIGATION - FLOATING PILL SHAPED (MOBILE ONLY)
    ======================================== */
 
@@ -1208,8 +1302,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   width: calc(100% - 32px);
   max-width: 480px;
   background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
   border-radius: 50px;
   z-index: var(--z-bottom-nav);
   padding: 8px 12px;
@@ -1249,7 +1343,6 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   transition: transform var(--transition-base);
 }
 
-/* ===== تنسيق أيقونات Lucide ===== */
 .bottom-nav-btn .bn-icon svg {
   width: 22px;
   height: 22px;
@@ -1391,8 +1484,8 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   width: 38px;
   height: 38px;
   background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   border: 1.5px solid rgba(79, 142, 219, 0.12);
   border-radius: 8px;
   cursor: pointer;
@@ -1537,12 +1630,6 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
     height: 100px;
   }
 
-  .profile-camera-btn {
-    width: 32px;
-    height: 32px;
-    font-size: var(--font-sm);
-  }
-
   .profile-stat-value {
     font-size: var(--font-2xl);
   }
@@ -1640,11 +1727,11 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
   }
 
   .hour-label {
-    font-size: 7px;
+    font-size: 10px;
   }
 
   .hour-activity {
-    font-size: 9px;
+    font-size: 10px;
   }
 
   #suggestions-grid {
@@ -1683,6 +1770,37 @@ h3 { font-size: var(--font-xl); font-weight: 600; }
 
   .profile-section {
     padding: var(--spacing-lg);
+  }
+
+  /* ✅ Completed Counter Bar - Mobile */
+  .completed-counter-bar {
+    padding: 8px 16px;
+    gap: 8px;
+    margin-top: 12px;
+    margin-bottom: 6px;
+  }
+  
+  .completed-counter-drop {
+    width: 22px;
+    height: 22px;
+  }
+  
+  .completed-counter-drop svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .completed-counter-number {
+    font-size: 20px;
+  }
+  
+  .completed-counter-label {
+    font-size: 12px;
+  }
+
+  /* ✅ مسافة أقل للإحصائيات على الشاشات الصغيرة */
+  .profile-stats-grid {
+    margin-top: 20px;
   }
 }
 
@@ -1774,5 +1892,14 @@ select:focus-visible,
   .notification-toggle svg {
     width: 14px;
     height: 14px;
+  }
+}
+
+/* ========================================
+   ✅ PREFERS-REDUCED-MOTION
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .completed-counter-drop {
+    animation: none;
   }
 }

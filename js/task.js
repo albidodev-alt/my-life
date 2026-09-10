@@ -60,6 +60,65 @@ function renderTasks() {
 
   app.appendChild(headerDiv);
 
+  // ===== شريط البحث =====
+  const searchDiv = document.createElement("div");
+  searchDiv.style.cssText = `
+    margin-bottom: 16px;
+    position: relative;
+  `;
+
+  const searchIcon = document.createElement("span");
+  searchIcon.setAttribute("data-lucide", "search");
+  searchIcon.style.cssText = `
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    pointer-events: none;
+  `;
+
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.id = "task-search-input";
+  searchInput.placeholder = typeof t === 'function' ? t('search_tasks', 'Search tasks...') : "Search tasks...";
+  searchInput.style.cssText = `
+    width: 100%;
+    height: 46px;
+    padding: 0 16px 0 44px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border-input);
+    border-radius: 12px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    transition: all 0.2s ease;
+    outline: none;
+  `;
+
+  searchInput.addEventListener("focus", function() {
+    this.style.borderColor = "var(--primary)";
+    this.style.boxShadow = "0 0 0 3px rgba(79, 142, 219, 0.12)";
+  });
+
+  searchInput.addEventListener("blur", function() {
+    this.style.borderColor = "var(--border-input)";
+    this.style.boxShadow = "none";
+  });
+
+  searchInput.addEventListener("input", function() {
+    renderTaskList(
+      document.querySelector(".filter-btn.active")?.dataset.filter || "all",
+      this.value
+    );
+  });
+
+  searchDiv.appendChild(searchIcon);
+  searchDiv.appendChild(searchInput);
+  app.appendChild(searchDiv);
+
   // ===== الفلاتر =====
   const filterDiv = document.createElement("div");
   filterDiv.id = "task-filters";
@@ -102,11 +161,11 @@ function renderTasks() {
         b.classList.remove("active");
       });
       btn.classList.add("active");
-      renderTaskList(btn.dataset.filter);
+      renderTaskList(btn.dataset.filter, document.getElementById("task-search-input")?.value || "");
     });
   });
 
-  renderTaskList("all");
+  renderTaskList("all", "");
   
   setTimeout(function() {
     if (typeof initLucideIcons === 'function') {
@@ -115,14 +174,25 @@ function renderTasks() {
   }, 50);
 }
 
-function renderTaskList(filter = "all") {
+function renderTaskList(filter = "all", searchTerm = "") {
   const taskList = document.getElementById("task-list");
   if (!taskList) return;
 
   let tasks = getAllTasks().filter(function (t) { return !t.completed; });
 
+  // تطبيق الفلتر حسب الأولوية
   if (filter !== "all") {
     tasks = tasks.filter(function (t) { return t.priority === filter; });
+  }
+
+  // تطبيق البحث
+  if (searchTerm && searchTerm.trim() !== "") {
+    const query = searchTerm.trim().toLowerCase();
+    tasks = tasks.filter(function (t) {
+      const textMatch = (t.text || "").toLowerCase().includes(query);
+      const categoryMatch = (t.category || "").toLowerCase().includes(query);
+      return textMatch || categoryMatch;
+    });
   }
 
   const priorityOrder = { high: 0, medium: 1, low: 2 };
@@ -133,9 +203,31 @@ function renderTaskList(filter = "all") {
   const fragment = document.createDocumentFragment();
 
   if (tasks.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "empty-message";
-    empty.textContent = filter === "all" ? (typeof t === 'function' ? t('no_tasks', 'No tasks yet. Add one!') : "No tasks yet. Add one!") : (typeof t === 'function' ? t('no_tasks_priority', 'No tasks with this priority.') : "No tasks with this priority.");
+    const empty = document.createElement("div");
+    empty.style.cssText = `
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    `;
+
+    const emptyIcon = document.createElement("div");
+    emptyIcon.innerHTML = '<span data-lucide="inbox" style="width: 48px; height: 48px; opacity: 0.3;"></span>';
+    emptyIcon.style.marginBottom = "12px";
+
+    const emptyText = document.createElement("p");
+    emptyText.style.fontSize = "16px";
+    emptyText.style.fontFamily = "var(--font-handwritten)";
+
+    if (searchTerm) {
+      emptyText.textContent = typeof t === 'function' ? t('no_tasks_found', 'No tasks found matching your search') : "No tasks found matching your search";
+    } else if (filter !== "all") {
+      emptyText.textContent = (typeof t === 'function' ? t('no_tasks_priority', 'No tasks with this priority.') : "No tasks with this priority.");
+    } else {
+      emptyText.textContent = typeof t === 'function' ? t('no_tasks', 'No tasks yet. Add one!') : "No tasks yet. Add one!";
+    }
+
+    empty.appendChild(emptyIcon);
+    empty.appendChild(emptyText);
     fragment.appendChild(empty);
   } else {
     tasks.forEach(function (task) {
@@ -209,7 +301,7 @@ function renderTaskList(filter = "all") {
       rightDiv.style.gap = "6px";
 
       const editBtn = document.createElement("button");
-      editBtn.textContent = "✏️";
+      editBtn.innerHTML = '<span data-lucide="pencil" style="width: 16px; height: 16px;"></span>';
       editBtn.className = "task-action-btn";
       editBtn.title = typeof t === 'function' ? t('edit_task', 'Edit task') : "Edit task";
       editBtn.addEventListener("click", function (e) {
@@ -218,14 +310,17 @@ function renderTaskList(filter = "all") {
       });
 
       const deleteBtn = document.createElement("button");
-      deleteBtn.textContent = "🗑️";
+      deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 16px; height: 16px;"></span>';
       deleteBtn.className = "task-action-btn";
       deleteBtn.title = typeof t === 'function' ? t('delete_task', 'Delete task') : "Delete task";
       deleteBtn.addEventListener("click", function (e) {
         e.stopPropagation();
         if (confirm("Delete this task?")) {
           deleteTask(task.id);
-          renderTaskList(filter);
+          renderTaskList(
+            document.querySelector(".filter-btn.active")?.dataset.filter || "all",
+            document.getElementById("task-search-input")?.value || ""
+          );
         }
       });
 
@@ -349,12 +444,12 @@ function openAddTaskModal() {
       dueDate: dateInput.value || null
     });
     closeModal();
-    renderTaskList(document.querySelector(".filter-btn.active")?.dataset.filter || "all");
+    renderTaskList(document.querySelector(".filter-btn.active")?.dataset.filter || "all", document.getElementById("task-search-input")?.value || "");
   });
   modal.appendChild(saveBtn);
 
   const closeBtn = document.createElement("button");
-  closeBtn.textContent = "✕";
+  closeBtn.innerHTML = '<span data-lucide="x" style="width: 20px; height: 20px;"></span>';
   closeBtn.id = "close-modal-btn";
   closeBtn.addEventListener("click", function () { closeModal(); });
   modal.appendChild(closeBtn);
@@ -376,7 +471,7 @@ function openEditTaskModal(task) {
   modal.id = "hour-modal";
 
   const title = document.createElement("h3");
-  title.textContent = "✏️ " + (typeof t === 'function' ? t('edit_task', 'Edit Task') : "Edit Task");
+  title.innerHTML = '<span data-lucide="pencil" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('edit_task', 'Edit Task') : "Edit Task");
   modal.appendChild(title);
 
   const textInput = document.createElement("input");
@@ -454,12 +549,12 @@ function openEditTaskModal(task) {
       dueDate: dateInput.value || null
     });
     closeModal();
-    renderTaskList(document.querySelector(".filter-btn.active")?.dataset.filter || "all");
+    renderTaskList(document.querySelector(".filter-btn.active")?.dataset.filter || "all", document.getElementById("task-search-input")?.value || "");
   });
   modal.appendChild(saveBtn);
 
   const closeBtn = document.createElement("button");
-  closeBtn.textContent = "✕";
+  closeBtn.innerHTML = '<span data-lucide="x" style="width: 20px; height: 20px;"></span>';
   closeBtn.id = "close-modal-btn";
   closeBtn.addEventListener("click", function () { closeModal(); });
   modal.appendChild(closeBtn);
@@ -539,12 +634,12 @@ function openCompleteTaskModal(task) {
   doneBtn.addEventListener("click", function () {
     completeTask(task.id, selectedDifficulty, dateInput.value);
     closeModal();
-    renderTaskList(document.querySelector(".filter-btn.active")?.dataset.filter || "all");
+    renderTaskList(document.querySelector(".filter-btn.active")?.dataset.filter || "all", document.getElementById("task-search-input")?.value || "");
   });
   modal.appendChild(doneBtn);
 
   const closeBtn = document.createElement("button");
-  closeBtn.textContent = "✕";
+  closeBtn.innerHTML = '<span data-lucide="x" style="width: 20px; height: 20px;"></span>';
   closeBtn.id = "close-modal-btn";
   closeBtn.addEventListener("click", function () { closeModal(); });
   modal.appendChild(closeBtn);

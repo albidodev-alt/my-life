@@ -283,7 +283,7 @@ function renderProgramPage() {
           <p class="program-main-subtitle">${tr('program_subtitle', 'Create your learning programs and track your progress step by step')}</p>
         </div>
         <button class="program-add-btn" id="program-add-btn">
-          <span class="program-add-icon">＋</span>
+          <span class="program-add-icon" data-lucide="plus" style="width: 20px; height: 20px;"></span>
           ${tr('add_program', 'New Program')}
         </button>
       </div>
@@ -307,9 +307,12 @@ function renderProgramPage() {
     });
     fragment.appendChild(grid);
   } else {
+    // ===== ✅ استبدال الإيموجي بأيقونة Lucide =====
     const emptyHTML = `
       <div class="program-empty-state">
-        <div class="program-empty-icon">📚</div>
+        <div class="program-empty-icon">
+          <span data-lucide="graduation-cap" style="width: 32px; height: 32px; color: var(--primary);"></span>
+        </div>
         <h3 class="program-empty-title">${tr('no_programs', 'No programs yet')}</h3>
         <p class="program-empty-desc">${tr('create_first_program', 'Create your first learning program')}</p>
       </div>
@@ -371,7 +374,12 @@ function renderProgramPage() {
     });
   });
 
-  setTimeout(() => { if (typeof initLucideIcons === 'function') initLucideIcons(); }, 50);
+  // ✅ إعادة تهيئة أيقونات Lucide
+  setTimeout(() => { 
+    if (typeof initLucideIcons === 'function') {
+      initLucideIcons();
+    }
+  }, 50);
 }
 
 // ========================================
@@ -393,7 +401,7 @@ function createProgramCardHTML(program) {
         <span class="program-card-name">${escapeHtml(program.name)}</span>
       </div>
       <p class="program-card-description">${escapeHtml(program.description) || tr('no_description', 'No description')}</p>
-      ${program.goal ? `<p class="program-card-goal">🎯 ${escapeHtml(program.goal)}</p>` : ''}
+      ${program.goal ? `<p class="program-card-goal"><span data-lucide="target" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ${escapeHtml(program.goal)}</p>` : ''}
       <div class="program-card-progress">
         <div class="program-card-progress-bar">
           <div class="program-card-progress-fill" style="width: ${progress}%"></div>
@@ -404,14 +412,16 @@ function createProgramCardHTML(program) {
         </div>
       </div>
       <div class="program-card-stats">
-        <span class="program-card-stat">📌 ${tr('next', 'Next')}: ${nextStepName}</span>
-        <span class="program-card-stat">📋 ${stats.totalSessions} ${tr('sessions', 'Sessions')}</span>
+        <span class="program-card-stat"><span data-lucide="arrow-right-circle" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ${tr('next', 'Next')}: ${nextStepName}</span>
+        <span class="program-card-stat"><span data-lucide="clock" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ${stats.totalSessions} ${tr('sessions', 'Sessions')}</span>
       </div>
       <div class="program-card-actions">
         <button class="program-card-continue-btn" data-program-id="${program.id}">
           ${stats.totalSteps === 0 ? tr('add_steps', 'Add Steps →') : tr('continue', 'Continue →')}
         </button>
-        <button class="program-card-delete-btn" data-program-id="${program.id}">🗑️</button>
+        <button class="program-card-delete-btn" data-program-id="${program.id}">
+          <span data-lucide="trash-2" style="width: 16px; height: 16px;"></span>
+        </button>
       </div>
     </div>
   `;
@@ -422,10 +432,21 @@ function createCompletedCardHTML(program) {
   return `
     <div class="program-card-small">
       <div class="program-card-small-info">
-        <div class="program-card-small-name">📚 ${escapeHtml(program.name)}</div>
-        <div class="program-card-small-progress">${stats.totalSessions} ${tr('sessions', 'Sessions')} • ${stats.completedSteps}/${stats.totalSteps} ${tr('steps', 'Steps')}</div>
+        <div class="program-card-small-name">
+          <span data-lucide="book-open" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></span>
+          ${escapeHtml(program.name)}
+        </div>
+        <div class="program-card-small-progress">
+          <span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+          ${stats.totalSessions} ${tr('sessions', 'Sessions')} • 
+          <span data-lucide="check-circle" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; margin-left: 4px;"></span>
+          ${stats.completedSteps}/${stats.totalSteps} ${tr('steps', 'Steps')}
+        </div>
       </div>
-      <button class="program-card-small-btn" data-program-id="${program.id}">${tr('view', 'View')}</button>
+      <button class="program-card-small-btn" data-program-id="${program.id}">
+        <span data-lucide="eye" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
+        ${tr('view', 'View')}
+      </button>
     </div>
   `;
 }
@@ -444,8 +465,13 @@ function openProgramBuilder() {
   modal.id = "program-builder-modal";
 
   modal.innerHTML = `
-    <button class="notes-modal-close-btn" id="program-builder-close">✕</button>
-    <h3 class="notes-modal-title">📚 ${tr('create_learning_program', 'Create Learning Program')}</h3>
+    <button class="notes-modal-close-btn" id="program-builder-close">
+      <span data-lucide="x" style="width: 20px; height: 20px;"></span>
+    </button>
+    <h3 class="notes-modal-title">
+      <span data-lucide="graduation-cap" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></span>
+      ${tr('create_learning_program', 'Create Learning Program')}
+    </h3>
 
     <div class="program-builder-step">
       <label class="notes-modal-label">${tr('program_name', 'Program Name')} *</label>
@@ -462,15 +488,24 @@ function openProgramBuilder() {
         <div style="display: flex; gap: 8px; margin-bottom: 8px;">
           <input type="text" class="notes-modal-input" id="program-builder-resource-name" placeholder="${tr('resource_name', 'Resource name...')}" style="flex: 1; margin-bottom: 0;" />
           <input type="text" class="notes-modal-input" id="program-builder-resource-url" placeholder="${tr('url_optional', 'URL (optional)')}" style="flex: 1.5; margin-bottom: 0;" />
-          <button class="notes-modal-cancel-btn" id="program-builder-add-resource" style="padding: 12px 16px; flex: 0.5;">${tr('add', 'Add')}</button>
+          <button class="notes-modal-cancel-btn" id="program-builder-add-resource" style="padding: 12px 16px; flex: 0.5;">
+            <span data-lucide="plus" style="width: 16px; height: 16px; vertical-align: middle;"></span>
+            ${tr('add', 'Add')}
+          </button>
         </div>
         <div id="program-builder-resources-list" style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;"></div>
       </div>
     </div>
 
     <div class="notes-modal-actions">
-      <button class="notes-modal-cancel-btn" id="program-builder-cancel">${tr('cancel', 'Cancel')}</button>
-      <button class="notes-modal-save-btn" id="program-builder-create">${tr('create_program', 'Create Program →')}</button>
+      <button class="notes-modal-cancel-btn" id="program-builder-cancel">
+        <span data-lucide="x" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
+        ${tr('cancel', 'Cancel')}
+      </button>
+      <button class="notes-modal-save-btn" id="program-builder-create">
+        <span data-lucide="check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
+        ${tr('create_program', 'Create Program →')}
+      </button>
     </div>
   `;
 
@@ -489,7 +524,7 @@ function openProgramBuilder() {
       const text = document.createElement("span");
       text.textContent = r.name + (r.url ? " 🔗" : "");
       const btn = document.createElement("button");
-      btn.textContent = "✕";
+      btn.innerHTML = '<span data-lucide="x" style="width: 14px; height: 14px;"></span>';
       btn.style.cssText = "background: none; border: none; color: var(--danger); cursor: pointer; font-size: 14px;";
       btn.dataset.index = i;
       btn.onclick = () => { tempResources.splice(i, 1); renderTempResources(); };
@@ -531,6 +566,13 @@ function openProgramBuilder() {
     closeModal();
     openProgramDetail(program.id);
   };
+
+  // ✅ إعادة تهيئة أيقونات Lucide
+  setTimeout(() => { 
+    if (typeof initLucideIcons === 'function') {
+      initLucideIcons();
+    }
+  }, 50);
 }
 
 // ========================================
@@ -570,12 +612,18 @@ function renderProgramDetail(program) {
           <div>
             <h2 class="program-detail-name">${escapeHtml(program.name)}</h2>
             <span class="program-detail-type">${program.status}</span>
-            ${program.goal ? `<span class="program-detail-goal">🎯 ${escapeHtml(program.goal)}</span>` : ''}
+            ${program.goal ? `<span class="program-detail-goal"><span data-lucide="target" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ${escapeHtml(program.goal)}</span>` : ''}
           </div>
         </div>
         <div class="program-detail-actions">
-          <button class="program-detail-back-btn" id="program-detail-back">← ${tr('back', 'Back')}</button>
-          <button class="program-detail-delete-btn" id="program-detail-delete">🗑️ ${tr('delete', 'Delete')}</button>
+          <button class="program-detail-back-btn" id="program-detail-back">
+            <span data-lucide="arrow-left" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
+            ${tr('back', 'Back')}
+          </button>
+          <button class="program-detail-delete-btn" id="program-detail-delete">
+            <span data-lucide="trash-2" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
+            ${tr('delete', 'Delete')}
+          </button>
         </div>
       </div>
 
@@ -590,10 +638,22 @@ function renderProgramDetail(program) {
       </div>
 
       <div class="program-detail-tabs">
-        <button class="program-detail-tab ${currentTab === 'overview' ? 'active' : ''}" data-tab="overview">${tr('overview', 'Overview')}</button>
-        <button class="program-detail-tab ${currentTab === 'steps' ? 'active' : ''}" data-tab="steps">${tr('steps', 'Steps')}</button>
-        <button class="program-detail-tab ${currentTab === 'resources' ? 'active' : ''}" data-tab="resources">${tr('resources', 'Resources')}</button>
-        <button class="program-detail-tab ${currentTab === 'sessions' ? 'active' : ''}" data-tab="sessions">${tr('sessions', 'Sessions')}</button>
+        <button class="program-detail-tab ${currentTab === 'overview' ? 'active' : ''}" data-tab="overview">
+          <span data-lucide="info" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+          ${tr('overview', 'Overview')}
+        </button>
+        <button class="program-detail-tab ${currentTab === 'steps' ? 'active' : ''}" data-tab="steps">
+          <span data-lucide="list" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+          ${tr('steps', 'Steps')}
+        </button>
+        <button class="program-detail-tab ${currentTab === 'resources' ? 'active' : ''}" data-tab="resources">
+          <span data-lucide="link" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+          ${tr('resources', 'Resources')}
+        </button>
+        <button class="program-detail-tab ${currentTab === 'sessions' ? 'active' : ''}" data-tab="sessions">
+          <span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+          ${tr('sessions', 'Sessions')}
+        </button>
       </div>
 
       <div id="program-tab-content"></div>
@@ -640,56 +700,88 @@ function renderOverview(container, program) {
     <div class="program-overview">
       <div class="program-overview-grid">
         <div class="program-overview-item">
-          <span class="program-overview-label">${tr('description', 'Description')}</span>
+          <span class="program-overview-label">
+            <span data-lucide="file-text" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+            ${tr('description', 'Description')}
+          </span>
           <span class="program-overview-value">${escapeHtml(program.description) || tr('no_description', 'No description')}</span>
         </div>
         <div class="program-overview-item">
-          <span class="program-overview-label">${tr('goal', 'Goal')}</span>
+          <span class="program-overview-label">
+            <span data-lucide="target" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+            ${tr('goal', 'Goal')}
+          </span>
           <span class="program-overview-value">${escapeHtml(program.goal) || tr('not_set', 'Not set')}</span>
         </div>
         <div class="program-overview-item">
-          <span class="program-overview-label">${tr('status', 'Status')}</span>
+          <span class="program-overview-label">
+            <span data-lucide="activity" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+            ${tr('status', 'Status')}
+          </span>
           <span class="program-overview-value">${program.status}</span>
         </div>
         <div class="program-overview-item">
-          <span class="program-overview-label">${tr('progress', 'Progress')}</span>
+          <span class="program-overview-label">
+            <span data-lucide="trending-up" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+            ${tr('progress', 'Progress')}
+          </span>
           <span class="program-overview-value">${stats.percentage}%</span>
         </div>
         <div class="program-overview-item">
-          <span class="program-overview-label">${tr('steps', 'Steps')}</span>
+          <span class="program-overview-label">
+            <span data-lucide="list" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+            ${tr('steps', 'Steps')}
+          </span>
           <span class="program-overview-value">${stats.completedSteps}/${stats.totalSteps}</span>
         </div>
         <div class="program-overview-item">
-          <span class="program-overview-label">${tr('sessions', 'Sessions')}</span>
+          <span class="program-overview-label">
+            <span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+            ${tr('sessions', 'Sessions')}
+          </span>
           <span class="program-overview-value">${stats.totalSessions}</span>
         </div>
         <div class="program-overview-item">
-          <span class="program-overview-label">${tr('resources', 'Resources')}</span>
+          <span class="program-overview-label">
+            <span data-lucide="link" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+            ${tr('resources', 'Resources')}
+          </span>
           <span class="program-overview-value">${program.resources ? program.resources.length : 0}</span>
         </div>
         <div class="program-overview-item">
-          <span class="program-overview-label">${tr('next_step', 'Next Step')}</span>
+          <span class="program-overview-label">
+            <span data-lucide="arrow-right-circle" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+            ${tr('next_step', 'Next Step')}
+          </span>
           <span class="program-overview-value">${nextStep ? escapeHtml(nextStep.name) : (stats.totalSteps > 0 ? "✅ " + tr('all_completed', 'All completed!') : tr('no_steps_added', 'No steps added'))}</span>
         </div>
         <div class="program-overview-item">
-          <span class="program-overview-label">${tr('created', 'Created')}</span>
+          <span class="program-overview-label">
+            <span data-lucide="calendar" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+            ${tr('created', 'Created')}
+          </span>
           <span class="program-overview-value">${formatDate(program.createdAt)}</span>
         </div>
         ${program.completedAt ? `
         <div class="program-overview-item">
-          <span class="program-overview-label">${tr('completed', 'Completed')}</span>
+          <span class="program-overview-label">
+            <span data-lucide="check-circle" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+            ${tr('completed', 'Completed')}
+          </span>
           <span class="program-overview-value">${formatDate(program.completedAt)}</span>
         </div>` : ''}
       </div>
 
       ${program.status === "active" ? `
         <button class="program-card-continue-btn" id="program-start-session" style="width: 100%; margin-top: 12px;">
+          <span data-lucide="play" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
           ${getNextStep(program) ? tr('start_session', 'Start Session') + ': ' + escapeHtml(getNextStep(program).name) + ' →' : (stats.totalSteps === 0 ? tr('add_steps_first', 'Add Steps First →') : '✅ ' + tr('all_steps_completed', 'All Steps Completed!'))}
         </button>` : ''}
 
       ${program.status === "completed" ? `
         <div style="text-align: center; padding: 12px; background: #4caf84; color: white; border-radius: 8px; margin-top: 12px;">
-          🎉 ${tr('program_completed', 'Program Completed! All')} ${stats.totalSteps} ${tr('steps_done', 'steps done!')}
+          <span data-lucide="check-circle" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;"></span>
+          ${tr('program_completed', 'Program Completed! All')} ${stats.totalSteps} ${tr('steps_done', 'steps done!')}
         </div>` : ''}
     </div>
   `;
@@ -726,26 +818,26 @@ function renderSteps(container, program) {
 
       const nameSpan = document.createElement("span");
       nameSpan.className = "program-phase-name";
-      nameSpan.textContent = (step.completed ? '✅' : '⬜') + ' ' + escapeHtml(step.name);
+      nameSpan.innerHTML = (step.completed ? '<span data-lucide="check-circle" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: #4caf84;"></span>' : '<span data-lucide="circle" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>') + ' ' + escapeHtml(step.name);
       headerDiv.appendChild(nameSpan);
 
       if (step.completed) {
         const dateSpan = document.createElement("span");
         dateSpan.style.cssText = "font-size: 12px; color: var(--text-muted);";
-        dateSpan.textContent = formatDate(step.completedAt);
+        dateSpan.innerHTML = '<span data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span>' + formatDate(step.completedAt);
         headerDiv.appendChild(dateSpan);
 
         if (step.difficulty) {
           const diffSpan = document.createElement("span");
           diffSpan.style.cssText = "font-size: 12px; color: var(--text-muted);";
-          diffSpan.textContent = tr(step.difficulty.toLowerCase(), step.difficulty);
+          diffSpan.innerHTML = tr(step.difficulty.toLowerCase(), step.difficulty);
           headerDiv.appendChild(diffSpan);
         }
 
         if (step.rating) {
           const ratingSpan = document.createElement("span");
           ratingSpan.style.cssText = "font-size: 12px; color: var(--warning);";
-          ratingSpan.textContent = '⭐ ' + step.rating + '/5';
+          ratingSpan.innerHTML = '<span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; fill: #f5a623; stroke: #f5a623;"></span>' + step.rating + '/5';
           headerDiv.appendChild(ratingSpan);
         }
       }
@@ -756,13 +848,13 @@ function renderSteps(container, program) {
       if (!step.completed) {
         const editBtn = document.createElement("button");
         editBtn.className = "program-phase-btn program-edit-step-btn";
-        editBtn.textContent = "✏️";
+        editBtn.innerHTML = '<span data-lucide="pencil" style="width: 16px; height: 16px;"></span>';
         editBtn.dataset.stepId = step.id;
         actionsDiv.appendChild(editBtn);
 
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "program-phase-btn program-phase-btn-danger program-delete-step-btn";
-        deleteBtn.textContent = "✕";
+        deleteBtn.innerHTML = '<span data-lucide="x" style="width: 16px; height: 16px;"></span>';
         deleteBtn.dataset.stepId = step.id;
         actionsDiv.appendChild(deleteBtn);
       }
@@ -773,14 +865,14 @@ function renderSteps(container, program) {
       if (step.completed && step.learning) {
         const learningDiv = document.createElement("div");
         learningDiv.style.cssText = "font-size: 13px; color: var(--text-secondary); padding: 4px 0 0 24px; font-style: italic;";
-        learningDiv.textContent = '💡 ' + escapeHtml(step.learning);
+        learningDiv.innerHTML = '<span data-lucide="lightbulb" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623;"></span>' + escapeHtml(step.learning);
         phaseDiv.appendChild(learningDiv);
       }
 
       if (step.completed && step.duration) {
         const durationDiv = document.createElement("div");
         durationDiv.style.cssText = "font-size: 12px; color: var(--text-muted); padding: 2px 0 0 24px;";
-        durationDiv.textContent = '⏱️ ' + step.duration + ' min';
+        durationDiv.innerHTML = '<span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>' + step.duration + ' min';
         phaseDiv.appendChild(durationDiv);
       }
 
@@ -792,7 +884,7 @@ function renderSteps(container, program) {
   addBtn.className = "program-add-phase-btn";
   addBtn.id = "program-add-step";
   addBtn.style.marginTop = "12px";
-  addBtn.textContent = "＋ " + tr('add_step', 'Add Step');
+  addBtn.innerHTML = '<span data-lucide="plus" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>' + tr('add_step', 'Add Step');
   wrapper.appendChild(addBtn);
 
   fragment.appendChild(wrapper);
@@ -860,10 +952,15 @@ function renderResources(container, program) {
       html += `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 8px; background: var(--bg-surface);">
           <div>
-            <span style="font-weight: 500; color: var(--text-primary);">${escapeHtml(res.name)}</span>
-            ${res.url ? `<a href="${escapeHtml(res.url)}" target="_blank" style="margin-left: 12px; color: var(--primary); text-decoration: none; font-size: 13px;">🔗 ${tr('open', 'Open')}</a>` : ''}
+            <span style="font-weight: 500; color: var(--text-primary);">
+              <span data-lucide="link" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></span>
+              ${escapeHtml(res.name)}
+            </span>
+            ${res.url ? `<a href="${escapeHtml(res.url)}" target="_blank" style="margin-left: 12px; color: var(--primary); text-decoration: none; font-size: 13px;"><span data-lucide="external-link" style="width: 14px; height: 14px; vertical-align: middle;"></span> ${tr('open', 'Open')}</a>` : ''}
           </div>
-          <button class="program-phase-btn program-phase-btn-danger" data-action="delete-resource" data-resource-id="${res.id}" style="padding: 4px 10px;">✕</button>
+          <button class="program-phase-btn program-phase-btn-danger" data-action="delete-resource" data-resource-id="${res.id}" style="padding: 4px 10px;">
+            <span data-lucide="trash-2" style="width: 14px; height: 14px;"></span>
+          </button>
         </div>
       `;
     });
@@ -874,7 +971,10 @@ function renderResources(container, program) {
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <input type="text" id="program-add-resource-name" placeholder="${tr('resource_name', 'Resource name...')}" style="flex: 1; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);" />
         <input type="text" id="program-add-resource-url" placeholder="${tr('url_optional', 'URL (optional)')}" style="flex: 1.5; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);" />
-        <button class="program-card-continue-btn" id="program-add-resource-btn" style="padding: 8px 20px;">${tr('add_resource', 'Add Resource')}</button>
+        <button class="program-card-continue-btn" id="program-add-resource-btn" style="padding: 8px 20px;">
+          <span data-lucide="plus" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
+          ${tr('add_resource', 'Add Resource')}
+        </button>
       </div>
     </div>
   `;
@@ -919,7 +1019,10 @@ function renderSessions(container, program) {
     if (program.status === "active" && program.steps && program.steps.length > 0) {
       const nextStep = getNextStep(program);
       if (nextStep) {
-        html += `<button class="program-card-continue-btn" id="program-start-session-from-sessions" style="width: 100%;">${tr('start_session', 'Start Session')} →</button>`;
+        html += `<button class="program-card-continue-btn" id="program-start-session-from-sessions" style="width: 100%;">
+          <span data-lucide="play" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
+          ${tr('start_session', 'Start Session')} →
+        </button>`;
       }
     }
     html += `</div>`;
@@ -933,8 +1036,11 @@ function renderSessions(container, program) {
   let html = `<div class="program-overview">`;
   html += `
     <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-      <span style="font-weight: 600; color: var(--text-primary);">${sessions.length} ${tr('sessions_completed', 'Sessions Completed')}</span>
-      ${program.status === "active" && getNextStep(program) ? `<button class="program-card-continue-btn" id="program-start-session-from-sessions">${tr('start_session', 'Start Session')} →</button>` : ''}
+      <span style="font-weight: 600; color: var(--text-primary);">
+        <span data-lucide="clock" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></span>
+        ${sessions.length} ${tr('sessions_completed', 'Sessions Completed')}
+      </span>
+      ${program.status === "active" && getNextStep(program) ? `<button class="program-card-continue-btn" id="program-start-session-from-sessions"><span data-lucide="play" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>${tr('start_session', 'Start Session')} →</button>` : ''}
     </div>
   `;
 
@@ -946,16 +1052,22 @@ function renderSessions(container, program) {
       <div style="padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 8px; background: var(--bg-surface);">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           <div>
-            <span style="font-weight: 600; color: var(--text-primary);">${escapeHtml(session.stepName)}</span>
+            <span style="font-weight: 600; color: var(--text-primary);">
+              <span data-lucide="book-open" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></span>
+              ${escapeHtml(session.stepName)}
+            </span>
           </div>
           <div style="display: flex; gap: 12px; font-size: 13px; color: var(--text-muted);">
             <span>${difficultyEmoji} ${difficultyLabel}</span>
-            <span>⭐ ${session.rating}/5</span>
-            ${session.duration ? `<span>⏱️ ${session.duration} min</span>` : ''}
+            <span><span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 2px; fill: #f5a623; stroke: #f5a623;"></span>${session.rating}/5</span>
+            ${session.duration ? `<span><span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 2px;"></span>${session.duration} min</span>` : ''}
           </div>
         </div>
-        ${session.learning ? `<div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-style: italic;">💡 "${escapeHtml(session.learning)}"</div>` : ''}
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">${formatDate(session.completedAt)}</div>
+        ${session.learning ? `<div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-style: italic;"><span data-lucide="lightbulb" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623;"></span>"${escapeHtml(session.learning)}"</div>` : ''}
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+          <span data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 2px;"></span>
+          ${formatDate(session.completedAt)}
+        </div>
       </div>
     `;
   });
@@ -1067,38 +1179,67 @@ function openSessionModal(programId, stepId, stepName) {
   let isTimerRunning = false;
 
   const html = `
-    <button class="notes-modal-close-btn" id="session-modal-close">✕</button>
-    <h3 class="notes-modal-title">⏱️ ${tr('session', 'Session')}</h3>
-    <p style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">${escapeHtml(stepName)}</p>
+    <button class="notes-modal-close-btn" id="session-modal-close">
+      <span data-lucide="x" style="width: 20px; height: 20px;"></span>
+    </button>
+    <h3 class="notes-modal-title">
+      <span data-lucide="clock" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></span>
+      ${tr('session', 'Session')}
+    </h3>
+    <p style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">
+      <span data-lucide="book-open" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></span>
+      ${escapeHtml(stepName)}
+    </p>
     
     <div style="text-align: center; margin: 16px 0;">
       <div style="font-size: 48px; font-weight: 700; font-family: monospace; color: var(--primary);" id="session-timer-display">00:00</div>
       <div style="display: flex; gap: 8px; justify-content: center; margin-top: 8px;">
-        <button class="notes-modal-cancel-btn" id="session-timer-start" style="padding: 6px 20px; font-size: 14px;">▶ ${tr('start', 'Start')}</button>
-        <button class="notes-modal-cancel-btn" id="session-timer-pause" style="padding: 6px 20px; font-size: 14px; display: none;">⏸ ${tr('pause', 'Pause')}</button>
-        <button class="notes-modal-cancel-btn" id="session-timer-reset" style="padding: 6px 20px; font-size: 14px;">↺ ${tr('reset', 'Reset')}</button>
+        <button class="notes-modal-cancel-btn" id="session-timer-start" style="padding: 6px 20px; font-size: 14px;">
+          <span data-lucide="play" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+          ${tr('start', 'Start')}
+        </button>
+        <button class="notes-modal-cancel-btn" id="session-timer-pause" style="padding: 6px 20px; font-size: 14px; display: none;">
+          <span data-lucide="pause" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+          ${tr('pause', 'Pause')}
+        </button>
+        <button class="notes-modal-cancel-btn" id="session-timer-reset" style="padding: 6px 20px; font-size: 14px;">
+          <span data-lucide="rotate-ccw" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+          ${tr('reset', 'Reset')}
+        </button>
       </div>
     </div>
 
     <hr style="border: none; border-top: 1px solid var(--border-light); margin: 12px 0;" />
 
     <div class="program-session-complete-form">
-      <label>${tr('how_was_step', 'How was this step?')}</label>
+      <label>
+        <span data-lucide="bar-chart" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
+        ${tr('how_was_step', 'How was this step?')}
+      </label>
       <div class="difficulty-grid">
         <button class="difficulty-btn active" data-difficulty="Medium">${tr('medium', 'Medium')}</button>
         <button class="difficulty-btn" data-difficulty="Hard">${tr('hard', 'Hard')}</button>
         <button class="difficulty-btn" data-difficulty="Easy">${tr('easy', 'Easy')}</button>
       </div>
 
-      <label>${tr('what_did_you_learn', 'What did you learn?')}</label>
+      <label>
+        <span data-lucide="lightbulb" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623;"></span>
+        ${tr('what_did_you_learn', 'What did you learn?')}
+      </label>
       <input type="text" id="session-learning" placeholder="${tr('learning_placeholder', 'e.g. I understood the concept...')}" />
 
-      <label>${tr('rating', 'Rating')} (1-5)</label>
+      <label>
+        <span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623;"></span>
+        ${tr('rating', 'Rating')} (1-5)
+      </label>
       <div id="rating-stars">
         ${[1,2,3,4,5].map(i => `<button class="difficulty-btn" data-rating="${i}">${i <= 3 ? '★' : '☆'}</button>`).join('')}
       </div>
 
-      <button class="notes-modal-save-btn" id="session-complete-btn" style="margin-top: 12px;">✅ ${tr('complete_step', 'Complete Step')}</button>
+      <button class="notes-modal-save-btn" id="session-complete-btn" style="margin-top: 12px;">
+        <span data-lucide="check-circle" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;"></span>
+        ${tr('complete_step', 'Complete Step')}
+      </button>
     </div>
   `;
 
@@ -1201,6 +1342,13 @@ function openSessionModal(programId, stepId, stepName) {
   document.getElementById("session-learning")?.addEventListener("keydown", function(e) {
     if (e.key === "Enter") document.getElementById("session-complete-btn").click();
   });
+
+  // ✅ إعادة تهيئة أيقونات Lucide
+  setTimeout(() => { 
+    if (typeof initLucideIcons === 'function') {
+      initLucideIcons();
+    }
+  }, 50);
 }
 
 // ========================================

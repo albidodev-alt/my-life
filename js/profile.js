@@ -1,5 +1,5 @@
 // ========================================
-// MY LIFE - PROFILE
+// MY LIFE HUB - PROFILE
 // ========================================
 
 // ===== عرض صفحة البروفايل =====
@@ -40,10 +40,21 @@ function renderProfile() {
     avatarImg.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23e5e7eb'/%3E%3Ctext x='50' y='55' font-size='40' text-anchor='middle' fill='%239ca3af'%3E👤%3C/text%3E%3C/svg%3E";
   }
 
-  const cameraBtn = document.createElement("button");
-  cameraBtn.className = "profile-camera-btn";
-  cameraBtn.textContent = "📷";
+  // ✅ جعل الصورة قابلة للنقر
+  avatarImg.style.cursor = "pointer";
+  avatarImg.style.transition = "transform 0.2s ease, box-shadow 0.2s ease";
+  
+  avatarImg.addEventListener("mouseenter", function() {
+    this.style.transform = "scale(1.05)";
+    this.style.boxShadow = "var(--shadow-md)";
+  });
+  
+  avatarImg.addEventListener("mouseleave", function() {
+    this.style.transform = "scale(1)";
+    this.style.boxShadow = "var(--shadow-sm)";
+  });
 
+  // ✅ إنشاء input مخفي لاختيار الصورة
   const fileInput = document.createElement("input");
   fileInput.type = "file";
   fileInput.accept = "image/*";
@@ -65,25 +76,55 @@ function renderProfile() {
     }
   });
 
-  cameraBtn.addEventListener("click", function () {
+  // ✅ الضغط على الصورة يفتح نافذة اختيار الصورة
+  avatarImg.addEventListener("click", function () {
     fileInput.click();
   });
 
+  avatarImg.title = typeof t === 'function' ? t('change_photo', 'Click to change photo') : 'Click to change photo';
+
   avatarWrapper.appendChild(avatarImg);
-  avatarWrapper.appendChild(cameraBtn);
   avatarWrapper.appendChild(fileInput);
   avatarContainer.appendChild(avatarWrapper);
 
   const nameDiv = document.createElement("div");
   nameDiv.className = "profile-name";
   nameDiv.textContent = profile.name || "User 1";
+  nameDiv.title = profile.name || "User 1";
   profileCard.appendChild(avatarContainer);
   profileCard.appendChild(nameDiv);
 
   const bioDiv = document.createElement("div");
   bioDiv.className = "profile-bio";
   bioDiv.textContent = profile.bio || "Building my life one day at a time.";
+  bioDiv.title = profile.bio || "Building my life one day at a time.";
   profileCard.appendChild(bioDiv);
+
+  // ===== ✅ شريط عداد المهام المنجزة مع قطرة ماء =====
+  const completedStats = getProfileStats();
+  
+  const counterBar = document.createElement("div");
+  counterBar.className = "completed-counter-bar";
+  
+  const dropIcon = document.createElement("span");
+  dropIcon.className = "completed-counter-drop";
+  dropIcon.setAttribute("data-lucide", "droplet");
+  
+  const counterNumber = document.createElement("span");
+  counterNumber.className = "completed-counter-number";
+  counterNumber.textContent = completedStats.completedTasks;
+  
+  const counterLabel = document.createElement("span");
+  counterLabel.className = "completed-counter-label";
+  counterLabel.textContent = typeof t === 'function' 
+    ? t('drops', 'Drops') 
+    : 'Drops';
+  
+  counterBar.appendChild(dropIcon);
+  counterBar.appendChild(counterNumber);
+  counterBar.appendChild(counterLabel);
+  
+  profileCard.appendChild(counterBar);
 
   // ===== الإحصائيات =====
   const stats = getProfileStats();
@@ -171,7 +212,9 @@ function renderProfile() {
   aboutTitleWrapper.appendChild(aboutText);
   aboutSection.appendChild(aboutTitleWrapper);
 
-  // حقل الاسم
+  // ========================================
+  // ===== حقل الاسم مع الحد 20 حرفاً =====
+  // ========================================
   const nameField = document.createElement("div");
   nameField.className = "profile-field";
 
@@ -185,18 +228,54 @@ function renderProfile() {
   nameInput.type = "text";
   nameInput.value = profile.name || "User 1";
   nameInput.placeholder = typeof t === 'function' ? t('name', 'Your name') : "Your name";
+  nameInput.maxLength = 20;
+
+  // ✅ عداد الأحرف - أسفل الحقل مباشرة بدون تداخل
+  const nameCounter = document.createElement("div");
+  nameCounter.style.cssText = `
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: right;
+    margin-top: 4px;
+    margin-bottom: 0;
+    padding-right: 4px;
+    font-family: var(--font-body);
+    transition: color 0.2s ease;
+    line-height: 1;
+  `;
+  nameCounter.textContent = (profile.name || "User 1").length + " / 20";
+
+  nameInput.addEventListener("input", function() {
+    if (this.value.length > 20) {
+      this.value = this.value.substring(0, 20);
+    }
+    
+    nameCounter.textContent = this.value.length + " / 20";
+    
+    if (this.value.length >= 20) {
+      nameCounter.style.color = "#ef4444";
+    } else if (this.value.length >= 17) {
+      nameCounter.style.color = "#f59e0b";
+    } else {
+      nameCounter.style.color = "var(--text-muted)";
+    }
+  });
 
   nameInput.addEventListener("change", function () {
     profile.name = nameInput.value;
     saveProfileData(profile);
     nameDiv.textContent = profile.name;
+    nameDiv.title = profile.name;
     updateUserHeader();
   });
 
   nameField.appendChild(nameInput);
+  nameField.appendChild(nameCounter);
   aboutSection.appendChild(nameField);
 
-  // حقل البايو
+  // ========================================
+  // ===== حقل البايو مع الحد 100 حرف =====
+  // ========================================
   const bioField = document.createElement("div");
   bioField.className = "profile-field";
 
@@ -210,14 +289,48 @@ function renderProfile() {
   bioTextarea.rows = 3;
   bioTextarea.value = profile.bio || "Building my life one day at a time.";
   bioTextarea.placeholder = typeof t === 'function' ? t('bio', 'Tell us about yourself...') : "Tell us about yourself...";
+  bioTextarea.maxLength = 100;
+
+  // ✅ عداد الأحرف - أسفل الحقل مباشرة بدون تداخل
+  const bioCounter = document.createElement("div");
+  bioCounter.style.cssText = `
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: right;
+    margin-top: 4px;
+    margin-bottom: 0;
+    padding-right: 4px;
+    font-family: var(--font-body);
+    transition: color 0.2s ease;
+    line-height: 1;
+  `;
+  bioCounter.textContent = (profile.bio || "Building my life one day at a time.").length + " / 100";
+
+  bioTextarea.addEventListener("input", function() {
+    if (this.value.length > 100) {
+      this.value = this.value.substring(0, 100);
+    }
+    
+    bioCounter.textContent = this.value.length + " / 100";
+    
+    if (this.value.length >= 100) {
+      bioCounter.style.color = "#ef4444";
+    } else if (this.value.length >= 85) {
+      bioCounter.style.color = "#f59e0b";
+    } else {
+      bioCounter.style.color = "var(--text-muted)";
+    }
+  });
 
   bioTextarea.addEventListener("change", function () {
     profile.bio = bioTextarea.value;
     saveProfileData(profile);
     bioDiv.textContent = profile.bio;
+    bioDiv.title = profile.bio;
   });
 
   bioField.appendChild(bioTextarea);
+  bioField.appendChild(bioCounter);
   aboutSection.appendChild(bioField);
 
   app.appendChild(aboutSection);
@@ -344,73 +457,6 @@ function renderProfile() {
   languageRow.appendChild(languageSelect);
   displaySettings.appendChild(languageRow);
 
-  // ===== إعدادات نظام الساعات =====
-  const hourSystemRow = document.createElement("div");
-  hourSystemRow.style.cssText = `
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-light);
-    border-radius: 8px;
-    margin-bottom: 8px;
-  `;
-
-  const hourSystemLabel = document.createElement("span");
-  hourSystemLabel.style.cssText = `
-    font-size: 14px;
-    color: var(--text-primary);
-    font-weight: 500;
-  `;
-  hourSystemLabel.textContent = "🕐 " + (typeof t === 'function' ? t('hour_system', 'Hour System') : 'Hour System');
-
-  const hourSystemSelect = document.createElement("select");
-  hourSystemSelect.id = "hour-system-select";
-  hourSystemSelect.style.cssText = `
-    padding: 6px 12px;
-    background: var(--bg-input);
-    color: var(--text-primary);
-    border: 1px solid var(--border-input);
-    border-radius: 6px;
-    font-family: var(--font-body);
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  `;
-
-  const hourSystems = [
-    { value: "12h", label: "12 Hour (AM/PM)" },
-    { value: "24h", label: "24 Hour" }
-  ];
-
-  hourSystems.forEach(function(system) {
-    const option = document.createElement("option");
-    option.value = system.value;
-    option.textContent = system.label;
-    hourSystemSelect.appendChild(option);
-  });
-
-  const savedHourSystem = localStorage.getItem('hourSystem') || '12h';
-  hourSystemSelect.value = savedHourSystem;
-
-  hourSystemSelect.addEventListener("change", function() {
-    const selected = this.value;
-    if (typeof setHourSystem === 'function') {
-      setHourSystem(selected);
-    } else {
-      localStorage.setItem('hourSystem', selected);
-      showToast("🕐 Hour system changed to " + (selected === '24h' ? '24 Hour' : '12 Hour'), "info");
-      setTimeout(function() {
-        location.reload();
-      }, 500);
-    }
-  });
-
-  hourSystemRow.appendChild(hourSystemLabel);
-  hourSystemRow.appendChild(hourSystemSelect);
-  displaySettings.appendChild(hourSystemRow);
-
   settingsSection.appendChild(displaySettings);
 
   // ===== إعدادات البيانات =====
@@ -513,6 +559,149 @@ function renderProfile() {
   app.appendChild(settingsSection);
 
   // ========================================
+  // ===== PWA INSTALL SECTION =====
+  // ========================================
+  
+  const installSection = document.createElement("div");
+  installSection.className = "profile-section";
+  installSection.id = "install-section";
+
+  const installTitleWrapper = document.createElement("div");
+  installTitleWrapper.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  `;
+
+  const installIcon = document.createElement("span");
+  installIcon.setAttribute("data-lucide", "download");
+  installIcon.style.cssText = `
+    width: 24px;
+    height: 24px;
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  `;
+
+  const installTitle = document.createElement("h3");
+  installTitle.className = "profile-section-title";
+  installTitle.textContent = typeof t === 'function' ? t('install_app', 'Install App') : "Install App";
+  installTitle.style.marginBottom = "0";
+
+  installTitleWrapper.appendChild(installIcon);
+  installTitleWrapper.appendChild(installTitle);
+  installSection.appendChild(installTitleWrapper);
+
+  const installDesc = document.createElement("p");
+  installDesc.style.cssText = `
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 12px;
+    font-family: var(--font-body);
+  `;
+  installDesc.textContent = typeof t === 'function' ? t('install_desc', 'Install this app on your device for quick access and offline use.') : "Install this app on your device for quick access and offline use.";
+  installSection.appendChild(installDesc);
+
+  const installBtn = document.createElement("button");
+  installBtn.id = "profile-install-btn";
+  installBtn.style.cssText = `
+    width: 100%;
+    padding: 14px 20px;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-handwritten);
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: var(--shadow-sm);
+  `;
+
+  // التحقق من حالة التثبيت
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+  if (isStandalone) {
+    installBtn.innerHTML = '✅ App Installed';
+    installBtn.style.background = 'linear-gradient(135deg, #4caf84, #66bb6a)';
+    installBtn.style.cursor = 'default';
+    installBtn.disabled = true;
+  } else {
+    const hasDeferredPrompt = typeof deferredPrompt !== 'undefined' && deferredPrompt !== null;
+    
+    if (hasDeferredPrompt) {
+      installBtn.innerHTML = '📲 Install App';
+    } else {
+      installBtn.innerHTML = '📲 Install App';
+      installBtn.style.background = 'linear-gradient(135deg, #6b7280, #9ca3af)';
+    }
+    
+    installBtn.addEventListener('mouseenter', function() {
+      if (!this.disabled) {
+        this.style.transform = 'translateY(-2px)';
+        this.style.boxShadow = 'var(--shadow-md)';
+      }
+    });
+    installBtn.addEventListener('mouseleave', function() {
+      this.style.transform = 'translateY(0)';
+      this.style.boxShadow = 'var(--shadow-sm)';
+    });
+    
+    installBtn.addEventListener('click', function() {
+      if (isStandalone) return;
+      
+      if (typeof handleInstallClick === 'function') {
+        handleInstallClick();
+      } else if (typeof window.handleInstallClick === 'function') {
+        window.handleInstallClick();
+      } else {
+        const isMobile = window.innerWidth < 768;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        
+        let message = '📲 To install this app:\n\n';
+        
+        if (isIOS) {
+          message += '• Tap the Share button (📤)\n';
+          message += '• Scroll down and tap "Add to Home Screen"\n';
+          message += '• Tap "Add" in the top right corner';
+        } else if (isMobile) {
+          message += '• On Chrome: Tap the menu (⋮) → "Install App"\n';
+          message += '• On Firefox: Tap the menu → "Install"\n';
+          message += '• On Edge: Tap the menu → "Install App"';
+        } else {
+          message += '• On Chrome: Click the install icon in the address bar\n';
+          message += '• Or go to the menu → "Install App"';
+        }
+        
+        alert(message);
+      }
+    });
+  }
+
+  installSection.appendChild(installBtn);
+
+  const installNote = document.createElement("p");
+  installNote.style.cssText = `
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    font-style: italic;
+  `;
+  installNote.textContent = typeof t === 'function' ? t('install_note', '💡 Install for offline access and quick launch from your home screen') : "💡 Install for offline access and quick launch from your home screen";
+  installSection.appendChild(installNote);
+
+  app.appendChild(installSection);
+
+  // ========================================
   // ===== ACHIEVEMENTS SECTION =====
   // ========================================
 
@@ -564,8 +753,8 @@ function renderProfile() {
   `;
 
   const badgeLabel = document.createElement("span");
-  badgeLabel.textContent = "✅ " + (typeof t === 'function' ? t('completed_tasks', 'Completed Tasks') : 'Completed Tasks');
-  badgeLabel.style.cssText = "font-weight: 500; color: var(--text-primary);";
+  badgeLabel.innerHTML = '<span data-lucide="check-circle" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px; color: #4caf84;"></span>' + (typeof t === 'function' ? t('completed_tasks', 'Completed Tasks') : 'Completed Tasks');
+  badgeLabel.style.cssText = "font-weight: 500; color: var(--text-primary); display: flex; align-items: center;";
 
   const badgeCount = document.createElement("span");
   badgeCount.textContent = stats2.completedTasks;
@@ -590,7 +779,7 @@ function renderProfile() {
   achievementsSection.appendChild(achievementsDesc);
 
   const viewBtn = document.createElement("button");
-  viewBtn.textContent = "📊 " + (typeof t === 'function' ? t('view_achievements', 'View Achievements') : 'View Achievements');
+  viewBtn.innerHTML = '<span data-lucide="bar-chart-3" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;"></span>' + (typeof t === 'function' ? t('view_achievements', 'View Achievements') : 'View Achievements');
   viewBtn.style.cssText = `
     width: 100%;
     padding: 12px;
@@ -603,6 +792,9 @@ function renderProfile() {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   `;
 
   viewBtn.addEventListener("mouseenter", function() {
@@ -616,20 +808,28 @@ function renderProfile() {
   });
 
   viewBtn.addEventListener("click", function() {
-    if (typeof window.navigateTo === "function") {
-      window.navigateTo("completed");
-    } 
-    else if (typeof navigateTo === "function") {
-      navigateTo("completed");
-    }
-    else if (typeof renderCompleted === "function") {
+    console.log("📌 Achievements button clicked");
+    
+    if (typeof window.renderCompleted === 'function') {
       document.querySelectorAll(".nav-btn, .bottom-nav-btn").forEach(function(btn) {
         btn.classList.remove("active");
       });
-      renderCompleted();
-    } else {
-      alert("Achievements page is not available. Please check if Achievements.js is loaded.");
+      window.renderCompleted();
+      return;
     }
+    
+    if (typeof window.navigateTo === "function") {
+      window.navigateTo("completed");
+      return;
+    }
+    
+    if (typeof navigateTo === "function") {
+      navigateTo("completed");
+      return;
+    }
+    
+    console.error("❌ renderCompleted function not found!");
+    alert("⚠️ Achievements page is not available.\n\nPlease refresh the page and try again.");
   });
 
   achievementsSection.appendChild(viewBtn);
@@ -744,6 +944,14 @@ function getDefaultProfile() {
 }
 
 function saveProfileData(data) {
+  // ✅ التأكد من عدم تجاوز الحد قبل الحفظ
+  if (data.name && data.name.length > 20) {
+    data.name = data.name.substring(0, 20);
+  }
+  if (data.bio && data.bio.length > 100) {
+    data.bio = data.bio.substring(0, 100);
+  }
+  
   localStorage.setItem(PROFILE_KEY, JSON.stringify(data));
   updateUserHeader();
 }

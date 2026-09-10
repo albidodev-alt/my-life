@@ -153,6 +153,13 @@ function tr(key, fallback) {
   return typeof t === 'function' ? t(key, fallback) : fallback;
 }
 
+function escapeHtml(text) {
+  if (!text) return "";
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 // ========================================
 // عرض صفحة الملاحظات الرئيسية (مع الترجمة)
 // ========================================
@@ -166,11 +173,14 @@ function renderNotesPageV2() {
       <!-- Header Section -->
       <div class="notes-header-section">
         <div class="notes-title-area">
-          <h2 class="notes-main-title">${tr('notes', '📝 Notes')}</h2>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span data-lucide="notebook-pen" style="width: 32px; height: 32px; color: var(--primary);"></span>
+            <h2 class="notes-main-title" style="margin: 0;">${tr('notes', 'Notes')}</h2>
+          </div>
           <p class="notes-main-subtitle">${tr('notes_subtitle', 'Capture your thoughts, ideas, and reminders')}</p>
         </div>
         <button class="notes-add-main-btn" id="notes-open-add-btn">
-          <span class="notes-add-icon">＋</span>
+          <span class="notes-add-icon" data-lucide="plus" style="width: 20px; height: 20px;"></span>
           ${tr('add_note', 'New Note')}
         </button>
       </div>
@@ -178,7 +188,7 @@ function renderNotesPageV2() {
       <!-- Search Bar -->
       <div class="notes-search-container">
         <div class="notes-search-wrapper">
-          <span class="notes-search-icon">🔍</span>
+          <span class="notes-search-icon" data-lucide="search" style="width: 18px; height: 18px;"></span>
           <input 
             type="text" 
             class="notes-search-input" 
@@ -212,6 +222,13 @@ function renderNotesPageV2() {
   }
 
   renderNotesList("");
+
+  // ✅ إعادة تهيئة أيقونات Lucide
+  setTimeout(function() {
+    if (typeof initLucideIcons === 'function') {
+      initLucideIcons();
+    }
+  }, 50);
 }
 
 // ========================================
@@ -239,7 +256,9 @@ function renderNotesList(searchTerm = "") {
 
     const icon = document.createElement("div");
     icon.className = "notes-empty-icon";
-    icon.textContent = searchTerm ? "🔍" : "📝";
+    icon.innerHTML = searchTerm 
+      ? '<span data-lucide="search-x" style="width: 32px; height: 32px; color: var(--primary);"></span>'
+      : '<span data-lucide="notebook-pen" style="width: 32px; height: 32px; color: var(--primary);"></span>';
 
     const title = document.createElement("h3");
     title.className = "notes-empty-title";
@@ -264,6 +283,13 @@ function renderNotesList(searchTerm = "") {
 
   grid.innerHTML = "";
   grid.appendChild(fragment);
+
+  // ✅ إعادة تهيئة أيقونات Lucide
+  setTimeout(function() {
+    if (typeof initLucideIcons === 'function') {
+      initLucideIcons();
+    }
+  }, 50);
 }
 
 // ========================================
@@ -292,7 +318,7 @@ function createNoteCard(note) {
   if (note.pinned) {
     const pinBadge = document.createElement("span");
     pinBadge.className = "notes-card-pin-badge";
-    pinBadge.textContent = "📌 " + tr('pinned', 'Pinned');
+    pinBadge.innerHTML = '<span data-lucide="pin" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span>' + tr('pinned', 'Pinned');
     titleArea.appendChild(pinBadge);
   }
 
@@ -301,7 +327,9 @@ function createNoteCard(note) {
 
   const pinBtn = document.createElement("button");
   pinBtn.className = "notes-card-action-btn";
-  pinBtn.textContent = note.pinned ? "📌" : "📍";
+  pinBtn.innerHTML = note.pinned 
+    ? '<span data-lucide="pin" style="width: 16px; height: 16px; fill: var(--primary); stroke: var(--primary);"></span>'
+    : '<span data-lucide="pin" style="width: 16px; height: 16px;"></span>';
   pinBtn.title = note.pinned ? tr('unpin', 'Unpin note') : tr('pin', 'Pin note');
   pinBtn.setAttribute("aria-label", pinBtn.title);
 
@@ -313,7 +341,7 @@ function createNoteCard(note) {
 
   const editBtn = document.createElement("button");
   editBtn.className = "notes-card-action-btn";
-  editBtn.textContent = "✏️";
+  editBtn.innerHTML = '<span data-lucide="pencil" style="width: 16px; height: 16px;"></span>';
   editBtn.title = tr('edit', 'Edit note');
   editBtn.setAttribute("aria-label", "Edit note");
 
@@ -324,7 +352,7 @@ function createNoteCard(note) {
 
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "notes-card-action-btn notes-delete-btn";
-  deleteBtn.textContent = "🗑️";
+  deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 16px; height: 16px;"></span>';
   deleteBtn.title = tr('delete', 'Delete note');
   deleteBtn.setAttribute("aria-label", "Delete note");
 
@@ -352,12 +380,12 @@ function createNoteCard(note) {
 
   const dateSpan = document.createElement("span");
   dateSpan.className = "notes-card-date";
-  dateSpan.textContent = formatNoteDate(note.updatedAt || note.createdAt);
+  dateSpan.innerHTML = '<span data-lucide="clock" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span>' + formatNoteDate(note.updatedAt || note.createdAt);
 
   const editIndicator = document.createElement("span");
   editIndicator.className = "notes-card-edit-indicator";
   if (note.updatedAt && note.updatedAt !== note.createdAt) {
-    editIndicator.textContent = " (" + tr('edited', 'edited') + ")";
+    editIndicator.innerHTML = '<span data-lucide="pencil" style="width: 10px; height: 10px; vertical-align: middle; margin-right: 2px;"></span>' + tr('edited', 'edited');
   }
 
   footer.appendChild(dateSpan);
@@ -391,7 +419,9 @@ function openNoteModal(editNote = null) {
 
   const title = document.createElement("h3");
   title.className = "notes-modal-title";
-  title.textContent = isEditing ? ("✏️ " + tr('edit_note', 'Edit Note')) : ("➕ " + tr('new_note', 'New Note'));
+  title.innerHTML = isEditing 
+    ? '<span data-lucide="pencil" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></span>' + tr('edit_note', 'Edit Note')
+    : '<span data-lucide="plus" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></span>' + tr('new_note', 'New Note');
 
   const titleLabel = document.createElement("label");
   titleLabel.className = "notes-modal-label";
@@ -424,15 +454,17 @@ function openNoteModal(editNote = null) {
 
   const saveBtn = document.createElement("button");
   saveBtn.className = "notes-modal-save-btn";
-  saveBtn.textContent = isEditing ? ("💾 " + tr('update_note', 'Update Note')) : ("➕ " + tr('add_note_btn', 'Add Note'));
+  saveBtn.innerHTML = isEditing 
+    ? '<span data-lucide="check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>' + tr('update_note', 'Update Note')
+    : '<span data-lucide="plus" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>' + tr('add_note_btn', 'Add Note');
 
   const cancelBtn = document.createElement("button");
   cancelBtn.className = "notes-modal-cancel-btn";
-  cancelBtn.textContent = tr('cancel', 'Cancel');
+  cancelBtn.innerHTML = '<span data-lucide="x" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>' + tr('cancel', 'Cancel');
 
   const closeBtn = document.createElement("button");
   closeBtn.className = "notes-modal-close-btn";
-  closeBtn.textContent = "✕";
+  closeBtn.innerHTML = '<span data-lucide="x" style="width: 20px; height: 20px;"></span>';
   closeBtn.setAttribute("aria-label", "Close modal");
 
   modal.appendChild(closeBtn);
@@ -515,7 +547,10 @@ function openNoteModal(editNote = null) {
     }
   });
 
-  setTimeout(() => titleInput.focus(), 100);
+  setTimeout(() => {
+    titleInput.focus();
+    if (typeof initLucideIcons === 'function') initLucideIcons();
+  }, 100);
 }
 
 // ========================================

@@ -12,7 +12,7 @@ const translationsEN = {
     "completed": "Completed",
     "notes": "Notes",
     "events": "Events",
-    "program": "Learning Programs",
+    "program": "Programs",
     "profile": "Profile",
     "settings": "Settings",
     "achievements": "Achievements",
@@ -63,6 +63,7 @@ const translationsEN = {
     "today": "Today",
     "yesterday": "Yesterday",
     "days_ago": "days ago",
+    "drops": "Drops",
 
     // ========================================
     // الروتين - Routine
@@ -155,6 +156,9 @@ const translationsEN = {
     "completion_date": "Completion date",
     "filter_by_priority": "Filter by priority",
     "overdue": "Overdue",
+    "search_tasks": "Search tasks...",
+    "no_tasks_found": "No tasks found matching your search",
+    "no_tasks_priority": "No tasks with this priority",
 
     // ========================================
     // الإنجازات - Achievements
@@ -215,7 +219,6 @@ const translationsEN = {
     "no_steps_added_yet": "No steps added yet. Add your first step below!",
     "all_completed": "All completed!",
     "no_description": "No description",
-    "not_set": "Not set",
     "next": "Next",
     "sessions": "Sessions",
     "steps": "Steps",

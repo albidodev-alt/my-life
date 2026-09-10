@@ -37,25 +37,34 @@ function renderWeek() {
     dayBtn.addEventListener("click", function () { openDay(day); });
     dayCard.appendChild(dayBtn);
 
-    // ===== عرض "Day For" باللون الأخضر مثل التفاح =====
+    // ===== عرض "Day For" باللون الأزرق الفاتح مع إصلاح النصوص الطويلة =====
     if (dayForText) {
       const dayForSpan = document.createElement("span");
       dayForSpan.className = "day-for-label";
       dayForSpan.textContent = dayForText;
       
-      // تنسيق باللون الأخضر مثل التفاح
+      // تنسيق باللون الأزرق الفاتح مع إصلاح النصوص الطويلة
       dayForSpan.style.cssText = `
         display: block;
         padding: 4px 8px;
         margin: 4px 8px 8px 8px;
-        color: #228B22;  /* أخضر غامق مثل التفاح */
+        color: #4f8edb;  /* أزرق فاتح - نفس اللون الأساسي للموقع */
         font-weight: 700;
         font-size: 13px;
         text-align: center;
-        background: rgba(34, 139, 34, 0.12);  /* خلفية خضراء فاتحة */
+        background: rgba(79, 142, 219, 0.12);  /* خلفية زرقاء فاتحة */
         border-radius: 6px;
-        border: 1px solid rgba(34, 139, 34, 0.3);  /* حدود خضراء */
+        border: 1px solid rgba(79, 142, 219, 0.3);  /* حدود زرقاء */
+        /* ✅ إصلاح النصوص الطويلة */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        line-height: 1.4;
       `;
+      
+      // إضافة title لعرض النص الكامل عند التمرير
+      dayForSpan.title = dayForText;
       
       dayCard.appendChild(dayForSpan);
     }

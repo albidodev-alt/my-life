@@ -5,32 +5,23 @@
 
 const NOTIFICATIONS_STORAGE_KEY = "myLifeHub_notifications";
 
-// ========================================
-// هيكل الإشعار الواحد
-// ========================================
-/*
-{
-  id: number,
-  type: "task" | "event" | "sleep" | "reminder",
-  title: string,
-  message: string,
-  date: string (ISO),
-  read: boolean,
-  createdAt: string (ISO),
-  relatedId: number (ID المهمة/الحدث المرتبط)
-}
-*/
+// ===== كاش في الذاكرة =====
+let notificationsCache = null;
 
 // ========================================
 // دوال التخزين الأساسية
 // ========================================
 
 function getAllNotifications() {
+  // ✅ استخدام الكاش إذا كان موجوداً
+  if (notificationsCache !== null) return notificationsCache;
+  
   try {
     const raw = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
     if (!raw) return [];
     const notifications = JSON.parse(raw);
-    return Array.isArray(notifications) ? notifications : [];
+    notificationsCache = Array.isArray(notifications) ? notifications : [];
+    return notificationsCache;
   } catch (error) {
     console.error("Error loading notifications:", error);
     return [];
@@ -38,6 +29,7 @@ function getAllNotifications() {
 }
 
 function saveAllNotifications(notifications) {
+  notificationsCache = notifications; // ✅ تحديث الكاش
   try {
     localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifications));
   } catch (error) {
@@ -145,7 +137,7 @@ function generateNotifications() {
   todayTasks.forEach(task => {
     notifications.push({
       type: "task",
-      title: "📋 " + tr('task_due_today', 'Task Due Today'),
+      title: tr('task_due_today', 'Task Due Today'), // ✅ بدون إيموجي
       message: `"${task.text}" ` + tr('is_due_today', 'is due today!'),
       relatedId: task.id
     });
@@ -157,7 +149,7 @@ function generateNotifications() {
   overdueTasks.forEach(task => {
     notifications.push({
       type: "task",
-      title: "⚠️ " + tr('overdue_task', 'Overdue Task'),
+      title: tr('overdue_task', 'Overdue Task'), // ✅ بدون إيموجي
       message: `"${task.text}" ` + tr('is_overdue', 'is overdue!'),
       relatedId: task.id
     });
@@ -170,7 +162,7 @@ function generateNotifications() {
   tomorrowEvents.forEach(event => {
     notifications.push({
       type: "event",
-      title: "📅 " + tr('event_tomorrow', 'Event Tomorrow'),
+      title: tr('event_tomorrow', 'Event Tomorrow'), // ✅ بدون إيموجي
       message: `"${event.title}" ` + tr('is_tomorrow', 'is tomorrow!'),
       relatedId: event.id
     });
@@ -190,7 +182,7 @@ function generateNotifications() {
     const daysLeft = Math.ceil((dateObj - today) / (1000 * 60 * 60 * 24));
     notifications.push({
       type: "event",
-      title: "📅 " + tr('upcoming_event', 'Upcoming Event'),
+      title: tr('upcoming_event', 'Upcoming Event'), // ✅ بدون إيموجي
       message: `"${event.title}" ` + tr('is_in', 'is in') + ` ${daysLeft} ` + (daysLeft > 1 ? tr('days', 'days') : tr('day', 'day')) + `!`,
       relatedId: event.id
     });
@@ -225,7 +217,7 @@ function generateNotifications() {
     if (currentTotalMinutes >= oneHourBeforeTotal && currentTotalMinutes < halfHourBeforeTotal) {
       notifications.push({
         type: "sleep",
-        title: "😴 " + tr('bedtime_reminder', 'Bedtime Reminder'),
+        title: tr('bedtime_reminder', 'Bedtime Reminder'), // ✅ بدون إيموجي
         message: tr('you_should_go_to_bed_1h', 'You should go to bed in about 1 hour') + ` (${sleepTimeStr}). ` + tr('get_ready', 'Get ready for a good night\'s sleep!'),
         relatedId: null
       });
@@ -233,7 +225,7 @@ function generateNotifications() {
     else if (currentTotalMinutes >= halfHourBeforeTotal && currentTotalMinutes < sleepTotal) {
       notifications.push({
         type: "sleep",
-        title: "🌙 " + tr('time_to_sleep_soon', 'Time to Sleep Soon'),
+        title: tr('time_to_sleep_soon', 'Time to Sleep Soon'), // ✅ بدون إيموجي
         message: tr('you_should_go_to_bed_30min', 'You should go to bed in about 30 minutes') + ` (${sleepTimeStr}). ` + tr('start_winding_down', 'Start winding down!'),
         relatedId: null
       });
@@ -241,7 +233,7 @@ function generateNotifications() {
     else if (currentTotalMinutes >= sleepTotal && currentTotalMinutes < sleepTotal + 60) {
       notifications.push({
         type: "sleep",
-        title: "😴 " + tr('time_to_sleep', 'Time to Sleep!'),
+        title: tr('time_to_sleep', 'Time to Sleep!'), // ✅ بدون إيموجي
         message: tr('its', 'It\'s') + ` ${sleepTimeStr}. ` + tr('time_to_go_to_bed', 'Time to go to bed!'),
         relatedId: null
       });
@@ -272,7 +264,7 @@ function generateNotifications() {
       
       notifications.push({
         type: "sleep",
-        title: "🌅 " + tr('sleep_report', 'Sleep Report'),
+        title: tr('sleep_report', 'Sleep Report'), // ✅ بدون إيموجي
         message: tr('sleep', 'Sleep') + `: ${formatTime12(dayData.sleepHour, dayData.sleepMinute)} - ${formatTime12(dayData.wakeHour, dayData.wakeMinute)} (${Math.round(sleepDuration)}h) ${qualityEmoji} ${qualityLabel}`,
         relatedId: null
       });
@@ -383,7 +375,7 @@ function openNotificationsModal() {
   actionsRow.style.cssText = "display: flex; gap: 8px;";
   
   const markAllBtn = document.createElement("button");
-  markAllBtn.textContent = "✅ " + tr('mark_all_read', 'Mark all read');
+  markAllBtn.innerHTML = '<span data-lucide="check-check" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('mark_all_read', 'Mark all read');
   markAllBtn.style.cssText = `
     padding: 6px 12px;
     border: none;
@@ -414,7 +406,7 @@ function openNotificationsModal() {
   actionsRow.appendChild(markAllBtn);
   
   const deleteAllBtn = document.createElement("button");
-  deleteAllBtn.textContent = "🗑️ " + tr('clear_all', 'Clear all');
+  deleteAllBtn.innerHTML = '<span data-lucide="trash-2" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('clear_all', 'Clear all');
   deleteAllBtn.style.cssText = `
     padding: 6px 12px;
     border: none;
@@ -469,7 +461,7 @@ function openNotificationsModal() {
       font-family: var(--font-handwritten);
       font-size: 16px;
     `;
-    empty.textContent = "🎉 " + tr('no_notifications', 'No notifications yet!');
+    empty.innerHTML = '<span data-lucide="bell-off" style="width: 32px; height: 32px; vertical-align: middle; margin-right: 8px; opacity: 0.3;"></span> ' + tr('no_notifications', 'No notifications yet!');
     listContainer.appendChild(empty);
   } else {
     notifications.forEach(notification => {
@@ -553,8 +545,7 @@ function openNotificationsModal() {
         display: block;
         margin-top: 4px;
       `;
-      const dateObj = new Date(notification.createdAt);
-      dateSpan.textContent = dateObj.toLocaleDateString("en-US", {
+      dateSpan.innerHTML = '<span data-lucide="clock" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + new Date(notification.createdAt).toLocaleDateString("en-US", {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
@@ -570,7 +561,7 @@ function openNotificationsModal() {
       
       if (!notification.read) {
         const readBtn = document.createElement("button");
-        readBtn.textContent = "📖 " + tr('mark_read', 'Mark as read');
+        readBtn.innerHTML = '<span data-lucide="check" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('mark_read', 'Mark as read');
         readBtn.style.cssText = `
           padding: 4px 12px;
           border: none;
@@ -600,7 +591,7 @@ function openNotificationsModal() {
       }
       
       const deleteBtn = document.createElement("button");
-      deleteBtn.textContent = "🗑️ " + tr('delete', 'Delete');
+      deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('delete', 'Delete');
       deleteBtn.style.cssText = `
         padding: 4px 12px;
         border: none;
@@ -632,7 +623,7 @@ function openNotificationsModal() {
       
       if (notification.relatedId && (notification.type === "task" || notification.type === "event")) {
         const viewBtn = document.createElement("button");
-        viewBtn.textContent = "👁️ " + tr('view', 'View');
+        viewBtn.innerHTML = '<span data-lucide="eye" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('view', 'View');
         viewBtn.style.cssText = `
           padding: 4px 12px;
           border: none;
@@ -679,13 +670,13 @@ function openNotificationsModal() {
   
   const closeBtn = document.createElement("button");
   closeBtn.className = "notes-modal-close-btn";
-  closeBtn.textContent = "✕";
+  closeBtn.innerHTML = '<span data-lucide="x" style="width: 20px; height: 20px;"></span>';
   closeBtn.addEventListener("click", closeNotificationsModal);
   modal.appendChild(closeBtn);
   
   const closeModalBtn = document.createElement("button");
   closeModalBtn.className = "notes-modal-save-btn";
-  closeModalBtn.textContent = tr('close', 'Close');
+  closeModalBtn.innerHTML = '<span data-lucide="x" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('close', 'Close');
   closeModalBtn.style.marginTop = "8px";
   closeModalBtn.addEventListener("click", closeNotificationsModal);
   modal.appendChild(closeModalBtn);
@@ -743,8 +734,8 @@ function setupNotificationButton() {
       width: 38px;
       height: 38px;
       background: rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       border: 1.5px solid rgba(79, 142, 219, 0.12);
       border-radius: 8px;
       cursor: pointer;

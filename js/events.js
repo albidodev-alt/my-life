@@ -171,7 +171,7 @@ function openEventDetailsModal(events, dateStr) {
 
     if (event.pinned) {
       const pinIcon = document.createElement("span");
-      pinIcon.textContent = "📌";
+      pinIcon.innerHTML = '<span data-lucide="pin" style="width: 16px; height: 16px; fill: var(--primary); stroke: var(--primary);"></span>';
       titleRow.appendChild(pinIcon);
     }
 
@@ -187,7 +187,7 @@ function openEventDetailsModal(events, dateStr) {
     `;
 
     if (event.description) {
-      descRow.textContent = "📝 " + event.description;
+      descRow.innerHTML = '<span data-lucide="file-text" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + escapeHtml(event.description);
     } else {
       descRow.textContent = typeof t === 'function' ? t('no_description', 'No description') : "No description";
       descRow.style.opacity = "0.5";
@@ -207,16 +207,16 @@ function openEventDetailsModal(events, dateStr) {
     const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     if (diff < 0) {
-      remainingRow.textContent = "⏳ " + (typeof t === 'function' ? t('event_passed', 'Event passed') : "Event passed");
+      remainingRow.innerHTML = '<span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('event_passed', 'Event passed') : "Event passed");
       remainingRow.style.color = "#6b7280";
     } else if (daysLeft <= 3) {
-      remainingRow.textContent = "⏳ " + remaining;
+      remainingRow.innerHTML = '<span data-lucide="alert-triangle" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
       remainingRow.style.color = "#ef4444";
     } else if (daysLeft <= 7) {
-      remainingRow.textContent = "⏳ " + remaining;
+      remainingRow.innerHTML = '<span data-lucide="alert-circle" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
       remainingRow.style.color = "#f59e0b";
     } else {
-      remainingRow.textContent = "⏳ " + remaining;
+      remainingRow.innerHTML = '<span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
       remainingRow.style.color = "#22c55e";
     }
 
@@ -228,7 +228,7 @@ function openEventDetailsModal(events, dateStr) {
     `;
 
     const editBtn = document.createElement("button");
-    editBtn.textContent = "✏️ " + (typeof t === 'function' ? t('edit', 'Edit') : "Edit");
+    editBtn.innerHTML = '<span data-lucide="pencil" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('edit', 'Edit') : "Edit");
     editBtn.style.cssText = `
       padding: 4px 12px;
       border: 1px solid var(--border-input);
@@ -255,7 +255,7 @@ function openEventDetailsModal(events, dateStr) {
     });
 
     const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "🗑️ " + (typeof t === 'function' ? t('delete', 'Delete') : "Delete");
+    deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('delete', 'Delete') : "Delete");
     deleteBtn.style.cssText = `
       padding: 4px 12px;
       border: 1px solid #ef4444;
@@ -300,7 +300,7 @@ function openEventDetailsModal(events, dateStr) {
 
   const closeBtn = document.createElement("button");
   closeBtn.className = "notes-modal-close-btn";
-  closeBtn.textContent = "✕";
+  closeBtn.innerHTML = '<span data-lucide="x" style="width: 20px; height: 20px;"></span>';
   closeBtn.setAttribute("aria-label", "Close");
 
   closeBtn.addEventListener("click", function() {
@@ -311,7 +311,7 @@ function openEventDetailsModal(events, dateStr) {
 
   const closeModalBtn = document.createElement("button");
   closeModalBtn.className = "notes-modal-save-btn";
-  closeModalBtn.textContent = typeof t === 'function' ? t('close', 'Close') : "Close";
+  closeModalBtn.innerHTML = '<span data-lucide="x" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('close', 'Close') : "Close");
   closeModalBtn.style.marginTop = "8px";
 
   closeModalBtn.addEventListener("click", function() {
@@ -355,7 +355,7 @@ function renderEventsPage() {
           <h2 class="events-title" style="margin: 0;">${typeof t === 'function' ? t('events_title', 'Events') : 'Events'}</h2>
         </div>
         <button class="events-add-btn" id="events-add-btn">
-          <span class="events-add-icon">＋</span>
+          <span class="events-add-icon" data-lucide="plus" style="width: 20px; height: 20px;"></span>
           ${typeof t === 'function' ? t('add_event_btn', 'Add Event') : 'Add Event'}
         </button>
       </div>
@@ -363,9 +363,13 @@ function renderEventsPage() {
       <!-- Calendar -->
       <div class="calendar-wrapper">
         <div class="calendar-nav">
-          <button class="calendar-nav-btn" id="calendar-prev">◀</button>
+          <button class="calendar-nav-btn" id="calendar-prev">
+            <span data-lucide="chevron-left" style="width: 24px; height: 24px;"></span>
+          </button>
           <span class="calendar-month-year" id="calendar-label">January 2026</span>
-          <button class="calendar-nav-btn" id="calendar-next">▶</button>
+          <button class="calendar-nav-btn" id="calendar-next">
+            <span data-lucide="chevron-right" style="width: 24px; height: 24px;"></span>
+          </button>
         </div>
 
         <div class="calendar-grid">
@@ -448,7 +452,7 @@ function renderEventsPage() {
       if (hasPinned) {
         const pinIcon = document.createElement("span");
         pinIcon.className = "calendar-pin-icon";
-        pinIcon.textContent = "📌";
+        pinIcon.innerHTML = '<span data-lucide="pin" style="width: 10px; height: 10px; fill: var(--primary); stroke: var(--primary);"></span>';
         dayDiv.appendChild(pinIcon);
       }
 
@@ -478,7 +482,9 @@ function renderEventsPage() {
 
     const pinIcon = document.createElement("span");
     pinIcon.className = "event-pin-icon";
-    pinIcon.textContent = event.pinned ? "📌" : "";
+    if (event.pinned) {
+      pinIcon.innerHTML = '<span data-lucide="pin" style="width: 16px; height: 16px; fill: var(--primary); stroke: var(--primary);"></span>';
+    }
     pinIcon.style.marginRight = "6px";
 
     const titleSpan = document.createElement("span");
@@ -495,32 +501,36 @@ function renderEventsPage() {
       day: 'numeric',
       year: 'numeric'
     });
-    dateSpan.textContent = "📅 " + formattedDate;
+    dateSpan.innerHTML = '<span data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + formattedDate;
 
     const remainingSpan = document.createElement("span");
     remainingSpan.className = "event-remaining";
     const remaining = getTimeRemaining(event.date);
-    remainingSpan.textContent = "⏳ " + remaining;
-
     const now = new Date();
     const target = new Date(event.date + "T00:00:00");
     const diff = target - now;
     const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     if (diff < 0) {
+      remainingSpan.innerHTML = '<span data-lucide="clock" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
       remainingSpan.style.color = "#6b7280";
     } else if (daysLeft <= 3) {
+      remainingSpan.innerHTML = '<span data-lucide="alert-triangle" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
       remainingSpan.style.color = "#ef4444";
       remainingSpan.style.fontWeight = "600";
     } else if (daysLeft <= 7) {
+      remainingSpan.innerHTML = '<span data-lucide="alert-circle" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
       remainingSpan.style.color = "#f59e0b";
     } else {
+      remainingSpan.innerHTML = '<span data-lucide="clock" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
       remainingSpan.style.color = "#22c55e";
     }
 
     const descSpan = document.createElement("span");
     descSpan.className = "event-description";
-    descSpan.textContent = event.description || "";
+    if (event.description) {
+      descSpan.innerHTML = '<span data-lucide="file-text" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + escapeHtml(event.description);
+    }
 
     infoDiv.appendChild(titleDiv);
     infoDiv.appendChild(dateSpan);
@@ -535,7 +545,11 @@ function renderEventsPage() {
     if (showPinButton) {
       const pinBtn = document.createElement("button");
       pinBtn.className = "event-pin-btn";
-      pinBtn.textContent = event.pinned ? "📌" : "📍";
+      if (event.pinned) {
+        pinBtn.innerHTML = '<span data-lucide="pin" style="width: 16px; height: 16px; fill: var(--primary); stroke: var(--primary);"></span>';
+      } else {
+        pinBtn.innerHTML = '<span data-lucide="pin" style="width: 16px; height: 16px;"></span>';
+      }
       pinBtn.title = event.pinned ? (typeof t === 'function' ? t('unpin', 'Unpin event') : "Unpin event") : (typeof t === 'function' ? t('pin', 'Pin event') : "Pin event");
       pinBtn.setAttribute("aria-label", pinBtn.title);
 
@@ -550,7 +564,7 @@ function renderEventsPage() {
 
     const editBtn = document.createElement("button");
     editBtn.className = "event-edit-btn";
-    editBtn.textContent = "✏️";
+    editBtn.innerHTML = '<span data-lucide="pencil" style="width: 16px; height: 16px;"></span>';
     editBtn.title = typeof t === 'function' ? t('edit', 'Edit event') : "Edit event";
     editBtn.setAttribute("aria-label", "Edit event");
 
@@ -563,7 +577,7 @@ function renderEventsPage() {
 
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "event-delete-btn";
-    deleteBtn.textContent = "🗑️";
+    deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 16px; height: 16px;"></span>';
     deleteBtn.title = typeof t === 'function' ? t('delete', 'Delete event') : "Delete event";
     deleteBtn.setAttribute("aria-label", "Delete event");
 
@@ -604,13 +618,13 @@ function renderEventsPage() {
     if (upcomingEvents.length === 0) {
       const empty = document.createElement("p");
       empty.className = "events-empty";
-      empty.textContent = typeof t === 'function' ? t('no_events', 'No upcoming events. Add one!') : "No upcoming events. Add one!";
+      empty.innerHTML = '<span data-lucide="calendar-x" style="width: 32px; height: 32px; vertical-align: middle; margin-right: 8px; opacity: 0.5;"></span> ' + (typeof t === 'function' ? t('no_events', 'No upcoming events. Add one!') : "No upcoming events. Add one!");
       fragment.appendChild(empty);
     } else {
       if (pinnedEvents.length > 0) {
         const pinnedTitle = document.createElement("h4");
         pinnedTitle.className = "events-subtitle";
-        pinnedTitle.textContent = "📌 " + (typeof t === 'function' ? t('pinned_events', 'Pinned Events') : "Pinned Events");
+        pinnedTitle.innerHTML = '<span data-lucide="pin" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></span> ' + (typeof t === 'function' ? t('pinned_events', 'Pinned Events') : "Pinned Events");
         fragment.appendChild(pinnedTitle);
 
         pinnedEvents.forEach(e => {
@@ -622,7 +636,7 @@ function renderEventsPage() {
       if (unpinnedEvents.length > 0) {
         const unpinnedTitle = document.createElement("h4");
         unpinnedTitle.className = "events-subtitle";
-        unpinnedTitle.textContent = pinnedEvents.length > 0 ? (typeof t === 'function' ? t('all_events', 'All Events') : "All Events") : (typeof t === 'function' ? t('upcoming_events', 'Upcoming Events') : "Upcoming Events");
+        unpinnedTitle.innerHTML = '<span data-lucide="calendar" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></span> ' + (pinnedEvents.length > 0 ? (typeof t === 'function' ? t('all_events', 'All Events') : "All Events") : (typeof t === 'function' ? t('upcoming_events', 'Upcoming Events') : "Upcoming Events"));
         fragment.appendChild(unpinnedTitle);
 
         unpinnedEvents.forEach(e => {
@@ -680,7 +694,9 @@ function openEventModal(editEvent = null) {
 
   const title = document.createElement("h3");
   title.className = "notes-modal-title";
-  title.textContent = isEditing ? ("✏️ " + (typeof t === 'function' ? t('edit_event', 'Edit Event') : "Edit Event")) : ("➕ " + (typeof t === 'function' ? t('add_event', 'Add Event') : "Add Event"));
+  title.innerHTML = isEditing 
+    ? '<span data-lucide="pencil" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></span> ' + (typeof t === 'function' ? t('edit_event', 'Edit Event') : "Edit Event")
+    : '<span data-lucide="plus" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></span> ' + (typeof t === 'function' ? t('add_event', 'Add Event') : "Add Event");
 
   const titleLabel = document.createElement("label");
   titleLabel.className = "notes-modal-label";
@@ -723,15 +739,17 @@ function openEventModal(editEvent = null) {
 
   const saveBtn = document.createElement("button");
   saveBtn.className = "notes-modal-save-btn";
-  saveBtn.textContent = isEditing ? ("💾 " + (typeof t === 'function' ? t('update', 'Update') : "Update")) : ("➕ " + (typeof t === 'function' ? t('add', 'Add') : "Add"));
+  saveBtn.innerHTML = isEditing 
+    ? '<span data-lucide="check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('update', 'Update') : "Update")
+    : '<span data-lucide="plus" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('add', 'Add') : "Add");
 
   const cancelBtn = document.createElement("button");
   cancelBtn.className = "notes-modal-cancel-btn";
-  cancelBtn.textContent = typeof t === 'function' ? t('cancel', 'Cancel') : "Cancel";
+  cancelBtn.innerHTML = '<span data-lucide="x" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('cancel', 'Cancel') : "Cancel");
 
   const closeBtn = document.createElement("button");
   closeBtn.className = "notes-modal-close-btn";
-  closeBtn.textContent = "✕";
+  closeBtn.innerHTML = '<span data-lucide="x" style="width: 20px; height: 20px;"></span>';
 
   modal.appendChild(closeBtn);
   modal.appendChild(title);
@@ -800,6 +818,17 @@ function openEventModal(editEvent = null) {
   });
 
   setTimeout(() => titleInput.focus(), 100);
+}
+
+// ========================================
+// دالة مساعدة للتهريب الآمن
+// ========================================
+
+function escapeHtml(text) {
+  if (!text) return "";
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 // ========================================

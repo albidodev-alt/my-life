@@ -1,47 +1,57 @@
 // ========================================
-// MY LIFE - SERVICE WORKER v1.8
+// MY LIFE - SERVICE WORKER v1.10
 // يدعم العمل دون اتصال + إدارة كاش محسّنة
 // ========================================
 
-const CACHE_NAME = 'my-life-v8';
-const RUNTIME_CACHE = 'runtime-v1';
+const CACHE_NAME = 'my-life-v10';
+const RUNTIME_CACHE = 'runtime-v3';
 
 const ASSETS_TO_CACHE = [
+  // ===== HTML =====
   'index.html',
+
+  // ===== CSS =====
   'css/style.css',
   'css/notes.css',
   'css/events.css',
   'css/program.css',
+
+  // ===== JS (Core) =====
   'js/main.js',
   'js/storage.js',
   'js/week.js',
   'js/day.js',
   'js/task.js',
-  'js/Achievements.js',
+  'js/achievements.js', 
   'js/note.js',
   'js/events.js',
   'js/program.js',
   'js/profile.js',
+
+  // ===== JS (Secondary) =====
   'js/notification.js',
   'js/backup.js',
   'js/translations.js',
   'js/update.js',
   'js/hour.js',
+
+  // ===== Languages =====
   'lang/en.js',
   'lang/ar.js',
   'lang/fr.js',
+
+  // ===== PWA =====
   'manifest.json',
   'icons/icon-512.png',
   'icons/icon-192.png',
-  'icons/icon-96.png',
-  
-  // ===== الموارد الخارجية (CDN) =====
-  'https://unpkg.com/lucide@latest',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap'
+  'icons/icon-96.png'
 ];
 
+// ========================================
+// INSTALL
+// ========================================
 self.addEventListener('install', function(event) {
-  console.log('[SW] Installing...');
+  console.log('[SW] Installing v10...');
   
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -60,8 +70,11 @@ self.addEventListener('install', function(event) {
   );
 });
 
+// ========================================
+// ACTIVATE
+// ========================================
 self.addEventListener('activate', function(event) {
-  console.log('[SW] Activating...');
+  console.log('[SW] Activating v10...');
   
   event.waitUntil(
     caches.keys()
@@ -82,46 +95,38 @@ self.addEventListener('activate', function(event) {
   );
 });
 
+// ========================================
+// FETCH
+// ========================================
 self.addEventListener('fetch', function(event) {
   const requestUrl = new URL(event.request.url);
   
+  // تجاهل طلبات التحليلات
   if (requestUrl.pathname.includes('analytics') || 
       requestUrl.pathname.includes('beacon') ||
       requestUrl.pathname.includes('logging')) {
     return;
   }
   
-  // ===== معالجة CDN بشكل خاص (كاش منفصل) =====
+  // ===== ملفات CDN (Network-First) =====
   if (requestUrl.hostname.includes('unpkg.com') || 
       requestUrl.hostname.includes('fonts.googleapis.com') ||
-      requestUrl.hostname.includes('fonts.gstatic.com')) {
+      requestUrl.hostname.includes('fonts.gstatic.com') ||
+      requestUrl.hostname.includes('cdn.jsdelivr.net')) {
     
     event.respondWith(
-      caches.open(RUNTIME_CACHE)
-        .then(function(cache) {
-          return cache.match(event.request)
-            .then(function(cachedResponse) {
-              if (cachedResponse) {
-                return cachedResponse;
-              }
-              
-              return fetch(event.request)
-                .then(function(networkResponse) {
-                  if (networkResponse && networkResponse.status === 200) {
-                    cache.put(event.request, networkResponse.clone());
-                  }
-                  return networkResponse;
-                })
-                .catch(function() {
-                  return new Response('', { status: 200, statusText: 'OK' });
-                });
+      fetch(event.request)
+        .catch(function() {
+          return caches.match(event.request)
+            .then(function(cached) {
+              return cached || new Response('', { status: 200, statusText: 'OK' });
             });
         })
     );
     return;
   }
   
-  // ===== الملفات الثابتة (كاش رئيسي) =====
+  // ===== الملفات الثابتة (Cache-First مع تحديث خلفي) =====
   if (isStaticAsset(requestUrl)) {
     event.respondWith(
       caches.open(CACHE_NAME)
@@ -129,7 +134,6 @@ self.addEventListener('fetch', function(event) {
           return cache.match(event.request)
             .then(function(cachedResponse) {
               if (cachedResponse) {
-                // تحديث الكاش في الخلفية
                 fetch(event.request)
                   .then(function(networkResponse) {
                     if (networkResponse && networkResponse.status === 200) {
@@ -159,7 +163,7 @@ self.addEventListener('fetch', function(event) {
     return;
   }
   
-  // ===== Offline Fallback لصفحة index.html =====
+  // ===== Offline Fallback لـ index.html =====
   if (requestUrl.pathname.endsWith('/') || requestUrl.pathname.endsWith('/index.html')) {
     event.respondWith(
       fetch(event.request)
@@ -217,6 +221,9 @@ self.addEventListener('fetch', function(event) {
   );
 });
 
+// ========================================
+// Helper: Check Static Asset
+// ========================================
 function isStaticAsset(url) {
   const staticExtensions = [
     '.css', '.js', '.html', '.json',
@@ -229,6 +236,9 @@ function isStaticAsset(url) {
   });
 }
 
+// ========================================
+// PUSH NOTIFICATIONS
+// ========================================
 self.addEventListener('push', function(event) {
   const data = event.data ? event.data.json() : {};
   const title = data.title || 'My Life';
@@ -247,6 +257,9 @@ self.addEventListener('push', function(event) {
   );
 });
 
+// ========================================
+// NOTIFICATION CLICK
+// ========================================
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   
@@ -271,10 +284,13 @@ self.addEventListener('notificationclick', function(event) {
   );
 });
 
+// ========================================
+// MESSAGE HANDLER
+// ========================================
 self.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 });
 
-console.log('✅ Service Worker loaded successfully!');
+console.log('✅ Service Worker v1.10 loaded successfully!');

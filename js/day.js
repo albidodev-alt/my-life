@@ -179,7 +179,7 @@ function openDay(dayName) {
     box.dataset.hour = i;
     box.dataset.label = formatHourRange(i);
     box.dataset.activity = data.hours[i] || '';
-    box.style.cssText = 'background:#dbeafe;color:#1e293b;border-color:rgba(79,142,219,0.2)';
+    box.style.cssText = 'background:#dbeafe;color:#1e293b;border-color:rgba(79,142,219,0.2);overflow:hidden;min-width:0;';
 
     const label = document.createElement('span');
     label.className = 'hour-label';
@@ -189,16 +189,47 @@ function openDay(dayName) {
 
     const act = document.createElement('div');
     act.className = 'hour-activity';
-    act.style.cssText = 'display:flex;align-items:center;gap:6px;color:#1e293b;font-family:var(--font-handwritten);font-size:var(--font-sm);font-weight:600;';
+    act.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #1e293b;
+      font-family: var(--font-handwritten);
+      font-size: var(--font-sm);
+      font-weight: 600;
+      overflow: hidden;
+      max-width: 100%;
+      min-width: 0;
+    `;
 
     if (data.hours[i]) {
       const icon = document.createElement('span');
       icon.setAttribute('data-lucide', getActivityIcon(data.hours[i]));
-      icon.style.cssText = 'width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;';
+      icon.style.cssText = `
+        width: 16px;
+        height: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      `;
       act.appendChild(icon);
+      
       const txt = document.createElement('span');
       // ترجمة النشاط
-      txt.textContent = typeof t === 'function' ? t(data.hours[i], data.hours[i]) : data.hours[i];
+      const translatedText = typeof t === 'function' ? t(data.hours[i], data.hours[i]) : data.hours[i];
+      txt.textContent = translatedText;
+      
+      // ✅ قص النص مع "..." بدون Tooltip
+      txt.style.cssText = `
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        min-width: 0;
+        display: block;
+      `;
+      
       act.appendChild(txt);
     }
     box.appendChild(act);
@@ -218,13 +249,36 @@ function openDay(dayName) {
   // Day For
   const dfBox = document.createElement('div');
   dfBox.id = 'day-for-box';
+  dfBox.style.cssText = `
+    background: var(--bg-card);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    padding: var(--spacing-md) var(--spacing-xl);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--warning);
+    cursor: pointer;
+    max-width: 400px;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-base);
+    color: var(--text-secondary);
+    font-family: var(--font-handwritten);
+    font-size: var(--font-base);
+    font-weight: 500;
+    /* ✅ إصلاح النصوص الطويلة */
+    overflow: hidden;
+    word-break: break-word;
+    line-height: 1.5;
+  `;
+  
   const dfLabel = document.createElement('span');
   dfLabel.style.cssText = 'font-weight:600;color:var(--text-primary);';
   dfLabel.textContent = typeof t === 'function' ? t('day_for', 'Day For? ') : 'Day For? ';
+  
   const dfValue = document.createElement('span');
   dfValue.id = 'day-for-value';
-  dfValue.style.cssText = 'color:var(--text-secondary);font-weight:500;';
+  dfValue.style.cssText = 'color:var(--text-secondary);font-weight:500;word-break: break-word;';
   dfValue.textContent = data.dayFor || (typeof t === 'function' ? t('click_to_set', 'Click to set') : 'Click to set');
+  
   dfBox.append(dfLabel, dfValue);
   dfBox.onclick = () => {
     const val = prompt(typeof t === 'function' ? t('what_is_day_for', 'What is this day for?') : 'What is this day for?', data.dayFor || '');
@@ -239,17 +293,30 @@ function openDay(dayName) {
 
   const card = document.createElement('div');
   card.className = 'sleep-card';
-  card.style.cssText = 'background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px 20px;margin-top:16px;box-shadow:var(--shadow-sm);transition:all 0.2s ease;cursor:pointer;';
+  card.style.cssText = `
+    background:var(--bg-card);
+    border:1px solid var(--border-color);
+    border-radius:12px;
+    padding:16px 20px;
+    margin-top:16px;
+    box-shadow:var(--shadow-sm);
+    transition:all 0.2s ease;
+    cursor:pointer;
+    overflow: hidden;
+    word-break: break-word;
+  `;
   card.onmouseenter = function() { this.style.boxShadow = 'var(--shadow-md)'; this.style.transform = 'translateY(-2px)'; };
   card.onmouseleave = function() { this.style.boxShadow = 'var(--shadow-sm)'; this.style.transform = 'translateY(0)'; };
   card.onclick = () => openSleepModal(dayName);
 
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
+  
   const info = document.createElement('div');
-  info.style.cssText = 'display:flex;align-items:center;gap:12px;font-family:var(--font-handwritten);font-size:16px;color:var(--text-primary);flex:1;';
+  info.style.cssText = 'display:flex;align-items:center;gap:12px;font-family:var(--font-handwritten);font-size:16px;color:var(--text-primary);flex:1;min-width:0;';
+  
   const txt = document.createElement('span');
-  txt.style.cssText = 'font-weight:600;direction:ltr;';
+  txt.style.cssText = 'font-weight:600;direction:ltr;word-break: break-word;overflow: hidden;text-overflow: ellipsis;';
 
   const sl = getLabel('sleep', 'Sleep');
   const wl = getLabel('wake', 'Wake');
@@ -308,7 +375,7 @@ function openDay(dayName) {
 }
 
 // ========================================
-// مودال النشاط
+// مودال النشاط (مع عرض النشاط الحالي كاملاً)
 // ========================================
 
 function openHourModal(dayName, hourIndex, label, currentActivity) {
@@ -324,9 +391,36 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
 
   modal.innerHTML = `
     <h3>${label}</h3>
-    <p class="modal-subtitle" style="color:${currentActivity ? '#3b82f6' : '#9ca3af'};font-weight:500;">
-      ${currentActivity ? t('current_activity', 'Current') + ': ' + translatedCurrentActivity : t('no_activity_selected', 'No activity selected')}
-    </p>
+    
+    <!-- ✅ عرض النشاط الحالي كاملاً -->
+    <div style="
+      background: ${currentActivity ? 'var(--primary-light)' : 'var(--bg-surface)'};
+      border: 1px solid ${currentActivity ? 'var(--primary)' : 'var(--border-light)'};
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      font-family: var(--font-handwritten);
+      font-size: 15px;
+      font-weight: 600;
+      color: ${currentActivity ? 'var(--primary-dark)' : 'var(--text-muted)'};
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      line-height: 1.5;
+      max-height: 120px;
+      overflow-y: auto;
+    ">
+      ${currentActivity ? `
+        <span data-lucide="${getActivityIcon(currentActivity)}" style="width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; color: var(--primary);"></span>
+        <span style="flex: 1; min-width: 0;">${translatedCurrentActivity}</span>
+      ` : `
+        <span data-lucide="circle-dashed" style="width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; color: var(--text-muted);"></span>
+        <span style="flex: 1; min-width: 0;">${t('no_activity_selected', 'No activity selected')}</span>
+      `}
+    </div>
+    
     <p class="modal-subtitle">${t('choose_activity', 'Choose an activity')}</p>
     
     <div id="suggestions-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
@@ -349,10 +443,20 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
            style="width:100%;padding:10px 14px;border:2px solid var(--border-input);border-radius:10px;font-family:var(--font-body);font-size:14px;background:var(--bg-input);color:var(--text-primary);transition:all 0.2s ease;margin-bottom:12px;">
 
     <div style="display:flex;gap:8px;margin-top:4px;">
-      <button id="save-custom-btn" style="flex:1;padding:12px;background:var(--primary-gradient);color:white;border:none;border-radius:10px;font-family:var(--font-handwritten);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s ease;box-shadow:var(--shadow-sm);">💾 ${t('save', 'Save')}</button>
-      ${currentActivity ? `<button id="remove-activity-btn" style="flex:1;padding:12px;background:#ef4444;color:white;border:none;border-radius:10px;font-family:var(--font-handwritten);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s ease;">🗑️ ${t('remove', 'Remove')}</button>` : ''}
+      <button id="save-custom-btn" style="flex:1;padding:12px;background:var(--primary-gradient);color:white;border:none;border-radius:10px;font-family:var(--font-handwritten);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s ease;box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span data-lucide="check" style="width: 18px; height: 18px;"></span>
+        ${t('save', 'Save')}
+      </button>
+      ${currentActivity ? `
+        <button id="remove-activity-btn" style="flex:1;padding:12px;background:#ef4444;color:white;border:none;border-radius:10px;font-family:var(--font-handwritten);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <span data-lucide="trash-2" style="width: 18px; height: 18px;"></span>
+          ${t('remove', 'Remove')}
+        </button>
+      ` : ''}
     </div>
-    <button id="close-modal-btn" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);transition:all 0.2s ease;padding:4px 8px;border-radius:6px;line-height:1;">✕</button>
+    <button id="close-modal-btn" style="position:absolute;top:12px;right:12px;background:none;border:none;cursor:pointer;color:var(--text-muted);transition:all 0.2s ease;padding:4px 8px;border-radius:6px;line-height:1;display:flex;align-items:center;justify-content:center;">
+      <span data-lucide="x" style="width: 20px; height: 20px;"></span>
+    </button>
   `;
 
   overlay.appendChild(modal);

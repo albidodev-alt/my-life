@@ -3,6 +3,7 @@
 // ========================================
 
 let mainAbortController = null;
+let currentPage = null;
 
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -36,7 +37,16 @@ document.addEventListener("DOMContentLoaded", function () {
   // ===== ✅ تحديث الإشعارات =====
   if (typeof refreshNotifications === "function") {
     refreshNotifications();
-    setInterval(refreshNotifications, 5 * 60 * 1000);
+    
+    // تحديث عند ظهور الصفحة فقط
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) {
+        refreshNotifications();
+      }
+    });
+    
+    // تحديث كل 15 دقيقة فقط
+    setInterval(refreshNotifications, 15 * 60 * 1000);
   }
 
   // ===== ✅ تهيئة PWA =====
@@ -97,6 +107,7 @@ function navigateTo(page) {
   const app = document.getElementById("app");
   if (!app) return;
 
+  // ✅ إزالة شرط pageCache - يعيد بناء الصفحة دائماً
   if (mainAbortController) {
     mainAbortController.abort();
     mainAbortController = null;
@@ -104,6 +115,7 @@ function navigateTo(page) {
 
   mainAbortController = new AbortController();
 
+  // تحديث الأزرار النشطة
   const navButtons = document.querySelectorAll(".nav-btn");
   navButtons.forEach(function (button) {
     button.classList.toggle(
@@ -123,6 +135,9 @@ function navigateTo(page) {
   // تحديث أسماء الأزرار المترجمة
   updateNavTranslations();
 
+  currentPage = page;
+
+  // بناء الصفحة الجديدة
   switch (page) {
     case "routine":
       if (typeof renderWeek === "function") {
@@ -137,8 +152,12 @@ function navigateTo(page) {
       break;
 
     case "completed":
-      if (typeof renderCompleted === "function") {
+      if (typeof window.renderCompleted === "function") {
+        window.renderCompleted();
+      } else if (typeof renderCompleted === "function") {
         renderCompleted();
+      } else {
+        renderCompletedFallback();
       }
       break;
 
@@ -176,6 +195,32 @@ function navigateTo(page) {
     initLucideIcons();
   }, 50);
 }
+
+// ========================================
+// ✅ دالة Fallback للإنجازات
+// ========================================
+
+function renderCompletedFallback() {
+  const app = document.getElementById("app");
+  if (!app) return;
+  
+  app.innerHTML = `
+    <h2>✅ Completed Tasks</h2>
+    <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+      <p style="font-size: 18px; margin-bottom: 16px;">
+        ⚠️ The Achievements module couldn't be loaded.
+      </p>
+      <p style="font-size: 14px; margin-bottom: 24px;">
+        Please refresh the page to try again.
+      </p>
+      <button onclick="location.reload()" style="padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-family: var(--font-handwritten); font-size: 16px; font-weight: 600;">
+        🔄 Refresh Page
+      </button>
+    </div>
+  `;
+}
+
+window.renderCompletedFallback = renderCompletedFallback;
 
 // ========================================
 // تحديث ترجمة أزرار التنقل
@@ -532,6 +577,41 @@ function handleInstallClick() {
     }
   }
 }
+
+// ========================================
+// ===== دالة مساعدة لفتح Achievements =====
+// ========================================
+
+window.openAchievements = function() {
+  console.log("📌 Opening Achievements via window.openAchievements");
+  
+  // محاولة استخدام renderCompleted مباشرة
+  if (typeof window.renderCompleted === "function") {
+    document.querySelectorAll(".nav-btn, .bottom-nav-btn").forEach(function(btn) {
+      btn.classList.remove("active");
+    });
+    window.renderCompleted();
+    return true;
+  }
+  
+  // محاولة استخدام renderCompleted مباشرة (بدون window)
+  if (typeof renderCompleted === "function") {
+    document.querySelectorAll(".nav-btn, .bottom-nav-btn").forEach(function(btn) {
+      btn.classList.remove("active");
+    });
+    renderCompleted();
+    return true;
+  }
+  
+  // محاولة استخدام navigateTo
+  if (typeof navigateTo === "function") {
+    navigateTo("completed");
+    return true;
+  }
+  
+  console.error("❌ Cannot open Achievements");
+  return false;
+};
 
 // ========================================
 // تصدير الدوال للاستخدام من ملفات أخرى

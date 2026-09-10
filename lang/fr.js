@@ -12,7 +12,7 @@ const translationsFR = {
     "completed": "Terminées",
     "notes": "Notes",
     "events": "Événements",
-    "program": "Programmes d'apprentissage",
+    "program": "Programmes",
     "profile": "Profil",
     "settings": "Paramètres",
     "achievements": "Réalisations",
@@ -63,6 +63,7 @@ const translationsFR = {
     "today": "Aujourd'hui",
     "yesterday": "Hier",
     "days_ago": "jours",
+    "drops": "Gouttes",
 
     // ========================================
     // الروتين - Routine
@@ -155,6 +156,9 @@ const translationsFR = {
     "completion_date": "Date d'achèvement",
     "filter_by_priority": "Filtrer par priorité",
     "overdue": "En retard",
+    "search_tasks": "Rechercher des tâches...",
+    "no_tasks_found": "Aucune tâche trouvée correspondant à votre recherche",
+    "no_tasks_priority": "Aucune tâche avec cette priorité",
 
     // ========================================
     // الإنجازات - Achievements
@@ -215,7 +219,6 @@ const translationsFR = {
     "no_steps_added_yet": "Aucune étape ajoutée pour le moment. Ajoutez votre première étape ci-dessous !",
     "all_completed": "Tout est terminé !",
     "no_description": "Aucune description",
-    "not_set": "Non défini",
     "next": "Suivant",
     "sessions": "Sessions",
     "steps": "Étapes",
