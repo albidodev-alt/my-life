@@ -1,10 +1,10 @@
 // ========================================
-// MY LIFE - SERVICE WORKER v16
+// MY LIFE - SERVICE WORKER v16.1
 // يدعم العمل دون اتصال بشكل كامل
 // ========================================
 
-const CACHE_NAME = 'my-life-v16';
-const RUNTIME_CACHE = 'runtime-v16';
+const CACHE_NAME = 'my-life-v16.1';
+const RUNTIME_CACHE = 'runtime-v16.1';
 
 const ASSETS_TO_CACHE = [
   // ===== HTML =====
@@ -35,11 +35,11 @@ const ASSETS_TO_CACHE = [
   'js/events.js',
   'js/program.js',
   'js/drops.js',
+  'js/backup.js',
   'js/profile.js',
 
   // ===== JS (Secondary) =====
   'js/notification.js',
-  'js/backup.js',
   'js/translations.js',
   'js/update.js',
   'js/hour.js',
@@ -73,7 +73,7 @@ const ASSETS_TO_CACHE = [
 // INSTALL - تخزين كل الملفات
 // ========================================
 self.addEventListener('install', function(event) {
-  console.log('[SW] Installing v16...');
+  console.log('[SW] Installing v16.1...');
   
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -99,7 +99,7 @@ self.addEventListener('install', function(event) {
 // ACTIVATE - حذف الكاش القديم
 // ========================================
 self.addEventListener('activate', function(event) {
-  console.log('[SW] Activating v16...');
+  console.log('[SW] Activating v16.1...');
   
   event.waitUntil(
     caches.keys()
@@ -268,4 +268,4 @@ self.addEventListener('message', function(event) {
   }
 });
 
-console.log('✅ Service Worker v16 loaded successfully!');
+console.log('✅ Service Worker v16.1 loaded successfully!');

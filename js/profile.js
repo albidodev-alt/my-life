@@ -377,11 +377,48 @@ function renderProfile() {
     }
   });
 
-  // 11. Backup Section
-  if (typeof renderBackupSection === 'function') {
-    const backupSlot = document.getElementById('backup-section-slot');
-    if (backupSlot) {
-      backupSlot.appendChild(renderBackupSection());
+  // ✅ 11. Backup Section - مع حماية كاملة من الأخطاء
+  const backupSlot = document.getElementById('backup-section-slot');
+  if (backupSlot) {
+    if (typeof renderBackupSection === 'function') {
+      try {
+        const backupSection = renderBackupSection();
+        if (backupSection && backupSection instanceof Node) {
+          backupSlot.appendChild(backupSection);
+        } else {
+          throw new Error('renderBackupSection did not return a valid DOM node');
+        }
+      } catch (e) {
+        console.warn('⚠️ Backup section failed to render:', e);
+        // عرض رسالة بديلة بدلاً من تعطل الصفحة
+        const fallback = document.createElement('div');
+        fallback.className = 'profile-section';
+        fallback.innerHTML = `
+          <div class="profile-section-header">
+            <span data-lucide="database" class="profile-section-icon"></span>
+            <h3 class="profile-section-title">${typeof t === 'function' ? t('data_backup', 'Data & Backup') : 'Data & Backup'}</h3>
+          </div>
+          <p style="color:var(--text-muted);font-size:14px;text-align:center;padding:12px;">
+            ⚠️ ${typeof t === 'function' ? t('backup_unavailable', 'Backup section temporarily unavailable') : 'Backup section temporarily unavailable'}
+          </p>
+        `;
+        backupSlot.appendChild(fallback);
+      }
+    } else {
+      // في حال لم يتم تحميل backup.js بعد (defer)
+      console.warn('⚠️ renderBackupSection not loaded yet');
+      const fallback = document.createElement('div');
+      fallback.className = 'profile-section';
+      fallback.innerHTML = `
+        <div class="profile-section-header">
+          <span data-lucide="database" class="profile-section-icon"></span>
+          <h3 class="profile-section-title">${typeof t === 'function' ? t('data_backup', 'Data & Backup') : 'Data & Backup'}</h3>
+        </div>
+        <p style="color:var(--text-muted);font-size:14px;text-align:center;padding:12px;">
+          ⏳ ${typeof t === 'function' ? t('loading', 'Loading...') : 'Loading...'}
+        </p>
+      `;
+      backupSlot.appendChild(fallback);
     }
   }
 
