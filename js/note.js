@@ -1,12 +1,39 @@
 // ========================================
-// MY LIFE HUB - NOTES v2.0
-// نظام ملاحظات متكامل ومستقل
+// MY LIFE HUB - NOTES v2.1
+// (Debounced Search + Safe Save + Better UX)
 // ========================================
 
 const NOTES_STORAGE_KEY = "myLifeHub_notes_v2";
 
 // ========================================
-// دوال التخزين الأساسية
+// ✅ دوال التخزين الآمنة
+// ========================================
+
+function safeSetNotes(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return { success: true };
+  } catch (err) {
+    if (err.name === 'QuotaExceededError' || err.code === 22) {
+      console.warn('⚠️ localStorage quota exceeded for notes');
+      if (typeof showToast === 'function') {
+        showToast(
+          '⚠️ ' + (typeof t === 'function'
+            ? t('storage_full', 'Storage is full. Please delete some notes.')
+            : 'Storage is full. Please delete some notes.'),
+          'warning',
+          5000
+        );
+      }
+      return { success: false, error: 'quota' };
+    }
+    console.error('Error saving notes:', err);
+    return { success: false, error: 'unknown' };
+  }
+}
+
+// ========================================
+// ✅ دوال التخزين الأساسية
 // ========================================
 
 function getAllNotes() {
@@ -22,20 +49,22 @@ function getAllNotes() {
 }
 
 function saveAllNotes(notes) {
-  try {
-    localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes));
-  } catch (error) {
-    console.error("Error saving notes:", error);
+  if (!Array.isArray(notes)) {
+    console.error("saveAllNotes: notes must be an array");
+    return false;
   }
+  
+  const result = safeSetNotes(NOTES_STORAGE_KEY, JSON.stringify(notes));
+  return result.success;
 }
 
 // ========================================
-// العمليات الأساسية
+// ✅ العمليات الأساسية
 // ========================================
 
 function addNote(title, content) {
-  const trimmedTitle = title.trim();
-  const trimmedContent = content.trim();
+  const trimmedTitle = (title || '').trim();
+  const trimmedContent = (content || '').trim();
 
   if (!trimmedTitle || !trimmedContent) {
     return null;
@@ -43,7 +72,7 @@ function addNote(title, content) {
 
   const notes = getAllNotes();
   const newNote = {
-    id: Date.now() + Math.random() * 1000,
+    id: (typeof generateId === "function") ? generateId() : Date.now() + Math.random(),
     title: trimmedTitle,
     content: trimmedContent,
     pinned: false,
@@ -52,13 +81,13 @@ function addNote(title, content) {
   };
 
   notes.unshift(newNote);
-  saveAllNotes(notes);
-  return newNote;
+  const success = saveAllNotes(notes);
+  return success ? newNote : null;
 }
 
 function updateNote(noteId, newTitle, newContent) {
-  const trimmedTitle = newTitle.trim();
-  const trimmedContent = newContent.trim();
+  const trimmedTitle = (newTitle || '').trim();
+  const trimmedContent = (newContent || '').trim();
 
   if (!trimmedTitle || !trimmedContent) {
     return false;
@@ -73,21 +102,20 @@ function updateNote(noteId, newTitle, newContent) {
   notes[noteIndex].content = trimmedContent;
   notes[noteIndex].updatedAt = new Date().toISOString();
 
-  saveAllNotes(notes);
-  return true;
+  return saveAllNotes(notes);
 }
 
 function deleteNote(noteId) {
   const notes = getAllNotes();
   const filteredNotes = notes.filter(n => n.id !== noteId);
-  saveAllNotes(filteredNotes);
+  return saveAllNotes(filteredNotes);
 }
 
 function togglePinNote(noteId) {
   const notes = getAllNotes();
   const note = notes.find(n => n.id === noteId);
 
-  if (!note) return;
+  if (!note) return false;
 
   note.pinned = !note.pinned;
 
@@ -97,11 +125,15 @@ function togglePinNote(noteId) {
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
 
-  saveAllNotes(notes);
+  return saveAllNotes(notes);
 }
 
+// ========================================
+// ✅ دوال مساعدة
+// ========================================
+
 function searchNotes(notes, searchTerm) {
-  const query = searchTerm.trim().toLowerCase();
+  const query = (searchTerm || '').trim().toLowerCase();
   if (!query) return notes;
 
   return notes.filter(note => {
@@ -146,6 +178,16 @@ function escapeHtml(text) {
 }
 
 // ========================================
+// ✅ Debounce (لتجنب إعادة الرسم المتكرر أثناء الكتابة)
+// ========================================
+
+const debouncedSearchRender = (typeof debounce === 'function')
+  ? debounce((searchTerm) => {
+      renderNotesList(searchTerm);
+    }, 200)
+  : (searchTerm) => renderNotesList(searchTerm);
+
+// ========================================
 // عرض صفحة الملاحظات
 // ========================================
 
@@ -178,6 +220,7 @@ function renderNotesPageV2() {
             id="notes-search-input"
             placeholder="${tr('search_notes', 'Search notes by title or content...')}"
             aria-label="${tr('search_notes', 'Search notes')}"
+            autocomplete="off"
           />
         </div>
         <div class="notes-stats">
@@ -191,8 +234,9 @@ function renderNotesPageV2() {
 
   const searchInput = document.getElementById("notes-search-input");
   if (searchInput) {
+    // ✅ استخدام debounce لتحسين الأداء
     searchInput.addEventListener("input", function() {
-      renderNotesList(this.value);
+      debouncedSearchRender(this.value);
     });
   }
 
@@ -265,11 +309,9 @@ function renderNotesList(searchTerm = "") {
   grid.innerHTML = "";
   grid.appendChild(fragment);
 
-  setTimeout(function() {
-    if (typeof initLucideIcons === 'function') {
-      initLucideIcons();
-    }
-  }, 50);
+  if (typeof debouncedLucide === 'function') {
+    debouncedLucide(50);
+  }
 }
 
 // ========================================
@@ -305,8 +347,10 @@ function createNoteCard(note) {
   const actions = document.createElement("div");
   actions.className = "notes-card-actions";
 
+  // ===== زر التثبيت =====
   const pinBtn = document.createElement("button");
   pinBtn.className = "notes-card-action-btn";
+  pinBtn.type = "button";
   pinBtn.innerHTML = note.pinned 
     ? '<span data-lucide="pin" style="width: 16px; height: 16px; fill: var(--primary); stroke: var(--primary);"></span>'
     : '<span data-lucide="pin" style="width: 16px; height: 16px;"></span>';
@@ -319,8 +363,10 @@ function createNoteCard(note) {
     renderNotesList(document.getElementById("notes-search-input")?.value || "");
   });
 
+  // ===== زر التعديل =====
   const editBtn = document.createElement("button");
   editBtn.className = "notes-card-action-btn";
+  editBtn.type = "button";
   editBtn.innerHTML = '<span data-lucide="pencil" style="width: 16px; height: 16px;"></span>';
   editBtn.title = tr('edit', 'Edit note');
   editBtn.setAttribute("aria-label", "Edit note");
@@ -330,13 +376,14 @@ function createNoteCard(note) {
     openNoteModal(note);
   });
 
+  // ===== زر الحذف =====
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "notes-card-action-btn notes-delete-btn";
+  deleteBtn.type = "button";
   deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 16px; height: 16px;"></span>';
   deleteBtn.title = tr('delete', 'Delete note');
   deleteBtn.setAttribute("aria-label", "Delete note");
 
-  // ✨ استخدام deleteModal الجديد
   deleteBtn.addEventListener("click", function(e) {
     e.stopPropagation();
     deleteModal({
@@ -356,10 +403,12 @@ function createNoteCard(note) {
   header.appendChild(titleArea);
   header.appendChild(actions);
 
+  // ===== محتوى الملاحظة =====
   const content = document.createElement("p");
   content.className = "notes-card-content";
   content.textContent = note.content || "";
 
+  // ===== تذييل البطاقة =====
   const footer = document.createElement("div");
   footer.className = "notes-card-footer";
 
@@ -380,6 +429,7 @@ function createNoteCard(note) {
   card.appendChild(content);
   card.appendChild(footer);
 
+  // ===== فتح الملاحظة عند النقر على البطاقة =====
   card.addEventListener("click", function(e) {
     if (e.target.closest("button")) return;
     openNoteModal(note);
@@ -403,7 +453,7 @@ function openNoteModal(editNote = null) {
     size: 'medium'
   });
 
-  // حقل العنوان
+  // ===== حقل العنوان =====
   const titleField = createModalField({
     id: 'notes-modal-title-input',
     label: tr('title', 'Title'),
@@ -413,7 +463,7 @@ function openNoteModal(editNote = null) {
     maxLength: 120
   });
 
-  // حقل المحتوى
+  // ===== حقل المحتوى =====
   const contentField = createModalField({
     id: 'notes-modal-content-input',
     label: tr('content', 'Content'),
@@ -427,7 +477,7 @@ function openNoteModal(editNote = null) {
   modal.body.appendChild(titleField.field);
   modal.body.appendChild(contentField.field);
 
-  // حفظ
+  // ===== حفظ =====
   function handleSave() {
     const newTitle = titleField.input.value.trim();
     const newContent = contentField.input.value.trim();
@@ -456,11 +506,17 @@ function openNoteModal(editNote = null) {
 
     if (success) {
       modal.close();
-      renderNotesList(document.getElementById("notes-search-input")?.value || "");
+      setTimeout(() => {
+        renderNotesList(document.getElementById("notes-search-input")?.value || "");
+      }, 250);
+    } else {
+      if (typeof showToast === 'function') {
+        showToast('❌ ' + tr('save_failed', 'Failed to save note'), 'error');
+      }
     }
   }
 
-  // الأزرار
+  // ===== الأزرار =====
   const actions = createModalActions([
     {
       label: tr('cancel', 'Cancel'),
@@ -478,7 +534,7 @@ function openNoteModal(editNote = null) {
 
   modal.body.appendChild(actions);
 
-  // Enter في العنوان
+  // ===== اختصارات لوحة المفاتيح =====
   titleField.input.addEventListener("keydown", function(e) {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -486,7 +542,6 @@ function openNoteModal(editNote = null) {
     }
   });
 
-  // Ctrl+Enter للحفظ
   contentField.input.addEventListener("keydown", function(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
@@ -494,8 +549,33 @@ function openNoteModal(editNote = null) {
     }
   });
 
-  // Focus على العنوان
+  // ===== Focus تلقائي =====
   setTimeout(() => titleField.input.focus(), 100);
+}
+
+// ========================================
+// ✅ دوال إضافية مفيدة
+// ========================================
+
+/**
+ * عدد الملاحظات
+ */
+function getNotesCount() {
+  return getAllNotes().length;
+}
+
+/**
+ * عدد الملاحظات المثبتة
+ */
+function getPinnedNotesCount() {
+  return getAllNotes().filter(n => n.pinned).length;
+}
+
+/**
+ * بحث سريع
+ */
+function findNotes(query) {
+  return searchNotes(getAllNotes(), query);
 }
 
 // ========================================
@@ -504,5 +584,13 @@ function openNoteModal(editNote = null) {
 
 window.renderNotesPageV2 = renderNotesPageV2;
 window.renderNotesList = renderNotesList;
+window.getAllNotes = getAllNotes;
+window.addNote = addNote;
+window.updateNote = updateNote;
+window.deleteNote = deleteNote;
+window.togglePinNote = togglePinNote;
+window.getNotesCount = getNotesCount;
+window.getPinnedNotesCount = getPinnedNotesCount;
+window.findNotes = findNotes;
 
-console.log("✅ Notes v2.0 loaded successfully!");
+console.log("✅ Notes v2.1 loaded successfully!");

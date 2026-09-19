@@ -1,6 +1,7 @@
 /* ========================================
-   MY LIFE HUB - MODAL BASE STYLES
+   MY LIFE HUB - MODAL BASE STYLES v2.0
    نظام النوافذ الموحدة - التنسيقات
+   (Mobile Fixes + Safe Areas + Keyboard Support)
    ======================================== */
 
 /* ========================================
@@ -18,8 +19,13 @@
   justify-content: center;
   z-index: var(--z-modal);
   padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(16px + env(safe-area-inset-left, 0px));
+  padding-right: calc(16px + env(safe-area-inset-right, 0px));
   animation: modalOverlayFadeIn 0.3s ease;
   transition: opacity 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .modal-base-overlay.closing {
@@ -46,6 +52,7 @@
   box-shadow: var(--shadow-lg);
   width: 100%;
   max-height: 90vh;
+  max-height: 90dvh;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -53,6 +60,8 @@
   overflow: hidden;
   font-family: var(--font-body);
   color: var(--text-primary);
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .modal-base.closing {
@@ -139,8 +148,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   background: transparent;
   border: none;
@@ -149,6 +158,7 @@
   color: var(--text-muted);
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .modal-base-close:hover {
@@ -228,6 +238,10 @@
   gap: 6px;
   white-space: nowrap;
   line-height: 1.2;
+  min-height: 48px;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .modal-base-btn:disabled {
@@ -325,6 +339,9 @@
   font-size: 14px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   outline: none;
+  min-height: 48px;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .modal-base-input::placeholder,
@@ -353,6 +370,14 @@
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 40px;
+}
+
+/* ✅ حقول التاريخ - تحسين للجوال */
+.modal-base-input[type="date"] {
+  min-height: 48px;
+  font-size: 16px;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 /* Error State */
@@ -581,17 +606,23 @@ body.dark-mode .modal-base-warning {
    ======================================== */
 
 @media (max-width: 768px) {
+  /* ===== Overlay: Bottom-aligned ===== */
   .modal-base-overlay {
     padding: 0;
     align-items: flex-end;
+    /* ✅ تقليل blur على الجوال للأداء */
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
 
+  /* ===== Modal: Bottom Sheet ===== */
   .modal-base {
     max-width: 100%;
     max-height: 90vh;
+    max-height: 90dvh;
     border-radius: 24px 24px 0 0;
     animation: modalBaseSlideUpMobile 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   @keyframes modalBaseSlideUpMobile {
@@ -638,8 +669,8 @@ body.dark-mode .modal-base-warning {
     position: absolute;
     top: 12px;
     right: 12px;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     background: var(--bg-surface);
     border-radius: 50%;
     z-index: 11;
@@ -653,7 +684,7 @@ body.dark-mode .modal-base-warning {
   .modal-base-actions {
     flex-direction: column;
     gap: 10px;
-    padding: 16px 20px calc(20px + env(safe-area-inset-bottom, 0));
+    padding: 16px 20px calc(20px + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--border-light);
     background: var(--bg-modal);
     margin: 20px -20px -20px;
@@ -665,10 +696,23 @@ body.dark-mode .modal-base-warning {
     padding: 14px 20px;
     font-size: 16px;
     border-radius: 12px;
+    min-height: 52px;
   }
 
   .modal-base-field:last-child {
     margin-bottom: 0;
+  }
+
+  /* ✅ حقول بحجم 16px لمنع التكبير التلقائي على iOS */
+  .modal-base-input,
+  .modal-base-textarea,
+  .modal-base-select {
+    font-size: 16px !important;
+    min-height: 50px;
+  }
+
+  .modal-base-textarea {
+    min-height: 100px;
   }
 
   /* ========================================
@@ -685,7 +729,7 @@ body.dark-mode .modal-base-warning {
   }
 
   #delete-modal .modal-base-body {
-    padding: 44px 20px calc(20px + env(safe-area-inset-bottom, 0)) !important;
+    padding: 44px 20px calc(20px + env(safe-area-inset-bottom, 0px)) !important;
     text-align: center;
   }
 
@@ -723,6 +767,7 @@ body.dark-mode .modal-base-warning {
 @media (max-width: 480px) {
   .modal-base {
     max-height: 92vh;
+    max-height: 92dvh;
   }
 
   .modal-base-header {
@@ -738,7 +783,7 @@ body.dark-mode .modal-base-warning {
   }
 
   .modal-base-actions {
-    padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0));
+    padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px));
     margin: 16px -16px -16px;
   }
 
@@ -748,14 +793,14 @@ body.dark-mode .modal-base-warning {
   }
 
   .modal-base-close {
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
     top: 10px;
     right: 10px;
   }
 
   #delete-modal .modal-base-body {
-    padding: 40px 16px calc(16px + env(safe-area-inset-bottom, 0)) !important;
+    padding: 40px 16px calc(16px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   #delete-modal .modal-base-body > div:first-child {
@@ -771,6 +816,52 @@ body.dark-mode .modal-base-warning {
   #delete-modal .modal-base-body > div:last-child button {
     padding: 13px 16px !important;
     font-size: 15px !important;
+  }
+}
+
+/* ========================================
+   ✅ LANDSCAPE MODE (Mobile)
+   ======================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+  .modal-base {
+    max-height: 95vh;
+    max-height: 95dvh;
+    border-radius: 16px;
+    margin: auto;
+  }
+
+  .modal-base-overlay {
+    align-items: center;
+    padding: 8px;
+  }
+
+  .modal-base::before {
+    display: none;
+  }
+
+  .modal-base-header {
+    padding: 12px 16px;
+    min-height: 48px;
+  }
+
+  .modal-base-title {
+    font-size: 16px;
+  }
+
+  .modal-base-body {
+    padding: 12px 16px;
+  }
+
+  .modal-base-actions {
+    flex-direction: row;
+    padding: 12px 16px;
+    margin: 12px -16px -16px;
+  }
+
+  .modal-base-btn {
+    padding: 10px 16px;
+    font-size: 14px;
+    min-height: 44px;
   }
 }
 
@@ -806,5 +897,39 @@ body.dark-mode .modal-base-warning {
   #delete-modal [style*="deleteIconPop"],
   #delete-modal [style*="deleteIconPulse"] {
     animation: none !important;
+  }
+}
+
+/* ========================================
+   ✅ KEYBOARD OPEN STATE (Mobile)
+   ======================================== */
+@media (max-width: 768px) {
+  body.keyboard-open .modal-base {
+    max-height: 60vh;
+    max-height: 60dvh;
+  }
+
+  body.keyboard-open .modal-base-actions {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-modal);
+    z-index: 10;
+  }
+}
+
+/* ========================================
+   ✅ DARK MODE + MOBILE
+   ======================================== */
+@media (max-width: 768px) {
+  body.dark-mode .modal-base::before {
+    background: var(--border-color);
+  }
+
+  body.dark-mode .modal-base-close {
+    background: var(--bg-surface);
+  }
+
+  body.dark-mode .modal-base-close:hover {
+    background: var(--bg-hover);
   }
 }

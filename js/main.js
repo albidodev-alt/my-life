@@ -1,12 +1,14 @@
 // ========================================
-// MY LIFE HUB - MAIN (Optimized v2.1)
+// MY LIFE HUB - MAIN v3.0
+// (Keyboard Detection + Visibility-Aware Timers + Clean Init)
 // ========================================
 
 let mainAbortController = null;
 let currentPage = null;
+let notificationInterval = null;
 
 // ========================================
-// ✅ Lucide Icons - Debounced + RAF (تحسين الأداء)
+// ✅ Lucide Icons - Debounced + RAF
 // ========================================
 let lucideTimer = null;
 let lucideRafId = null;
@@ -15,9 +17,6 @@ let lucideInitialized = false;
 
 /**
  * ✅ Debounced Lucide مع requestAnimationFrame
- * - يجمع الطلبات المتكررة في تنفيذ واحد
- * - يستخدم RAF للتزامن مع دورة رسم المتصفح
- * - لا تغيير بصري - فقط أسرع
  */
 function debouncedLucide(delay = 50) {
   if (lucideTimer) clearTimeout(lucideTimer);
@@ -43,7 +42,6 @@ function debouncedLucide(delay = 50) {
   }, delay);
 }
 
-// توافق مع الكود القديم
 function initLucideIcons() {
   debouncedLucide(50);
 }
@@ -52,8 +50,7 @@ window.debouncedLucide = debouncedLucide;
 window.initLucideIcons = initLucideIcons;
 
 // ========================================
-// ✅ Performance Marks (قياس الأداء - اختياري)
-// لا يؤثر على السلوك، فقط للتصحيح
+// ✅ Performance Marks
 // ========================================
 function perfMark(name) {
   if (typeof performance !== "undefined" && performance.mark) {
@@ -68,7 +65,7 @@ function perfMeasure(name, startMark, endMark) {
 }
 
 // ========================================
-// Error Boundary - حماية من الأخطاء
+// Error Boundary
 // ========================================
 function safeRender(renderFn, fallbackMessage = "Something went wrong") {
   try {
@@ -82,7 +79,7 @@ function safeRender(renderFn, fallbackMessage = "Something went wrong") {
           <div style="font-size:64px;margin-bottom:16px;">⚠️</div>
           <h2 style="color:var(--text-primary);margin-bottom:8px;">${fallbackMessage}</h2>
           <p style="font-size:14px;margin-bottom:24px;">${error.message || "Unknown error"}</p>
-          <button onclick="location.reload()" style="padding:12px 24px;background:var(--primary-gradient);color:white;border:none;border-radius:10px;cursor:pointer;font-family:var(--font-handwritten);font-size:16px;font-weight:600;">
+          <button onclick="location.reload()" style="padding:12px 24px;background:var(--primary-gradient);color:white;border:none;border-radius:10px;cursor:pointer;font-family:var(--font-handwritten);font-size:16px;font-weight:600;min-height:48px;">
             🔄 Reload Page
           </button>
         </div>
@@ -93,7 +90,7 @@ function safeRender(renderFn, fallbackMessage = "Something went wrong") {
 window.safeRender = safeRender;
 
 // ========================================
-// ✅ Page Initializers Map (كود أنظف)
+// ✅ Page Initializers Map
 // ========================================
 const pageInitializers = {
   routine: () => {
@@ -127,6 +124,79 @@ const pageInitializers = {
 };
 
 // ========================================
+// ✅ Keyboard Detection (Mobile)
+// ========================================
+function setupKeyboardDetection() {
+  if (!window.visualViewport) return;
+
+  const body = document.body;
+  let initialHeight = window.visualViewport.height;
+
+  function handleViewportResize() {
+    const currentHeight = window.visualViewport.height;
+    const isKeyboardOpen = currentHeight < initialHeight * 0.75;
+
+    if (isKeyboardOpen) {
+      body.classList.add('keyboard-open');
+    } else {
+      body.classList.remove('keyboard-open');
+    }
+  }
+
+  window.visualViewport.addEventListener('resize', handleViewportChange);
+
+  function handleViewportChange() {
+    handleViewportResize();
+  }
+
+  // ✅ حدّث الارتفاع الأولي عند تغيير orientation
+  window.addEventListener('orientationchange', function () {
+    setTimeout(() => {
+      initialHeight = window.visualViewport.height;
+    }, 300);
+  });
+}
+
+// ========================================
+// ✅ Visibility-Aware Notification Timer
+// ========================================
+function startNotificationTimer() {
+  if (notificationInterval) return;
+
+  notificationInterval = setInterval(function () {
+    if (!document.hidden && typeof refreshNotifications === "function") {
+      refreshNotifications();
+    }
+  }, 15 * 60 * 1000); // 15 دقيقة
+}
+
+function stopNotificationTimer() {
+  if (notificationInterval) {
+    clearInterval(notificationInterval);
+    notificationInterval = null;
+  }
+}
+
+function setupVisibilityAwareTimers() {
+  // ✅ أوقف المؤقتات عندما تكون الصفحة مخفية
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      stopNotificationTimer();
+    } else {
+      startNotificationTimer();
+      if (typeof refreshNotifications === "function") {
+        refreshNotifications();
+      }
+    }
+  });
+
+  // ✅ ابدأ عند التحميل
+  if (!document.hidden) {
+    startNotificationTimer();
+  }
+}
+
+// ========================================
 // DOMContentLoaded
 // ========================================
 document.addEventListener("DOMContentLoaded", function () {
@@ -143,6 +213,7 @@ document.addEventListener("DOMContentLoaded", function () {
   setupProfileButton();
   setupSidebarToggle();
   setupBottomNav();
+  setupKeyboardDetection(); // ✅ جديد
 
   const notesFabBtn = document.getElementById("notes-fab-btn");
   if (notesFabBtn) {
@@ -155,12 +226,10 @@ document.addEventListener("DOMContentLoaded", function () {
     setupNotificationButton();
   }
 
+  // ✅ مؤقتات واعية بالرؤية
   if (typeof refreshNotifications === "function") {
     refreshNotifications();
-    document.addEventListener("visibilitychange", function () {
-      if (!document.hidden) refreshNotifications();
-    });
-    setInterval(refreshNotifications, 15 * 60 * 1000);
+    setupVisibilityAwareTimers();
   }
 
   initPWA();
@@ -172,7 +241,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // ========================================
-// navigation - مع safeRender (بدون تغيير في السلوك)
+// Navigation
 // ========================================
 function navigateTo(page) {
   const app = document.getElementById("app");
@@ -198,7 +267,6 @@ function navigateTo(page) {
 
   perfMark(`page-${page}-start`);
 
-  // ✅ استخدام Map للتنفيذ
   const initializer = pageInitializers[page];
 
   safeRender(() => {
@@ -407,6 +475,23 @@ function initPWA() {
     navigator.serviceWorker.register("sw.js")
       .then(function (registration) {
         console.log("✅ ServiceWorker registered successfully");
+
+        // ✅ التعامل مع التحديثات
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          console.log('📌 New ServiceWorker found');
+
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('✅ New content available; please refresh.');
+              if (typeof showUpdateNotification === "function") {
+                showUpdateNotification();
+              }
+            }
+          });
+        });
+
+        // إذا كان هناك SW منتظر
         if (registration.waiting) {
           setTimeout(function () {
             if (typeof showUpdateNotification === "function") {
@@ -434,7 +519,7 @@ function addProfileInstallButton() {
     if (profileSection && !document.getElementById("profile-install-btn")) {
       const installBtn = document.createElement("button");
       installBtn.id = "profile-install-btn";
-      installBtn.style.cssText = "width:100%;padding:12px 20px;background:var(--primary-gradient);color:white;border:none;border-radius:10px;font-family:var(--font-handwritten);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s ease;margin-top:12px;display:none;align-items:center;justify-content:center;gap:10px;";
+      installBtn.style.cssText = "width:100%;padding:12px 20px;background:var(--primary-gradient);color:white;border:none;border-radius:10px;font-family:var(--font-handwritten);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s ease;margin-top:12px;display:none;align-items:center;justify-content:center;gap:10px;min-height:48px;";
       installBtn.innerHTML = "📲 Install App";
       installBtn.addEventListener("click", handleInstallClick);
       profileSection.parentNode.insertBefore(installBtn, profileSection.nextSibling);
@@ -510,8 +595,7 @@ window.openAchievements = function () {
 };
 
 // ========================================
-// ✅ Performance API (اختياري - للتصحيح فقط)
-// يمكن للمستخدم كتابة getPerfMetrics() في Console
+// ✅ Performance API
 // ========================================
 window.getPerfMetrics = function () {
   if (typeof performance === "undefined") return null;
@@ -529,6 +613,22 @@ window.getPerfMetrics = function () {
 };
 
 // ========================================
+// ✅ دوال تشخيص إضافية
+// ========================================
+window.getAppState = function () {
+  return {
+    currentPage: currentPage,
+    swVersion: 'v17',
+    lucideInitialized: lucideInitialized,
+    deferredPrompt: !!deferredPrompt,
+    isStandalone: window.matchMedia("(display-mode: standalone)").matches,
+    isOnline: navigator.onLine,
+    language: localStorage.getItem('language') || 'en',
+    hourSystem: localStorage.getItem('hourSystem') || '12h'
+  };
+};
+
+// ========================================
 // التصدير
 // ========================================
 window.navigateTo = navigateTo;
@@ -540,4 +640,6 @@ window.initPWA = initPWA;
 window.showInstallButtons = showInstallButtons;
 window.handleInstallClick = handleInstallClick;
 
-console.log("📌 Main.js loaded successfully (optimized v2.1)");
+console.log("📌 Main.js v3.0 loaded successfully!");
+console.log("   - Try: getAppState() to inspect app state");
+console.log("   - Try: getPerfMetrics() to see performance");

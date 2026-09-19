@@ -1,8 +1,91 @@
 // ========================================
-// MY LIFE HUB - PROFILE (Optimized)
+// MY LIFE HUB - PROFILE (Optimized v2.0)
+// (Image Compression + Quota Handling + Safe Save)
 // ========================================
 
-// ===== عرض صفحة البروفايل =====
+// ========================================
+// ✅ ضغط الصورة (مهم جداً لتوفير مساحة localStorage)
+// ========================================
+function resizeImage(file, maxSize = 400, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith('image/')) {
+      reject(new Error('Not an image file'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
+          canvas.width = Math.round(img.width * ratio);
+          canvas.height = Math.round(img.height * ratio);
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          const compressed = canvas.toDataURL('image/jpeg', quality);
+          resolve(compressed);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsDataURL(file);
+  });
+}
+
+// ========================================
+// ✅ حفظ آمن مع معالجة QuotaExceededError
+// ========================================
+function safeSetItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return { success: true };
+  } catch (err) {
+    if (err.name === 'QuotaExceededError' || err.code === 22) {
+      console.warn('⚠️ localStorage quota exceeded for key:', key);
+      return {
+        success: false,
+        error: 'quota',
+        message: 'Storage is full. Please free up space.'
+      };
+    }
+    console.error('Error saving to localStorage:', err);
+    return {
+      success: false,
+      error: 'unknown',
+      message: err.message || 'Unknown error'
+    };
+  }
+}
+
+// ========================================
+// ✅ التحقق من صحة الصورة
+// ========================================
+function isValidImageFile(file) {
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const maxSize = 10 * 1024 * 1024; // 10 MB
+
+  if (!validTypes.includes(file.type)) {
+    return { valid: false, error: 'Please select a valid image (JPG, PNG, WebP, GIF)' };
+  }
+
+  if (file.size > maxSize) {
+    return { valid: false, error: 'Image is too large (max 10 MB)' };
+  }
+
+  return { valid: true };
+}
+
+// ========================================
+// عرض صفحة البروفايل
+// ========================================
 function renderProfile() {
   const app = document.getElementById("app");
   if (!app) return;
@@ -34,12 +117,12 @@ function renderProfile() {
         </div>
       </div>
 
-      <div class="profile-name" id="profile-name-display" title="${profile.name || 'User 1'}">
-        ${escapeHtml(profile.name || 'User 1')}
+      <div class="profile-name" id="profile-name-display" title="${escapeHtmlProfile(profile.name || 'User 1')}">
+        ${escapeHtmlProfile(profile.name || 'User 1')}
       </div>
 
-      <div class="profile-bio" id="profile-bio-display" title="${escapeHtml(profile.bio || '')}">
-        ${escapeHtml(profile.bio || 'Building my life one day at a time.')}
+      <div class="profile-bio" id="profile-bio-display" title="${escapeHtmlProfile(profile.bio || '')}">
+        ${escapeHtmlProfile(profile.bio || 'Building my life one day at a time.')}
       </div>
 
       <!-- ===== شريط القطرات (قابل للضغط) ===== -->
@@ -84,7 +167,7 @@ function renderProfile() {
           type="text"
           id="profile-name-input"
           class="profile-field-input"
-          value="${escapeHtml(profile.name || 'User 1')}"
+          value="${escapeHtmlProfile(profile.name || 'User 1')}"
           placeholder="${typeof t === 'function' ? t('name', 'Your name') : 'Your name'}"
           maxlength="20"
         />
@@ -103,7 +186,7 @@ function renderProfile() {
           rows="3"
           maxlength="100"
           placeholder="${typeof t === 'function' ? t('bio', 'Tell us about yourself...') : 'Tell us about yourself...'}"
-        >${escapeHtml(profile.bio || '')}</textarea>
+        >${escapeHtmlProfile(profile.bio || '')}</textarea>
         <div class="profile-char-counter" id="bio-counter">
           ${(profile.bio || 'Building my life one day at a time.').length} / 100
         </div>
@@ -210,7 +293,9 @@ function renderProfile() {
     </div>
   `;
 
-  // ===== ربط الأحداث =====
+  // ========================================
+  // ✅ ربط الأحداث
+  // ========================================
 
   // 1. زر الرجوع
   document.getElementById('back-btn')?.addEventListener('click', () => renderWeek());
@@ -222,28 +307,71 @@ function renderProfile() {
     }
   });
 
-  // 3. صورة البروفايل
+  // ========================================
+  // 3. صورة البروفايل (مع ضغط تلقائي)
+  // ========================================
   const avatarImg = document.getElementById('profile-avatar-img');
   const fileInput = document.getElementById('avatar-file-input');
 
   avatarImg?.addEventListener('click', () => fileInput?.click());
 
-  fileInput?.addEventListener('change', function(e) {
+  fileInput?.addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const imageData = event.target.result;
-      profile.avatar = imageData;
-      saveProfileData(profile);
-      avatarImg.src = imageData;
+    // ✅ التحقق من صحة الملف
+    const validation = isValidImageFile(file);
+    if (!validation.valid) {
+      if (typeof showToast === 'function') {
+        showToast('❌ ' + validation.error, 'error');
+      }
+      fileInput.value = '';
+      return;
+    }
+
+    // ✅ إظهار مؤشر التحميل
+    if (typeof showToast === 'function') {
+      showToast('⏳ ' + (typeof t === 'function' ? t('loading', 'Processing image...') : 'Processing image...'), 'info', 2000);
+    }
+
+    try {
+      // ✅ ضغط الصورة قبل الحفظ
+      const compressedImage = await resizeImage(file, 400, 0.85);
+
+      // ✅ حفظ آمن
+      const currentProfile = getProfileData();
+      currentProfile.avatar = compressedImage;
+
+      const result = safeSetItem(PROFILE_KEY, JSON.stringify(currentProfile));
+
+      if (!result.success) {
+        if (typeof showToast === 'function') {
+          showToast('❌ ' + (typeof t === 'function' ? t('storage_full', 'Storage is full. Please clear some data.') : 'Storage is full. Please clear some data.'), 'error');
+        }
+        fileInput.value = '';
+        return;
+      }
+
+      // ✅ تحديث الصورة المعروضة
+      avatarImg.src = compressedImage;
       updateUserHeader();
-    };
-    reader.readAsDataURL(file);
+
+      if (typeof showToast === 'function') {
+        showToast('✅ ' + (typeof t === 'function' ? t('photo_updated', 'Photo updated!') : 'Photo updated!'), 'success');
+      }
+    } catch (err) {
+      console.error('Image processing error:', err);
+      if (typeof showToast === 'function') {
+        showToast('❌ ' + (typeof t === 'function' ? t('image_error', 'Failed to process image') : 'Failed to process image'), 'error');
+      }
+    }
+
+    fileInput.value = '';
   });
 
+  // ========================================
   // 4. حقل الاسم
+  // ========================================
   const nameInput = document.getElementById('profile-name-input');
   const nameCounter = document.getElementById('name-counter');
 
@@ -257,17 +385,30 @@ function renderProfile() {
   });
 
   nameInput?.addEventListener('change', function() {
-    profile.name = this.value.trim() || 'User 1';
-    saveProfileData(profile);
+    const newName = this.value.trim() || 'User 1';
+    const currentProfile = getProfileData();
+    currentProfile.name = newName;
+
+    const result = safeSetItem(PROFILE_KEY, JSON.stringify(currentProfile));
+
+    if (!result.success) {
+      if (typeof showToast === 'function') {
+        showToast('❌ ' + (typeof t === 'function' ? t('save_failed', 'Failed to save') : 'Failed to save'), 'error');
+      }
+      return;
+    }
+
     const nameDisplay = document.getElementById('profile-name-display');
     if (nameDisplay) {
-      nameDisplay.textContent = profile.name;
-      nameDisplay.title = profile.name;
+      nameDisplay.textContent = newName;
+      nameDisplay.title = newName;
     }
     updateUserHeader();
   });
 
+  // ========================================
   // 5. حقل البايو
+  // ========================================
   const bioInput = document.getElementById('profile-bio-input');
   const bioCounter = document.getElementById('bio-counter');
 
@@ -281,16 +422,29 @@ function renderProfile() {
   });
 
   bioInput?.addEventListener('change', function() {
-    profile.bio = this.value.trim();
-    saveProfileData(profile);
+    const newBio = this.value.trim();
+    const currentProfile = getProfileData();
+    currentProfile.bio = newBio;
+
+    const result = safeSetItem(PROFILE_KEY, JSON.stringify(currentProfile));
+
+    if (!result.success) {
+      if (typeof showToast === 'function') {
+        showToast('❌ ' + (typeof t === 'function' ? t('save_failed', 'Failed to save') : 'Failed to save'), 'error');
+      }
+      return;
+    }
+
     const bioDisplay = document.getElementById('profile-bio-display');
     if (bioDisplay) {
-      bioDisplay.textContent = profile.bio || 'Building my life one day at a time.';
-      bioDisplay.title = profile.bio || '';
+      bioDisplay.textContent = newBio || 'Building my life one day at a time.';
+      bioDisplay.title = newBio || '';
     }
   });
 
+  // ========================================
   // 6. اللغة
+  // ========================================
   document.getElementById('language-select')?.addEventListener('change', function() {
     if (typeof changeLanguage === 'function') {
       changeLanguage(this.value);
@@ -300,7 +454,9 @@ function renderProfile() {
     }
   });
 
+  // ========================================
   // 7. نظام الساعات
+  // ========================================
   document.getElementById('hour-system-select')?.addEventListener('change', function() {
     const selectedSystem = this.value;
     
@@ -308,13 +464,17 @@ function renderProfile() {
       setHourSystem(selectedSystem);
       
       const systemName = selectedSystem === '24h' ? '24h' : '12h (AM/PM)';
-      showToast(`🕐 ${typeof t === 'function' ? t('hour_system', 'Hour System') : 'Hour System'}: ${systemName}`, 'success');
+      if (typeof showToast === 'function') {
+        showToast(`🕐 ${typeof t === 'function' ? t('hour_system', 'Hour System') : 'Hour System'}: ${systemName}`, 'success');
+      }
     } else {
       localStorage.setItem('hourSystem', selectedSystem);
     }
   });
 
+  // ========================================
   // 8. مسح البيانات
+  // ========================================
   document.getElementById('clear-data-btn')?.addEventListener('click', function() {
     deleteModal({
       itemName: '',
@@ -337,7 +497,13 @@ function renderProfile() {
 
             keys.forEach(key => localStorage.removeItem(key));
 
-            showToast('🗑️ ' + (typeof t === 'function' ? t('data_cleared', 'All data cleared') : 'All data cleared'), 'error');
+            // ✅ إبطال الكاش
+            if (typeof routineCache !== 'undefined') routineCache = null;
+            if (typeof tasksCache !== 'undefined') tasksCache = null;
+
+            if (typeof showToast === 'function') {
+              showToast('🗑️ ' + (typeof t === 'function' ? t('data_cleared', 'All data cleared') : 'All data cleared'), 'error');
+            }
 
             setTimeout(() => location.reload(), 1500);
           }
@@ -346,7 +512,9 @@ function renderProfile() {
     });
   });
 
+  // ========================================
   // 9. PWA Install
+  // ========================================
   const installBtn = document.getElementById('profile-install-btn');
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
@@ -367,7 +535,9 @@ function renderProfile() {
     }
   }
 
+  // ========================================
   // 10. Achievements
+  // ========================================
   document.getElementById('view-achievements-btn')?.addEventListener('click', function() {
     if (typeof window.renderCompleted === 'function') {
       document.querySelectorAll(".nav-btn, .bottom-nav-btn").forEach(btn => btn.classList.remove("active"));
@@ -377,7 +547,9 @@ function renderProfile() {
     }
   });
 
-  // ✅ 11. Backup Section - مع حماية كاملة من الأخطاء
+  // ========================================
+  // 11. Backup Section
+  // ========================================
   const backupSlot = document.getElementById('backup-section-slot');
   if (backupSlot) {
     if (typeof renderBackupSection === 'function') {
@@ -390,7 +562,6 @@ function renderProfile() {
         }
       } catch (e) {
         console.warn('⚠️ Backup section failed to render:', e);
-        // عرض رسالة بديلة بدلاً من تعطل الصفحة
         const fallback = document.createElement('div');
         fallback.className = 'profile-section';
         fallback.innerHTML = `
@@ -405,7 +576,6 @@ function renderProfile() {
         backupSlot.appendChild(fallback);
       }
     } else {
-      // في حال لم يتم تحميل backup.js بعد (defer)
       console.warn('⚠️ renderBackupSection not loaded yet');
       const fallback = document.createElement('div');
       fallback.className = 'profile-section';
@@ -422,7 +592,9 @@ function renderProfile() {
     }
   }
 
+  // ========================================
   // 12. إعادة تهيئة Lucide
+  // ========================================
   if (typeof debouncedLucide === 'function') debouncedLucide(30);
 
   updateUserHeader();
@@ -443,8 +615,8 @@ function escapeHtmlProfile(text) {
 // دوال الإحصائيات
 // ========================================
 function getProfileStats() {
-  const tasks = getAllTasks();
-  const routineData = getAllRoutineData();
+  const tasks = typeof getAllTasks === 'function' ? getAllTasks() : [];
+  const routineData = typeof getAllRoutineData === 'function' ? getAllRoutineData() : {};
 
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(t => t.completed).length;
@@ -454,7 +626,12 @@ function getProfileStats() {
   days.forEach(day => {
     const data = routineData[day];
     if (data && data.hours) {
-      if (data.hours.some(h => h && h.trim() !== "")) {
+      if (data.hours.some(h => {
+        if (!h) return false;
+        if (typeof h === 'string') return h.trim() !== '';
+        if (typeof h === 'object') return !!(h.activity && h.activity.trim() !== '');
+        return false;
+      })) {
         daysPlanned++;
       }
     }
@@ -472,8 +649,15 @@ function getProfileData() {
   const raw = localStorage.getItem(PROFILE_KEY);
   if (raw) {
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      return {
+        name: parsed.name || "User 1",
+        bio: parsed.bio || "Building my life one day at a time.",
+        avatar: parsed.avatar || "",
+        joinDate: parsed.joinDate || new Date().toISOString()
+      };
     } catch (e) {
+      console.warn('Failed to parse profile, using default');
       return getDefaultProfile();
     }
   }
@@ -492,8 +676,16 @@ function getDefaultProfile() {
 function saveProfileData(data) {
   if (data.name && data.name.length > 20) data.name = data.name.substring(0, 20);
   if (data.bio && data.bio.length > 100) data.bio = data.bio.substring(0, 100);
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(data));
-  updateUserHeader();
+
+  const result = safeSetItem(PROFILE_KEY, JSON.stringify(data));
+
+  if (!result.success && typeof showToast === 'function') {
+    showToast('❌ ' + (result.message || 'Failed to save profile'), 'error');
+  }
+
+  if (typeof updateUserHeader === 'function') updateUserHeader();
+
+  return result.success;
 }
 
 // ========================================
@@ -503,5 +695,8 @@ window.renderProfile = renderProfile;
 window.getProfileStats = getProfileStats;
 window.getProfileData = getProfileData;
 window.saveProfileData = saveProfileData;
+window.resizeImage = resizeImage;
+window.safeSetItem = safeSetItem;
+window.isValidImageFile = isValidImageFile;
 
-console.log("✅ Profile.js (optimized) loaded successfully!");
+console.log("✅ Profile.js v2.0 (optimized) loaded successfully!");

@@ -1,8 +1,44 @@
 // ========================================
-// MY LIFE HUB - EVENTS (CALENDAR)
+// MY LIFE HUB - EVENTS (CALENDAR) v2.0
+// (Safe Save + Date Validation + Better UX)
 // ========================================
 
 const EVENTS_STORAGE_KEY = "myLifeHub_events";
+
+// ========================================
+// ✅ دوال التخزين الآمنة
+// ========================================
+function safeSetEvents(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return { success: true };
+  } catch (err) {
+    if (err.name === 'QuotaExceededError' || err.code === 22) {
+      console.warn('⚠️ localStorage quota exceeded for events');
+      if (typeof showToast === 'function') {
+        showToast(
+          '⚠️ ' + (typeof t === 'function'
+            ? t('storage_full', 'Storage is full. Please delete some events.')
+            : 'Storage is full. Please delete some events.'),
+          'warning',
+          5000
+        );
+      }
+      return { success: false, error: 'quota' };
+    }
+    console.error('Error saving events:', err);
+    return { success: false, error: 'unknown' };
+  }
+}
+
+// ========================================
+// ✅ قراءة آمنة للتاريخ
+// ========================================
+function parseEventDate(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return null;
+  const d = new Date(dateStr + "T00:00:00");
+  return isNaN(d.getTime()) ? null : d;
+}
 
 // ========================================
 // دوال التخزين
@@ -21,57 +57,61 @@ function getAllEvents() {
 }
 
 function saveAllEvents(events) {
-  try {
-    localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(events));
-  } catch (error) {
-    console.error("Error saving events:", error);
+  if (!Array.isArray(events)) {
+    console.error("saveAllEvents: events must be an array");
+    return false;
   }
+  
+  const result = safeSetEvents(EVENTS_STORAGE_KEY, JSON.stringify(events));
+  return result.success;
 }
 
 function addEvent(title, date, description = "") {
-  const trimmedTitle = title.trim();
+  const trimmedTitle = (title || '').trim();
   if (!trimmedTitle || !date) return null;
 
   const events = getAllEvents();
   const newEvent = {
-    id: Date.now() + Math.random() * 1000,
+    id: (typeof generateId === "function") ? generateId() : Date.now() + Math.random(),
     title: trimmedTitle,
     date: date,
-    description: description.trim(),
+    description: (description || '').trim(),
     pinned: false,
     createdAt: new Date().toISOString()
   };
 
   events.push(newEvent);
-  saveAllEvents(events);
-  return newEvent;
+  const success = saveAllEvents(events);
+  return success ? newEvent : null;
 }
 
 function updateEvent(eventId, title, date, description) {
+  const trimmedTitle = (title || '').trim();
+  if (!trimmedTitle || !date) return false;
+
   const events = getAllEvents();
   const index = events.findIndex(e => e.id === eventId);
   if (index === -1) return false;
 
-  events[index].title = title.trim();
+  events[index].title = trimmedTitle;
   events[index].date = date;
-  events[index].description = description.trim();
-  saveAllEvents(events);
-  return true;
+  events[index].description = (description || '').trim();
+  return saveAllEvents(events);
 }
 
 function deleteEvent(eventId) {
   const events = getAllEvents();
   const updatedEvents = events.filter(e => e.id !== eventId);
-  saveAllEvents(updatedEvents);
+  return saveAllEvents(updatedEvents);
 }
 
 function togglePinEvent(eventId) {
   const events = getAllEvents();
   const event = events.find(e => e.id === eventId);
-  if (!event) return;
-  
+  if (!event) return false;
+
   event.pinned = !event.pinned;
-  saveAllEvents(events);
+  return saveAllEvents(events);
 }
 
 function getEventsByDate(events, date) {
@@ -79,27 +119,30 @@ function getEventsByDate(events, date) {
 }
 
 function getTimeRemaining(eventDate) {
+  const target = parseEventDate(eventDate);
+  if (!target) return "";
+
   const now = new Date();
-  const target = new Date(eventDate + "T00:00:00");
   const diff = target - now;
-  
+
   if (diff < 0) return typeof t === 'function' ? t('event_passed', 'Event passed') : "Event passed";
-  
+
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  
+
   if (days === 0 && hours === 0) return typeof t === 'function' ? t('today', 'Today! 🎉') : "Today! 🎉";
   if (days === 0) return hours + " " + (typeof t === 'function' ? t('hours_left', 'hours left') : "hours left");
   if (hours === 0) return days + " " + (typeof t === 'function' ? t('days_left', 'days left') : "days left");
-  
+
   return days + " " + (typeof t === 'function' ? t('days', 'days') : "days") + ", " + hours + " " + (typeof t === 'function' ? t('hours', 'hours') : "hours") + " " + (typeof t === 'function' ? t('left', 'left') : "left");
 }
 
 function getEventsByMonth(events, year, month) {
   const monthStr = String(month).padStart(2, '0');
   return events.filter(e => {
-    const [eYear, eMonth] = e.date.split('-');
-    return parseInt(eYear) === year && parseInt(eMonth) === month;
+    if (!e.date) return false;
+    const parts = e.date.split('-');
+    return parseInt(parts[0]) === year && parseInt(parts[1]) === month;
   });
 }
 
@@ -115,7 +158,10 @@ function escapeHtmlEvt(text) {
 // ========================================
 
 function openEventDetailsModal(events, dateStr) {
-  const formattedDate = new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
+  const target = parseEventDate(dateStr);
+  if (!target) return;
+
+  const formattedDate = target.toLocaleDateString("en-US", {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -144,6 +190,7 @@ function openEventDetailsModal(events, dateStr) {
     margin: 16px 0;
     max-height: 400px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   `;
 
   events.forEach(event => {
@@ -170,11 +217,12 @@ function openEventDetailsModal(events, dateStr) {
       font-size: 18px;
       font-weight: 600;
       color: var(--text-primary);
+      overflow-wrap: anywhere;
     `;
 
     if (event.pinned) {
       const pinIcon = document.createElement("span");
-      pinIcon.innerHTML = '<span data-lucide="pin" style="width: 16px; height: 16px; fill: var(--primary); stroke: var(--primary);"></span>';
+      pinIcon.innerHTML = '<span data-lucide="pin" style="width: 16px; height: 16px; fill: var(--primary); stroke: var(--primary); flex-shrink: 0;"></span>';
       titleRow.appendChild(pinIcon);
     }
 
@@ -187,6 +235,7 @@ function openEventDetailsModal(events, dateStr) {
       margin-top: 6px;
       font-size: 14px;
       color: var(--text-secondary);
+      overflow-wrap: anywhere;
     `;
 
     if (event.description) {
@@ -205,8 +254,8 @@ function openEventDetailsModal(events, dateStr) {
 
     const remaining = getTimeRemaining(event.date);
     const now = new Date();
-    const target = new Date(event.date + "T00:00:00");
-    const diff = target - now;
+    const targetDate = parseEventDate(event.date);
+    const diff = targetDate ? (targetDate - now) : 0;
     const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     if (diff < 0) {
@@ -228,12 +277,15 @@ function openEventDetailsModal(events, dateStr) {
       display: flex;
       gap: 8px;
       margin-top: 8px;
+      flex-wrap: wrap;
     `;
 
+    // ===== زر التعديل =====
     const editBtn = document.createElement("button");
+    editBtn.type = "button";
     editBtn.innerHTML = '<span data-lucide="pencil" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('edit', 'Edit') : "Edit");
     editBtn.style.cssText = `
-      padding: 4px 12px;
+      padding: 6px 12px;
       border: 1px solid var(--border-input);
       border-radius: 6px;
       background: var(--bg-input);
@@ -242,25 +294,30 @@ function openEventDetailsModal(events, dateStr) {
       font-family: var(--font-handwritten);
       font-size: 14px;
       font-weight: 500;
-      transition: all 0.2s ease;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+      min-height: 36px;
     `;
     editBtn.addEventListener("mouseenter", function() {
       this.style.backgroundColor = "var(--bg-hover)";
+      this.style.borderColor = "var(--primary)";
     });
     editBtn.addEventListener("mouseleave", function() {
       this.style.backgroundColor = "var(--bg-input)";
+      this.style.borderColor = "var(--border-input)";
     });
 
     editBtn.addEventListener("click", function(e) {
       e.stopPropagation();
       modal.close();
-      openEventModal(event);
+      setTimeout(() => openEventModal(event), 250);
     });
 
+    // ===== زر الحذف =====
     const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
     deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('delete', 'Delete') : "Delete");
     deleteBtn.style.cssText = `
-      padding: 4px 12px;
+      padding: 6px 12px;
       border: 1px solid #ef4444;
       border-radius: 6px;
       background: transparent;
@@ -269,7 +326,8 @@ function openEventDetailsModal(events, dateStr) {
       font-family: var(--font-handwritten);
       font-size: 14px;
       font-weight: 500;
-      transition: all 0.2s ease;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      min-height: 36px;
     `;
     deleteBtn.addEventListener("mouseenter", function() {
       this.style.backgroundColor = "#ef4444";
@@ -280,7 +338,6 @@ function openEventDetailsModal(events, dateStr) {
       this.style.color = "#ef4444";
     });
 
-    // ✨ استخدام deleteModal
     deleteBtn.addEventListener("click", function(e) {
       e.stopPropagation();
       deleteModal({
@@ -335,7 +392,7 @@ function renderEventsPage() {
           <span data-lucide="calendar" style="width: 32px; height: 32px; color: var(--primary);"></span>
           <h2 class="events-title" style="margin: 0;">${typeof t === 'function' ? t('events_title', 'Events') : 'Events'}</h2>
         </div>
-        <button class="events-add-btn" id="events-add-btn">
+        <button class="events-add-btn" id="events-add-btn" type="button">
           <span class="events-add-icon" data-lucide="plus" style="width: 20px; height: 20px;"></span>
           ${typeof t === 'function' ? t('add_event_btn', 'Add Event') : 'Add Event'}
         </button>
@@ -343,11 +400,11 @@ function renderEventsPage() {
 
       <div class="calendar-wrapper">
         <div class="calendar-nav">
-          <button class="calendar-nav-btn" id="calendar-prev">
+          <button class="calendar-nav-btn" id="calendar-prev" type="button" aria-label="Previous month">
             <span data-lucide="chevron-left" style="width: 24px; height: 24px;"></span>
           </button>
           <span class="calendar-month-year" id="calendar-label">January 2026</span>
-          <button class="calendar-nav-btn" id="calendar-next">
+          <button class="calendar-nav-btn" id="calendar-next" type="button" aria-label="Next month">
             <span data-lucide="chevron-right" style="width: 24px; height: 24px;"></span>
           </button>
         </div>
@@ -465,6 +522,7 @@ function renderEventsPage() {
       pinIcon.innerHTML = '<span data-lucide="pin" style="width: 16px; height: 16px; fill: var(--primary); stroke: var(--primary);"></span>';
     }
     pinIcon.style.marginRight = "6px";
+    pinIcon.style.flexShrink = "0";
 
     const titleSpan = document.createElement("span");
     titleSpan.className = "event-title";
@@ -475,19 +533,18 @@ function renderEventsPage() {
 
     const dateSpan = document.createElement("span");
     dateSpan.className = "event-date";
-    const formattedDate = new Date(event.date + "T00:00:00").toLocaleDateString("en-US", {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    const targetDate = parseEventDate(event.date);
+    const formattedDate = targetDate 
+      ? targetDate.toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })
+      : event.date;
     dateSpan.innerHTML = '<span data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + formattedDate;
 
     const remainingSpan = document.createElement("span");
     remainingSpan.className = "event-remaining";
     const remaining = getTimeRemaining(event.date);
     const now = new Date();
-    const target = new Date(event.date + "T00:00:00");
-    const diff = target - now;
+    const target = parseEventDate(event.date);
+    const diff = target ? (target - now) : 0;
     const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     if (diff < 0) {
@@ -523,6 +580,7 @@ function renderEventsPage() {
 
     if (showPinButton) {
       const pinBtn = document.createElement("button");
+      pinBtn.type = "button";
       pinBtn.className = "event-pin-btn";
       if (event.pinned) {
         pinBtn.innerHTML = '<span data-lucide="pin" style="width: 16px; height: 16px; fill: var(--primary); stroke: var(--primary);"></span>';
@@ -542,6 +600,7 @@ function renderEventsPage() {
     }
 
     const editBtn = document.createElement("button");
+    editBtn.type = "button";
     editBtn.className = "event-edit-btn";
     editBtn.innerHTML = '<span data-lucide="pencil" style="width: 16px; height: 16px;"></span>';
     editBtn.title = typeof t === 'function' ? t('edit', 'Edit event') : "Edit event";
@@ -555,12 +614,12 @@ function renderEventsPage() {
     actionsDiv.appendChild(editBtn);
 
     const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
     deleteBtn.className = "event-delete-btn";
     deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 16px; height: 16px;"></span>';
     deleteBtn.title = typeof t === 'function' ? t('delete', 'Delete event') : "Delete event";
     deleteBtn.setAttribute("aria-label", "Delete event");
 
-    // ✨ استخدام deleteModal
     deleteBtn.addEventListener("click", function(e) {
       e.stopPropagation();
       deleteModal({
@@ -591,7 +650,7 @@ function renderEventsPage() {
                      String(now.getMonth() + 1).padStart(2, '0') + '-' + 
                      String(now.getDate()).padStart(2, '0');
 
-    const upcomingEvents = allEvents.filter(e => e.date >= todayStr);
+    const upcomingEvents = allEvents.filter(e => e.date && e.date >= todayStr);
     upcomingEvents.sort((a, b) => a.date.localeCompare(b.date));
 
     const pinnedEvents = upcomingEvents.filter(e => e.pinned);
@@ -632,9 +691,11 @@ function renderEventsPage() {
 
     container.innerHTML = "";
     container.appendChild(fragment);
+
+    if (typeof debouncedLucide === 'function') debouncedLucide(50);
   }
 
-  document.getElementById("calendar-prev").addEventListener("click", function() {
+  document.getElementById("calendar-prev")?.addEventListener("click", function() {
     currentMonthState--;
     if (currentMonthState < 1) {
       currentMonthState = 12;
@@ -644,7 +705,7 @@ function renderEventsPage() {
     renderEventsList([]);
   });
 
-  document.getElementById("calendar-next").addEventListener("click", function() {
+  document.getElementById("calendar-next")?.addEventListener("click", function() {
     currentMonthState++;
     if (currentMonthState > 12) {
       currentMonthState = 1;
@@ -654,7 +715,7 @@ function renderEventsPage() {
     renderEventsList([]);
   });
 
-  document.getElementById("events-add-btn").addEventListener("click", function() {
+  document.getElementById("events-add-btn")?.addEventListener("click", function() {
     openEventModal();
   });
 
@@ -703,7 +764,8 @@ function openEventModal(editEvent = null) {
     type: 'textarea',
     rows: 3,
     value: isEditing ? editEvent.description : '',
-    placeholder: typeof t === 'function' ? t('add_description', 'Add a description...') : 'Add a description...'
+    placeholder: typeof t === 'function' ? t('add_description', 'Add a description...') : 'Add a description...',
+    maxLength: 500
   });
   modal.body.appendChild(descField.field);
 
@@ -736,7 +798,11 @@ function openEventModal(editEvent = null) {
 
     if (success) {
       modal.close();
-      renderEventsPage();
+      setTimeout(() => renderEventsPage(), 250);
+    } else {
+      if (typeof showToast === 'function') {
+        showToast('❌ ' + (typeof t === 'function' ? t('save_failed', 'Failed to save event') : 'Failed to save event'), 'error');
+      }
     }
   }
 
@@ -760,9 +826,58 @@ function openEventModal(editEvent = null) {
 }
 
 // ========================================
-// تصدير الدالة
+// ✅ دوال إضافية
+// ========================================
+
+/**
+ * عدد الأحداث القادمة
+ */
+function getUpcomingEventsCount() {
+  const now = new Date();
+  const todayStr = now.getFullYear() + '-' + 
+                   String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                   String(now.getDate()).padStart(2, '0');
+  
+  return getAllEvents().filter(e => e.date && e.date >= todayStr).length;
+}
+
+/**
+ * أحداث اليوم
+ */
+function getTodayEvents() {
+  const now = new Date();
+  const todayStr = now.getFullYear() + '-' + 
+                   String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                   String(now.getDate()).padStart(2, '0');
+  
+  return getAllEvents().filter(e => e.date === todayStr);
+}
+
+/**
+ * أحداث الغد
+ */
+function getTomorrowEvents() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.getFullYear() + '-' + 
+                      String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
+                      String(tomorrow.getDate()).padStart(2, '0');
+  
+  return getAllEvents().filter(e => e.date === tomorrowStr);
+}
+
+// ========================================
+// التصدير
 // ========================================
 
 window.renderEventsPage = renderEventsPage;
+window.getAllEvents = getAllEvents;
+window.addEvent = addEvent;
+window.updateEvent = updateEvent;
+window.deleteEvent = deleteEvent;
+window.togglePinEvent = togglePinEvent;
+window.getUpcomingEventsCount = getUpcomingEventsCount;
+window.getTodayEvents = getTodayEvents;
+window.getTomorrowEvents = getTomorrowEvents;
 
-console.log("✅ Events (Calendar) loaded successfully!");
+console.log("✅ Events v2.0 loaded successfully!");

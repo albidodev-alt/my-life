@@ -1,6 +1,7 @@
 /* ========================================
-   MY LIFE HUB - TOAST NOTIFICATIONS
+   MY LIFE HUB - TOAST NOTIFICATIONS v2.0
    نظام الرسائل المنبثقة (Toast)
+   (Safe Areas + Mobile Optimized)
    ======================================== */
 
 /* ========================================
@@ -9,7 +10,7 @@
 
 .toast-container {
   position: fixed;
-  bottom: 20px;
+  bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 20px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 10000;
@@ -19,7 +20,9 @@
   align-items: center;
   pointer-events: none;
   width: auto;
-  max-width: 90vw;
+  max-width: calc(100vw - 32px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 /* ========================================
@@ -50,6 +53,8 @@
   word-break: break-word;
   text-align: center;
   justify-content: center;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .toast.toast-hiding {
@@ -135,32 +140,24 @@
 
 @media (max-width: 768px) {
   .toast-container {
-    bottom: 90px;
+    bottom: max(90px, calc(env(safe-area-inset-bottom, 0px) + 90px));
     max-width: calc(100vw - 32px);
     left: 16px;
     right: 16px;
     transform: none;
+    align-items: stretch;
   }
 
   .toast {
     width: 100%;
     max-width: 100%;
     font-size: 14px;
-    padding: 11px 16px;
-  }
-}
-
-@media (max-width: 480px) {
-  .toast-container {
-    bottom: 80px;
-    left: 12px;
-    right: 12px;
-  }
-
-  .toast {
-    font-size: 13px;
-    padding: 10px 14px;
+    padding: 12px 16px;
+    min-width: auto;
     border-radius: 10px;
+    /* ✅ تقليل blur على الجوال للأداء */
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
 
   .toast-icon {
@@ -171,6 +168,49 @@
   .toast-icon svg {
     width: 18px;
     height: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .toast-container {
+    bottom: max(80px, calc(env(safe-area-inset-bottom, 0px) + 80px));
+    left: 12px;
+    right: 12px;
+    gap: 8px;
+  }
+
+  .toast {
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 10px;
+  }
+
+  .toast-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .toast-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* ========================================
+   ✅ LANDSCAPE MODE (Mobile)
+   ======================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+  .toast-container {
+    bottom: max(60px, calc(env(safe-area-inset-bottom, 0px) + 60px));
+    left: 12px;
+    right: 12px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .toast {
+    font-size: 13px;
+    padding: 8px 14px;
   }
 }
 
@@ -201,4 +241,79 @@ body.dark-mode .toast {
     animation: none;
     transition: opacity 0.15s ease;
   }
+}
+
+/* ========================================
+   ✅ KEYBOARD OPEN STATE (Mobile)
+   ======================================== */
+@media (max-width: 768px) {
+  body.keyboard-open .toast-container {
+    bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 20px));
+  }
+}
+
+/* ========================================
+   ✅ HOVER ONLY ON TOUCH-FREE DEVICES
+   ======================================== */
+@media (hover: none) {
+  .toast {
+    transform: none !important;
+  }
+}
+
+/* ========================================
+   ✅ PRINT
+   ======================================== */
+@media print {
+  .toast-container {
+    display: none !important;
+  }
+}
+
+/* ========================================
+   ✅ TOAST POSITIONING VARIANTS (للمستقبل)
+   ======================================== */
+
+/* Top position (optional) */
+.toast-container.toast-top {
+  bottom: auto;
+  top: max(20px, calc(env(safe-area-inset-top, 0px) + 20px));
+}
+
+/* Top-right position (optional) */
+.toast-container.toast-top-right {
+  bottom: auto;
+  top: max(20px, calc(env(safe-area-inset-top, 0px) + 20px));
+  left: auto;
+  right: max(20px, calc(env(safe-area-inset-right, 0px) + 20px));
+  transform: none;
+  align-items: flex-end;
+}
+
+/* Bottom-right position (optional) */
+.toast-container.toast-bottom-right {
+  left: auto;
+  right: max(20px, calc(env(safe-area-inset-right, 0px) + 20px));
+  transform: none;
+  align-items: flex-end;
+}
+
+/* Animation for top position */
+@keyframes toastSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.toast-container.toast-top .toast {
+  animation: toastSlideDown 0.3s ease;
+}
+
+.toast-container.toast-top-right .toast {
+  animation: toastSlideDown 0.3s ease;
 }

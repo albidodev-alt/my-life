@@ -1,5 +1,6 @@
 /* ========================================
-   MY LIFE HUB - EVENTS (CALENDAR)
+   MY LIFE HUB - EVENTS (CALENDAR) v2.0
+   (Mobile Fixes + Aspect-Ratio Fallback + Safe Areas)
    ======================================== */
 
 /* ========================================
@@ -50,6 +51,10 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   box-shadow: var(--shadow-sm);
   white-space: nowrap;
+  min-height: 48px;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .events-add-btn:hover {
@@ -96,6 +101,14 @@
   padding: 4px 12px;
   border-radius: 6px;
   transition: background-color 0.2s ease, transform 0.2s ease;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .calendar-nav-btn:hover {
@@ -138,9 +151,12 @@
   gap: 4px;
 }
 
+/* ========================================
+   ✅ CALENDAR DAY (مع Aspect-Ratio Fallback)
+   ======================================== */
+
 .calendar-day,
 .calendar-day-empty {
-  aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -150,11 +166,35 @@
   color: var(--text-primary);
   transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   cursor: default;
+  aspect-ratio: 1;
+  min-height: 44px; /* ✅ بديل احتياطي */
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ✅ Fallback لمتصفحات قديمة لا تدعم aspect-ratio */
+@supports not (aspect-ratio: 1) {
+  .calendar-day,
+  .calendar-day-empty {
+    height: 0;
+    padding-bottom: 100%;
+    position: relative;
+  }
+  
+  .calendar-day > *,
+  .calendar-day-empty > * {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 .calendar-day {
   cursor: pointer;
-  position: relative;
 }
 
 .calendar-day:hover {
@@ -294,6 +334,8 @@
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .event-date {
@@ -312,6 +354,8 @@
   opacity: 0.7;
   font-style: italic;
   margin-top: 2px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* ========================================
@@ -332,8 +376,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border: none;
   border-radius: 8px;
@@ -342,6 +386,7 @@
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ===== Hover الأساسي (تثبيت + تعديل) ===== */
@@ -452,6 +497,43 @@ body.dark-mode .event-delete-btn:hover {
 }
 
 /* ========================================
+   ✅ HOVER ONLY ON TOUCH-FREE DEVICES
+   ======================================== */
+@media (hover: none) {
+  .calendar-day:hover,
+  .calendar-day-has-event:hover,
+  .event-card:hover,
+  .calendar-nav-btn:hover,
+  .events-add-btn:hover,
+  .event-pin-btn:hover,
+  .event-edit-btn:hover,
+  .event-delete-btn:hover {
+    transform: none !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+  
+  .calendar-day:hover {
+    background-color: inherit !important;
+  }
+  
+  .calendar-day-today:hover {
+    background-color: #dbeafe !important;
+  }
+  
+  .calendar-day-has-event:hover {
+    background-color: #fecaca !important;
+  }
+  
+  .event-card:hover {
+    background-color: var(--bg-surface) !important;
+  }
+  
+  .event-card-pinned:hover {
+    background: var(--primary-light) !important;
+  }
+}
+
+/* ========================================
    RESPONSIVE
    ======================================== */
 
@@ -477,17 +559,26 @@ body.dark-mode .event-delete-btn:hover {
 
   .calendar-day,
   .calendar-day-empty {
-    font-size: 12px;
+    font-size: 13px;
     border-radius: 6px;
+    min-height: 40px;
+  }
+
+  /* ✅ أزرار أكبر للتقويم على الجوال */
+  .calendar-nav-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px 12px;
   }
 
   .event-card {
     flex-wrap: wrap;
-    padding: 10px 14px;
+    padding: 12px 14px;
   }
 
   .event-actions {
     align-self: flex-end;
+    gap: 6px;
   }
 
   .events-list-section {
@@ -499,12 +590,12 @@ body.dark-mode .event-delete-btn:hover {
     padding: 24px 20px;
   }
 
-  /* أزرار أصغر على الجوال */
+  /* ✅ أزرار لمس أكبر على الجوال */
   .event-pin-btn,
   .event-edit-btn,
   .event-delete-btn {
-    width: 32px;
-    height: 32px;
+    width: 42px;
+    height: 42px;
   }
 }
 
@@ -523,12 +614,21 @@ body.dark-mode .event-delete-btn:hover {
 
   .calendar-day,
   .calendar-day-empty {
-    font-size: 10px;
-    border-radius: 4px;
+    font-size: 11px;
+    border-radius: 5px;
+    min-height: 36px;
   }
 
   .calendar-wrapper {
     padding: 12px;
+  }
+
+  .calendar-grid {
+    gap: 3px;
+  }
+
+  .calendar-days {
+    gap: 3px;
   }
 
   .event-title {
@@ -542,7 +642,7 @@ body.dark-mode .event-delete-btn:hover {
   }
 
   .event-card {
-    padding: 8px 12px;
+    padding: 10px 12px;
   }
 
   .events-list-section {
@@ -555,19 +655,40 @@ body.dark-mode .event-delete-btn:hover {
 
   .calendar-pin-icon {
     font-size: 6px;
+    top: 1px;
+    right: 3px;
   }
 
   #events-details-modal .notes-modal-title {
     font-size: 18px;
   }
 
-  /* أزرار أصغر على الجوال الصغير */
+  /* ✅ أزرار لمس أكبر على الشاشات الصغيرة */
   .event-pin-btn,
   .event-edit-btn,
   .event-delete-btn {
-    width: 30px;
-    height: 30px;
-    border-radius: 6px;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  }
+}
+
+/* ========================================
+   ✅ LANDSCAPE MODE (Mobile)
+   ======================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+  .calendar-wrapper {
+    padding: 12px;
+  }
+
+  .calendar-day,
+  .calendar-day-empty {
+    min-height: 32px;
+    font-size: 11px;
+  }
+
+  .events-header {
+    margin-bottom: 12px;
   }
 }
 
@@ -593,4 +714,45 @@ body.dark-mode .event-delete-btn:hover {
 #events-details-modal .notes-modal-save-btn:focus-visible {
   outline: 3px solid rgba(79, 142, 219, 0.3);
   outline-offset: 2px;
+}
+
+/* ========================================
+   ✅ REDUCED MOTION
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .calendar-day,
+  .event-card,
+  .calendar-nav-btn,
+  .events-add-btn,
+  .event-pin-btn,
+  .event-edit-btn,
+  .event-delete-btn {
+    transition: none !important;
+  }
+}
+
+/* ========================================
+   ✅ PRINT
+   ======================================== */
+@media print {
+  .events-add-btn,
+  .calendar-nav-btn,
+  .event-pin-btn,
+  .event-edit-btn,
+  .event-delete-btn {
+    display: none !important;
+  }
+
+  .calendar-wrapper,
+  .events-list-section {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
+  }
+
+  .event-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    page-break-inside: avoid;
+  }
 }

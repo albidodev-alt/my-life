@@ -1,6 +1,6 @@
 /* ========================================
-   MY LIFE HUB - MAIN STYLES v3.1
-   (بدون @import من Google Fonts - الخطوط محلية)
+   MY LIFE HUB - MAIN STYLES v3.2
+   (Mobile Fixes + Safe Areas + dvh)
    ======================================== */
 
 /* ========================================
@@ -77,20 +77,52 @@
 
   /* Focus */
   --focus-ring: 3px solid rgba(79, 142, 219, 0.3);
+
+  /* ✅ Safe Areas */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  /* ✅ Header Height */
+  --header-height: 60px;
+  --header-height-mobile: 56px;
+  --header-height-small: 48px;
+}
+
+/* ========================================
+   ✅ VIEWPORT HEIGHT FIX (iOS/Android)
+   ======================================== */
+:root {
+  --vh-unit: 100vh;
+}
+@supports (height: 100dvh) {
+  :root {
+    --vh-unit: 100dvh;
+  }
 }
 
 /* ========================================
    RESET & BASE
    ======================================== */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
 
 html {
   min-height: 100vh;
+  min-height: var(--vh-unit);
   background-image:
     linear-gradient(var(--grid-color) 2px, transparent 2px),
     linear-gradient(90deg, var(--grid-color) 2px, transparent 2px);
   background-size: var(--grid-size) var(--grid-size);
   background-position: -1px -1px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -100,8 +132,10 @@ body {
   color: var(--text-primary);
   transition: background-color var(--tr-slow), color var(--tr-slow);
   min-height: 100vh;
+  min-height: var(--vh-unit);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 h1, h2, h3, .handwritten, .day-btn, #app h2,
@@ -112,6 +146,14 @@ h1, h2, h3, .handwritten, .day-btn, #app h2,
 h1 { font-size: var(--fs-4xl); font-weight: 700; }
 h2 { font-size: var(--fs-3xl); font-weight: 700; }
 h3 { font-size: var(--fs-xl); font-weight: 600; }
+
+/* ========================================
+   ✅ SAFE AREA HELPERS
+   ======================================== */
+.safe-top { padding-top: var(--safe-top); }
+.safe-bottom { padding-bottom: var(--safe-bottom); }
+.safe-left { padding-left: var(--safe-left); }
+.safe-right { padding-right: var(--safe-right); }
 
 /* ========================================
    HEADER
@@ -129,11 +171,14 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   backdrop-filter: blur(4px) saturate(120%);
   -webkit-backdrop-filter: blur(4px) saturate(120%);
   padding: var(--sp-md) var(--sp-2xl);
+  padding-top: calc(var(--sp-md) + var(--safe-top));
+  padding-left: calc(var(--sp-2xl) + var(--safe-left));
+  padding-right: calc(var(--sp-2xl) + var(--safe-right));
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   position: sticky;
   top: 0;
   z-index: var(--z-header);
-  height: 60px;
+  height: calc(var(--header-height) + var(--safe-top));
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.02);
 }
 
@@ -160,7 +205,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   border: 1.5px solid rgba(79, 142, 219, 0.12);
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
   padding: 6px;
 }
 .menu-toggle:hover {
@@ -174,7 +219,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   height: 2.5px;
   background: var(--text-primary);
   border-radius: 4px;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, opacity 0.3s ease;
   transform-origin: center;
 }
 .menu-toggle.active .menu-icon:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
@@ -196,7 +241,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   -webkit-backdrop-filter: blur(2px);
   letter-spacing: 1px;
   display: inline-block;
-  transition: all var(--tr-base);
+  transition: border-color var(--tr-base), background-color var(--tr-base), transform var(--tr-base), box-shadow var(--tr-base);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 .title-border:hover {
@@ -248,7 +293,12 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
 /* ========================================
    LAYOUT & SIDEBAR
    ======================================== */
-#layout { display: flex; min-height: calc(100vh - 60px); position: relative; }
+#layout {
+  display: flex;
+  min-height: calc(100vh - var(--header-height));
+  min-height: calc(var(--vh-unit) - var(--header-height));
+  position: relative;
+}
 
 #sidebar {
   display: flex;
@@ -261,11 +311,15 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   border-right: 1px solid var(--border-light);
   min-width: 200px;
   width: 200px;
-  height: calc(100vh - 60px);
+  height: calc(100vh - var(--header-height));
+  height: calc(var(--vh-unit) - var(--header-height));
   position: sticky;
-  top: 60px;
+  top: var(--header-height);
   flex-shrink: 0;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: min-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.35s ease,
+              padding 0.35s ease;
   overflow: hidden;
 }
 #sidebar.closed {
@@ -288,6 +342,8 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   position: relative;
   letter-spacing: 0.3px;
   white-space: nowrap;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .nav-btn::before {
   content: "";
@@ -297,7 +353,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   width: 0; height: 70%;
   background: var(--primary);
   border-radius: 0 3px 3px 0;
-  transition: var(--tr-base);
+  transition: width var(--tr-base), opacity var(--tr-base);
   opacity: 0;
 }
 .nav-btn:hover { color: var(--ink); background-color: var(--bg-hover); }
@@ -310,8 +366,9 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   flex: 1;
   padding: var(--sp-2xl);
   overflow-y: auto;
-  max-height: calc(100vh - 60px);
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: calc(100vh - var(--header-height));
+  max-height: calc(var(--vh-unit) - var(--header-height));
+  transition: padding 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 0;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
@@ -355,7 +412,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   border-radius: var(--r-md);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
-  transition: var(--tr-base);
+  transition: box-shadow var(--tr-base), transform var(--tr-base), border-color var(--tr-base);
   min-height: 80px;
 }
 .day-card:hover {
@@ -372,11 +429,13 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-size: var(--fs-xl);
   font-weight: 500;
   cursor: pointer;
-  transition: var(--tr-base);
+  transition: background-color var(--tr-base);
   width: 100%;
   color: var(--text-primary);
   flex: 1;
   font-family: var(--font-hand);
+  -webkit-user-select: none;
+  user-select: none;
 }
 .day-btn:hover { background-color: var(--bg-hover); }
 
@@ -411,11 +470,12 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   -webkit-backdrop-filter: blur(2px);
   border-radius: var(--r-md);
   cursor: pointer;
-  transition: var(--tr-base);
+  transition: background-color var(--tr-base), border-color var(--tr-base), transform var(--tr-base);
   color: var(--ink);
   font-family: var(--font-hand);
   font-size: var(--fs-base);
   font-weight: 500;
+  min-height: 44px;
 }
 #back-btn:hover {
   background-color: var(--bg-hover);
@@ -449,6 +509,8 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   position: relative;
   overflow: hidden;
   color: #1e293b;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .hour-box:hover {
   transform: scale(1.04);
@@ -501,7 +563,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
 .hour-swap-icon {
   position: absolute;
   top: 3px; right: 3px;
-  width: 16px; height: 16px;
+  width: 20px; height: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -514,6 +576,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   z-index: 5;
   opacity: 0.55;
   line-height: 1;
+  -webkit-tap-highlight-color: transparent;
 }
 .hour-swap-icon:hover { opacity: 1; color: var(--primary-dark); transform: scale(1.2) rotate(180deg); }
 .hour-swap-icon:active { transform: scale(0.9) rotate(180deg); }
@@ -565,9 +628,11 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   margin-top: 16px;
   max-width: 500px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
   position: relative;
   overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .day-for-card::before {
@@ -680,7 +745,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   border-radius: 8px;
   flex-shrink: 0;
   opacity: 0.5;
-  transition: all 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
 .day-for-edit svg {
@@ -775,7 +840,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
 .sleep-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 
 /* ========================================
-   MODAL BASE
+   MODAL BASE (Legacy fallback - kept for compatibility)
    ======================================== */
 #modal-overlay {
   position: fixed;
@@ -788,6 +853,9 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   justify-content: center;
   z-index: var(--z-modal);
   animation: fadeIn var(--tr-slow);
+  padding: 16px;
+  padding-top: calc(16px + var(--safe-top));
+  padding-bottom: calc(16px + var(--safe-bottom));
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp {
@@ -797,18 +865,19 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
 
 #hour-modal {
   background: var(--bg-modal);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
   border-radius: var(--r-xl);
   padding: var(--sp-2xl);
-  width: 90%;
+  width: 100%;
   max-width: 460px;
   position: relative;
   animation: slideUp var(--tr-slow);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-lg);
-  max-height: 90vh;
+  max-height: calc(90vh - var(--safe-top) - var(--safe-bottom));
+  max-height: calc(90dvh - var(--safe-top) - var(--safe-bottom));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 #hour-modal h3 {
   font-family: var(--font-hand);
@@ -816,6 +885,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-weight: 600;
   margin-bottom: var(--sp-xs);
   color: var(--text-primary);
+  padding-right: 40px;
 }
 
 .modal-subtitle {
@@ -830,7 +900,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
 #close-modal-btn {
   position: absolute;
   top: 12px; right: 12px;
-  width: 32px; height: 32px;
+  width: 36px; height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -839,10 +909,11 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   border-radius: 8px;
   cursor: pointer;
   color: var(--text-muted);
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   padding: 0;
   font-size: var(--fs-xl);
   line-height: 1;
+  z-index: 10;
 }
 .modal-close-btn:hover,
 #close-modal-btn:hover {
@@ -869,12 +940,15 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-size: var(--fs-lg);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   border: none;
+  min-height: 48px;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .modal-save-btn,
 #save-custom-btn {
@@ -938,7 +1012,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   border-radius: var(--r-2xl);
   border: 1.5px solid var(--border-color);
   background: var(--bg-surface);
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   position: relative;
 }
 .activity-display-card:hover {
@@ -990,14 +1064,14 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px; height: 34px;
+  width: 40px; height: 40px;
   padding: 0;
   background: transparent;
   border: 1.5px solid var(--border-input);
   border-radius: 8px;
   color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   flex-shrink: 0;
 }
 .activity-change-btn:hover {
@@ -1007,7 +1081,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   transform: scale(1.08);
 }
 .activity-remove-btn {
-  width: 28px; height: 28px;
+  width: 36px; height: 36px;
   margin-left: auto;
   border-radius: 6px;
 }
@@ -1037,7 +1111,10 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-size: var(--fs-md);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  min-height: 48px;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .activity-add-alt-btn:hover {
   border-color: var(--primary);
@@ -1072,9 +1149,11 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   border-radius: var(--r-2xl);
   background: var(--bg-surface);
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: transform 0.25s ease, border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
   font-family: var(--font-hand);
   position: relative;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .suggestion-btn:hover,
 .alternative-option-btn:hover {
@@ -1182,9 +1261,10 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-weight: 450;
   background: var(--bg-input);
   color: var(--text-primary);
-  transition: var(--tr-base);
+  transition: border-color var(--tr-base), box-shadow var(--tr-base);
   margin-bottom: var(--sp-md);
   outline: none;
+  min-height: 48px;
 }
 .activity-custom-input:focus,
 #custom-activity-input:focus,
@@ -1211,7 +1291,10 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-family: var(--font-hand);
   font-size: var(--fs-base);
   font-weight: 600;
-  transition: var(--tr-base);
+  transition: transform var(--tr-base), box-shadow var(--tr-base);
+  min-height: 44px;
+  -webkit-user-select: none;
+  user-select: none;
 }
 #add-task-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 
@@ -1234,7 +1317,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   justify-content: space-between;
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
-  transition: var(--tr-base);
+  transition: box-shadow var(--tr-base), border-color var(--tr-base), transform var(--tr-base);
 }
 .task-item:hover {
   box-shadow: var(--shadow-md);
@@ -1248,13 +1331,13 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
 .task-text { font-size: var(--fs-md); font-weight: 500; color: var(--text-primary); }
 
 .task-circle {
-  width: 18px; height: 18px;
+  width: 24px; height: 24px;
   border: 2px solid var(--border-input);
   border-radius: var(--r-sm);
   background: none;
   cursor: pointer;
   flex-shrink: 0;
-  transition: var(--tr-base);
+  transition: border-color var(--tr-base), background-color var(--tr-base), transform var(--tr-base);
 }
 .task-circle:hover {
   border-color: var(--success);
@@ -1280,8 +1363,10 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-size: var(--fs-base);
   padding: var(--sp-xs) var(--sp-sm);
   border-radius: var(--r-sm);
-  transition: var(--tr-base);
+  transition: background-color var(--tr-base), opacity var(--tr-base);
   opacity: 0.5;
+  min-width: 36px;
+  min-height: 36px;
 }
 .task-action-btn:hover { opacity: 1; background-color: var(--bg-hover); }
 
@@ -1304,8 +1389,11 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-family: var(--font-hand);
   font-size: var(--fs-sm);
   font-weight: 500;
-  transition: var(--tr-base);
+  transition: background-color var(--tr-base), border-color var(--tr-base), color var(--tr-base);
   color: var(--ink-light);
+  min-height: 36px;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .filter-btn:hover { background-color: var(--bg-hover); border-color: var(--primary); }
 .filter-btn.active { background-color: var(--primary); color: var(--text-light); border-color: var(--primary); }
@@ -1332,7 +1420,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   border-radius: var(--r-md);
   margin-bottom: var(--sp-xs);
   box-shadow: var(--shadow-sm);
-  transition: var(--tr-base);
+  transition: border-color var(--tr-base), transform var(--tr-base);
 }
 .statistics-item:hover { border-color: var(--primary); transform: translateX(4px); }
 .statistics-item-name {
@@ -1493,10 +1581,11 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-family: var(--font-body);
   font-size: var(--fs-md);
   font-weight: 450;
-  transition: var(--tr-base);
+  transition: border-color var(--tr-base), box-shadow var(--tr-base);
   background: var(--bg-input);
   color: var(--text-primary);
   outline: none;
+  min-height: 48px;
 }
 .profile-field-input:focus,
 .profile-field-textarea:focus {
@@ -1516,7 +1605,8 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-family: var(--font-hand);
   font-size: var(--fs-base);
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  min-height: 44px;
 }
 .profile-back-btn:hover {
   background-color: var(--bg-hover);
@@ -1575,7 +1665,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
 .profile-setting-icon svg { width: 18px; height: 18px; stroke: currentColor; }
 
 .profile-setting-select {
-  padding: 6px 12px;
+  padding: 8px 12px;
   background: var(--bg-input);
   color: var(--text-primary);
   border: 1px solid var(--border-input);
@@ -1583,8 +1673,9 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-family: var(--font-body);
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   flex-shrink: 0;
+  min-height: 40px;
 }
 .profile-setting-select:hover { border-color: var(--primary); }
 .profile-setting-select:focus {
@@ -1594,7 +1685,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
 }
 
 .profile-clear-btn {
-  padding: 6px 16px;
+  padding: 8px 16px;
   background: transparent;
   color: #ef4444;
   border: 1px solid #ef4444;
@@ -1603,8 +1694,9 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   flex-shrink: 0;
+  min-height: 40px;
 }
 .profile-clear-btn:hover { background: #ef4444; color: white; transform: scale(1.05); }
 
@@ -1633,12 +1725,13 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-size: 17px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   box-shadow: var(--shadow-sm);
+  min-height: 48px;
 }
 .profile-install-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 
@@ -1677,11 +1770,12 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-height: 48px;
 }
 .profile-view-achievements-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 
@@ -1711,8 +1805,9 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   border: 1.5px solid rgba(79, 142, 219, 0.25);
   border-radius: 30px;
   box-shadow: 0 2px 12px rgba(79, 142, 219, 0.08);
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
   font-family: var(--font-hand);
+  cursor: pointer;
 }
 .completed-counter-bar:hover {
   background: linear-gradient(135deg, rgba(79, 142, 219, 0.15), rgba(109, 168, 232, 0.25));
@@ -1763,7 +1858,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
 #bottom-nav {
   display: none;
   position: fixed;
-  bottom: 20px;
+  bottom: max(20px, var(--safe-bottom));
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 32px);
@@ -1792,11 +1887,13 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   font-size: 10px;
   font-weight: 500;
   color: var(--text-muted);
-  transition: all var(--tr-base);
+  transition: color var(--tr-base), background-color var(--tr-base);
   position: relative;
   min-height: 48px;
   border-radius: 30px;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .bottom-nav-btn .bn-icon {
   display: flex;
@@ -1809,7 +1906,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
 .bottom-nav-btn .bn-icon svg {
   width: 22px; height: 22px;
   stroke-width: 2;
-  transition: all var(--tr-base);
+  transition: stroke var(--tr-base), color var(--tr-base);
   color: currentColor;
 }
 .bottom-nav-btn .bn-label { font-size: 10px; font-weight: 600; letter-spacing: 0.3px; }
@@ -1826,11 +1923,11 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
 #notes-fab {
   display: none;
   position: fixed;
-  bottom: 85px;
-  right: 20px;
+  bottom: max(85px, calc(var(--safe-bottom) + 75px));
+  right: max(20px, var(--safe-right));
   z-index: calc(var(--z-nav) + 1);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, bottom 0.3s ease;
 }
 #notes-fab .fab-btn {
   display: flex;
@@ -1842,7 +1939,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   border: none;
   box-shadow: 0 4px 20px rgba(79, 142, 219, 0.35);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   color: white;
   padding: 0;
 }
@@ -1865,7 +1962,7 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
   border: 1.5px solid rgba(79, 142, 219, 0.12);
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
   padding: 0;
   font-size: 18px;
   color: var(--text-primary);
@@ -1897,6 +1994,62 @@ h3 { font-size: var(--fs-xl); font-weight: 600; }
 #notification-badge.show { display: flex; }
 
 /* ========================================
+   ✅ KEYBOARD OPEN STATE (Mobile)
+   ======================================== */
+body.keyboard-open #bottom-nav,
+body.keyboard-open #notes-fab {
+  display: none !important;
+}
+
+/* ========================================
+   ✅ HOVER ONLY ON TOUCH-FREE DEVICES
+   ======================================== */
+@media (hover: none) {
+  .hour-box:hover,
+  .day-card:hover,
+  .task-item:hover,
+  .notes-card:hover,
+  .event-card:hover,
+  .program-card:hover,
+  .drops-item:hover,
+  .day-for-card:hover,
+  .sleep-card:hover,
+  .statistics-item:hover,
+  .nav-btn:hover,
+  .bottom-nav-btn:hover,
+  .filter-btn:hover,
+  .suggestion-btn:hover,
+  .alternative-option-btn:hover,
+  .title-border:hover,
+  #user-profile-btn:hover,
+  #back-btn:hover,
+  .profile-back-btn:hover,
+  .notes-card:hover .notes-card-action-btn,
+  .event-card:hover .event-actions,
+  .profile-install-btn:hover,
+  .profile-view-achievements-btn:hover,
+  .profile-clear-btn:hover,
+  .menu-toggle:hover,
+  #notes-fab .fab-btn:hover,
+  .notification-toggle:hover,
+  .activity-change-btn:hover,
+  .activity-remove-btn:hover,
+  .activity-add-alt-btn:hover {
+    transform: none !important;
+  }
+  
+  .hour-box:hover .hour-activity {
+    text-shadow: none !important;
+  }
+  
+  .hour-swap-icon:hover {
+    opacity: 0.55 !important;
+    transform: none !important;
+    color: var(--primary) !important;
+  }
+}
+
+/* ========================================
    ACCESSIBILITY
    ======================================== */
 button:focus-visible,
@@ -1916,15 +2069,24 @@ select:focus-visible,
    ======================================== */
 @media (max-width: 768px) {
   #bottom-nav { display: flex !important; }
-  #notes-fab { display: block !important; bottom: 82px; right: 16px; }
+  #notes-fab { display: block !important; bottom: max(82px, calc(var(--safe-bottom) + 72px)); right: max(16px, var(--safe-right)); }
   #sidebar { display: none !important; }
   .menu-toggle { display: none !important; }
 
-  #app { padding: var(--sp-lg); padding-bottom: calc(110px + var(--sp-lg)); }
+  #app {
+    padding: var(--sp-lg);
+    padding-bottom: calc(110px + var(--sp-lg) + var(--safe-bottom));
+  }
 
   #week-container { grid-template-columns: 1fr; gap: var(--sp-sm); max-width: 100%; }
 
-  #main-header { padding: var(--sp-sm) var(--sp-lg); height: 56px; }
+  #main-header {
+    padding: var(--sp-sm) var(--sp-lg);
+    padding-top: calc(var(--sp-sm) + var(--safe-top));
+    padding-left: calc(var(--sp-lg) + var(--safe-left));
+    padding-right: calc(var(--sp-lg) + var(--safe-right));
+    height: calc(var(--header-height-mobile) + var(--safe-top));
+  }
   .title-border { font-size: var(--fs-lg); padding: 4px 14px; border-width: 1.5px; }
 
   #user-profile-btn { padding: 2px 12px 2px 2px; gap: var(--sp-xs); border-width: 1.5px; }
@@ -1933,7 +2095,7 @@ select:focus-visible,
 
   #app h2 { font-size: var(--fs-2xl); }
   #hours-grid { grid-template-columns: repeat(4, 1fr); gap: var(--sp-xs); }
-  .hour-box { padding: var(--sp-xs); min-height: 45px; }
+  .hour-box { padding: var(--sp-xs); min-height: 48px; }
 
   .profile-card { padding: var(--sp-2xl) var(--sp-lg); }
   .profile-avatar-wrapper, .profile-avatar-img { width: 100px; height: 100px; }
@@ -1945,16 +2107,54 @@ select:focus-visible,
 
   .sleep-card { padding: 14px 16px; }
   .activity-display-name { font-size: 16px; }
-  .activity-change-btn, .activity-remove-btn { width: 32px; height: 32px; }
+  .activity-change-btn, .activity-remove-btn { width: 40px; height: 40px; }
   .activity-change-btn svg, .activity-remove-btn svg { width: 14px; height: 14px; }
+
+  /* ✅ حقول بحجم 16px لمنع التكبير التلقائي على iOS */
+  input[type="text"],
+  input[type="date"],
+  input[type="email"],
+  input[type="number"],
+  input[type="search"],
+  textarea,
+  select,
+  .modal-base-input,
+  .modal-base-textarea,
+  .modal-base-select,
+  .notes-search-input,
+  .notes-modal-input,
+  .notes-modal-textarea,
+  .activity-custom-input,
+  .profile-field-input,
+  .profile-field-textarea,
+  .profile-setting-select {
+    font-size: 16px !important;
+  }
+
+  /* ✅ أزرار لمس أكبر */
+  .hour-swap-icon {
+    width: 24px;
+    height: 24px;
+    top: 2px;
+    right: 2px;
+  }
+  .hour-swap-icon svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 /* ========================================
    RESPONSIVE - Small (≤480px)
    ======================================== */
 @media (max-width: 480px) {
-  #bottom-nav { bottom: 16px; width: calc(100% - 24px); padding: 6px 10px; border-radius: 40px; }
-  #notes-fab { bottom: 72px; right: 12px; }
+  #bottom-nav {
+    bottom: max(16px, var(--safe-bottom));
+    width: calc(100% - 24px);
+    padding: 6px 10px;
+    border-radius: 40px;
+  }
+  #notes-fab { bottom: max(72px, calc(var(--safe-bottom) + 62px)); right: max(12px, var(--safe-right)); }
   #notes-fab .fab-btn { width: 48px; height: 48px; }
   #notes-fab .fab-btn svg { width: 24px; height: 24px; }
 
@@ -1962,21 +2162,27 @@ select:focus-visible,
   .bottom-nav-btn .bn-icon svg { width: 18px; height: 18px; }
   .bottom-nav-btn .bn-label { font-size: 9px; }
 
-  #app { padding: var(--sp-md); padding-bottom: calc(90px + var(--sp-md)); }
-  #main-header { padding: var(--sp-sm) var(--sp-md); height: 48px; }
+  #app { padding: var(--sp-md); padding-bottom: calc(90px + var(--sp-md) + var(--safe-bottom)); }
+  #main-header {
+    padding: var(--sp-sm) var(--sp-md);
+    padding-top: calc(var(--sp-sm) + var(--safe-top));
+    padding-left: calc(var(--sp-md) + var(--safe-left));
+    padding-right: calc(var(--sp-md) + var(--safe-right));
+    height: calc(var(--header-height-small) + var(--safe-top));
+  }
   .title-border { font-size: var(--fs-base); padding: 3px 10px; border-width: 1.5px; }
   #user-avatar-icon { width: 24px; height: 24px; }
   #user-profile-btn { padding: 2px 8px 2px 2px; border-width: 1.5px; }
 
   #app h2 { font-size: var(--fs-xl); }
   #hours-grid { grid-template-columns: repeat(3, 1fr); gap: 3px; }
-  .hour-box { padding: 3px; min-height: 35px; }
+  .hour-box { padding: 3px; min-height: 38px; }
   .hour-label, .hour-activity { font-size: 10px; }
-  .hour-swap-icon { width: 12px; height: 12px; top: 2px; right: 2px; }
-  .hour-swap-icon svg { width: 10px; height: 10px; }
+  .hour-swap-icon { width: 20px; height: 20px; top: 2px; right: 2px; }
+  .hour-swap-icon svg { width: 14px; height: 14px; }
 
   #suggestions-grid, .alternative-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .suggestion-btn, .alternative-option-btn { padding: 10px 6px; min-height: 56px; }
+  .suggestion-btn, .alternative-option-btn { padding: 10px 6px; min-height: 60px; }
   .suggestion-btn-icon, .alternative-option-icon { width: 22px; height: 22px; }
   .suggestion-btn-icon svg, .alternative-option-icon svg { width: 22px; height: 22px; }
   .suggestion-btn-label, .alternative-option-label { font-size: 10px; }
@@ -2007,7 +2213,7 @@ select:focus-visible,
   .activity-display-name { font-size: 15px; }
   .activity-display-icon { width: 20px; height: 20px; }
   .activity-display-icon svg { width: 20px; height: 20px; }
-  .activity-change-btn, .activity-remove-btn { width: 30px; height: 30px; border-radius: 8px; }
+  .activity-change-btn, .activity-remove-btn { width: 38px; height: 38px; border-radius: 8px; }
   .activity-change-btn svg, .activity-remove-btn svg { width: 14px; height: 14px; }
 
   .day-for-card { padding: 14px; gap: 12px; }
@@ -2022,6 +2228,23 @@ select:focus-visible,
   .sleep-info-label { font-size: 12px; }
   .sleep-info-time { font-size: 13px; }
   .sleep-info-divider { height: 16px; margin: 0 4px; }
+}
+
+/* ========================================
+   ✅ LANDSCAPE MODE (Mobile)
+   ======================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+  #main-header {
+    height: calc(44px + var(--safe-top));
+    padding-top: calc(4px + var(--safe-top));
+    padding-bottom: 4px;
+  }
+  #bottom-nav {
+    display: none !important;
+  }
+  #notes-fab {
+    bottom: max(12px, var(--safe-bottom));
+  }
 }
 
 /* ========================================
@@ -2043,12 +2266,10 @@ select:focus-visible,
 }
 
 /* ========================================
-   ✅ PERFORMANCE OPTIMIZATIONS (NEW)
-   تحسينات الأداء - لا تغيير بصري
+   ✅ PERFORMANCE OPTIMIZATIONS
    ======================================== */
 
 /* ===== 1. GPU Acceleration ذكي ===== */
-/* يُفعّل فقط عند الحاجة (hover/active) لتقليل استهلاك الذاكرة */
 .hour-box,
 .day-card,
 .task-item,
@@ -2090,17 +2311,50 @@ textarea:focus-visible {
 
 /* ===== 5. تحسين الطباعة ===== */
 @media print {
+  @page {
+    margin: 15mm;
+    size: A4;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
   #main-header,
   #sidebar,
   #bottom-nav,
   #notes-fab,
   .notification-toggle,
-  .modal-base-overlay {
+  .modal-base-overlay,
+  #modal-overlay,
+  #back-btn,
+  .profile-back-btn {
     display: none !important;
   }
+  
   #app {
     padding: 0;
     max-height: none;
     overflow: visible;
   }
+  
+  .hour-box,
+  .task-item,
+  .notes-card,
+  .day-card,
+  .event-card,
+  .program-card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
+  }
+}
+
+/* ========================================
+   ✅ DARK MODE PREPARATION (للمستقبل)
+   ======================================== */
+@media (prefers-color-scheme: dark) {
+  /* يمكن تفعيل الوضع الليلي التلقائي هنا لاحقاً */
+  /* حالياً مطلوب من المستخدم تفعيله يدوياً */
 }

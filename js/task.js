@@ -1,5 +1,6 @@
 // ========================================
-// MY LIFE HUB - TASKS
+// MY LIFE HUB - TASKS v2.0
+// (Debounced Search + Safe Save + Better UX)
 // ========================================
 
 const priorityOptions = [
@@ -19,15 +20,34 @@ const difficultyOptions = [
 ];
 
 // ========================================
+// ✅ Debounce للبحث
+// ========================================
+const debouncedTaskSearch = (typeof debounce === 'function')
+  ? debounce((filter, searchTerm) => {
+      renderTaskList(filter, searchTerm);
+    }, 200)
+  : (filter, searchTerm) => renderTaskList(filter, searchTerm);
+
+// ========================================
+// ✅ قراءة آمنة للتواريخ
+// ========================================
+function parseDate(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// ========================================
 // عرض صفحة المهام
 // ========================================
 function renderTasks() {
   const app = document.getElementById("app");
+  if (!app) return;
   app.innerHTML = "";
 
   // ===== العنوان وزر الإضافة =====
   const headerDiv = document.createElement("div");
-  headerDiv.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;";
+  headerDiv.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;";
 
   const titleWrapper = document.createElement("div");
   titleWrapper.style.cssText = "display:flex;align-items:center;gap:12px;";
@@ -46,6 +66,7 @@ function renderTasks() {
 
   const addBtn = document.createElement("button");
   addBtn.id = "add-task-btn";
+  addBtn.type = "button";
   addBtn.textContent = "+ " + (typeof t === 'function' ? t('add_task', 'Add Task') : "Add Task");
   addBtn.style.marginBottom = "0";
   addBtn.addEventListener("click", function () { openAddTaskModal(); });
@@ -59,13 +80,14 @@ function renderTasks() {
 
   const searchIcon = document.createElement("span");
   searchIcon.setAttribute("data-lucide", "search");
-  searchIcon.style.cssText = "position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text-muted);pointer-events:none;";
+  searchIcon.style.cssText = "position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text-muted);pointer-events:none;display:flex;align-items:center;justify-content:center;";
 
   const searchInput = document.createElement("input");
   searchInput.type = "text";
   searchInput.id = "task-search-input";
   searchInput.placeholder = typeof t === 'function' ? t('search_tasks', 'Search tasks...') : "Search tasks...";
-  searchInput.style.cssText = "width:100%;height:46px;padding:0 16px 0 44px;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-input);border-radius:12px;font-family:var(--font-body);font-size:14px;transition:all 0.2s ease;outline:none;";
+  searchInput.autocomplete = "off";
+  searchInput.style.cssText = "width:100%;height:48px;padding:0 16px 0 44px;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-input);border-radius:12px;font-family:var(--font-body);font-size:14px;transition:border-color 0.2s ease, box-shadow 0.2s ease;outline:none;";
 
   searchInput.addEventListener("focus", function () {
     this.style.borderColor = "var(--primary)";
@@ -77,11 +99,10 @@ function renderTasks() {
     this.style.boxShadow = "none";
   });
 
+  // ✅ استخدام debounce للبحث
   searchInput.addEventListener("input", function () {
-    renderTaskList(
-      document.querySelector(".filter-btn.active")?.dataset.filter || "all",
-      this.value
-    );
+    const activeFilter = document.querySelector(".filter-btn.active")?.dataset.filter || "all";
+    debouncedTaskSearch(activeFilter, this.value);
   });
 
   searchDiv.appendChild(searchIcon);
@@ -99,6 +120,7 @@ function renderTasks() {
   filterDiv.appendChild(filterLabel);
 
   const filterAll = document.createElement("button");
+  filterAll.type = "button";
   filterAll.textContent = typeof t === 'function' ? t('all', 'All') : "All";
   filterAll.className = "filter-btn active";
   filterAll.dataset.filter = "all";
@@ -106,6 +128,7 @@ function renderTasks() {
 
   priorityOptions.forEach(function (opt) {
     const btn = document.createElement("button");
+    btn.type = "button";
     btn.textContent = opt.label;
     btn.className = "filter-btn";
     btn.dataset.filter = opt.value;
@@ -192,51 +215,61 @@ function renderTaskList(filter = "all", searchTerm = "") {
       item.className = "task-item priority-" + task.priority;
 
       const leftDiv = document.createElement("div");
-      leftDiv.style.cssText = "display:flex;align-items:center;gap:12px;flex:1;";
+      leftDiv.style.cssText = "display:flex;align-items:center;gap:12px;flex:1;min-width:0;";
 
+      // ===== زر إكمال المهمة =====
       const circleBtn = document.createElement("button");
+      circleBtn.type = "button";
       circleBtn.className = "task-circle";
       circleBtn.title = typeof t === 'function' ? t('complete_task', 'Mark as completed') : "Mark as completed";
+      circleBtn.setAttribute("aria-label", circleBtn.title);
       circleBtn.addEventListener("click", function () {
         openCompleteTaskModal(task);
       });
 
       const textDiv = document.createElement("div");
-      textDiv.style.cssText = "display:flex;flex-direction:column;";
+      textDiv.style.cssText = "display:flex;flex-direction:column;min-width:0;";
 
       const textSpan = document.createElement("span");
       textSpan.className = "task-text";
       textSpan.textContent = task.text;
+      textSpan.style.overflowWrap = "anywhere";
+      textSpan.style.wordBreak = "break-word";
 
       const metaDiv = document.createElement("div");
-      metaDiv.style.cssText = "display:flex;gap:8px;font-size:12px;color:#6b7280;";
+      metaDiv.style.cssText = "display:flex;gap:8px;font-size:12px;color:#6b7280;flex-wrap:wrap;";
 
+      // ===== التصنيف =====
       const categorySpan = document.createElement("span");
       categorySpan.className = "task-category";
       const categoryKey = task.category ? task.category.toLowerCase() : "";
       const translatedCategory = (typeof t === 'function' && t(categoryKey) !== categoryKey) ? t(categoryKey, task.category) : task.category;
-      categorySpan.textContent = translatedCategory || task.category;
+      categorySpan.textContent = translatedCategory || task.category || "";
 
       metaDiv.appendChild(categorySpan);
 
+      // ===== تاريخ الاستحقاق =====
       if (task.dueDate) {
         const dateSpan = document.createElement("span");
         dateSpan.className = "task-date";
-        const dueDate = new Date(task.dueDate);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
 
-        if (dueDate < today) {
-          dateSpan.style.color = "#ef4444";
-          dateSpan.textContent = "🔴 " + (typeof t === 'function' ? t('overdue', 'Overdue') : "Overdue") + ": " + task.dueDate;
-        } else if (dueDate.getTime() === today.getTime()) {
-          dateSpan.style.color = "#f59e0b";
-          dateSpan.textContent = "🟡 " + (typeof t === 'function' ? t('today', 'Today') : "Today");
-        } else {
-          dateSpan.textContent = "📅 " + task.dueDate;
+        const dueDate = parseDate(task.dueDate);
+        if (dueDate) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          dueDate.setHours(0, 0, 0, 0);
+
+          if (dueDate < today) {
+            dateSpan.style.color = "#ef4444";
+            dateSpan.textContent = "🔴 " + (typeof t === 'function' ? t('overdue', 'Overdue') : "Overdue") + ": " + task.dueDate;
+          } else if (dueDate.getTime() === today.getTime()) {
+            dateSpan.style.color = "#f59e0b";
+            dateSpan.textContent = "🟡 " + (typeof t === 'function' ? t('today', 'Today') : "Today");
+          } else {
+            dateSpan.textContent = "📅 " + task.dueDate;
+          }
+          metaDiv.appendChild(dateSpan);
         }
-
-        metaDiv.appendChild(dateSpan);
       }
 
       textDiv.appendChild(textSpan);
@@ -246,23 +279,28 @@ function renderTaskList(filter = "all", searchTerm = "") {
       leftDiv.appendChild(textDiv);
 
       const rightDiv = document.createElement("div");
-      rightDiv.style.cssText = "display:flex;gap:6px;";
+      rightDiv.style.cssText = "display:flex;gap:6px;flex-shrink:0;";
 
+      // ===== زر التعديل =====
       const editBtn = document.createElement("button");
+      editBtn.type = "button";
       editBtn.innerHTML = '<span data-lucide="pencil" style="width:16px;height:16px;"></span>';
       editBtn.className = "task-action-btn";
       editBtn.title = typeof t === 'function' ? t('edit_task', 'Edit task') : "Edit task";
+      editBtn.setAttribute("aria-label", editBtn.title);
       editBtn.addEventListener("click", function (e) {
         e.stopPropagation();
         openEditTaskModal(task);
       });
 
+      // ===== زر الحذف =====
       const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
       deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width:16px;height:16px;"></span>';
       deleteBtn.className = "task-action-btn";
       deleteBtn.title = typeof t === 'function' ? t('delete_task', 'Delete task') : "Delete task";
+      deleteBtn.setAttribute("aria-label", deleteBtn.title);
 
-      // ✨ استخدام deleteModal
       deleteBtn.addEventListener("click", function (e) {
         e.stopPropagation();
         deleteModal({
@@ -310,7 +348,8 @@ function openAddTaskModal() {
     label: typeof t === 'function' ? t('task_description', 'Task description') : 'Task description',
     type: 'text',
     placeholder: typeof t === 'function' ? t('task_description', 'Task description') : 'Task description',
-    required: true
+    required: true,
+    maxLength: 200
   });
   modal.body.appendChild(textField.field);
 
@@ -381,29 +420,40 @@ function openAddTaskModal() {
           return;
         }
 
-        addTask({
+        const newTask = addTask({
           text: text,
           priority: selectedPriority,
           category: categoryField.input.value,
           dueDate: dateField.input.value || null
         });
 
+        if (!newTask) {
+          if (typeof showToast === 'function') {
+            showToast('❌ ' + (typeof t === 'function' ? t('save_failed', 'Failed to save task') : 'Failed to save task'), 'error');
+          }
+          return;
+        }
+
         modal.close();
-        renderTaskList(
-          document.querySelector(".filter-btn.active")?.dataset.filter || "all",
-          document.getElementById("task-search-input")?.value || ""
-        );
+        setTimeout(() => {
+          renderTaskList(
+            document.querySelector(".filter-btn.active")?.dataset.filter || "all",
+            document.getElementById("task-search-input")?.value || ""
+          );
+        }, 250);
       }
     }
   ]);
   modal.body.appendChild(actions);
+
+  setTimeout(() => textField.input.focus(), 100);
 }
 
 // ========================================
 // نافذة تعديل مهمة
 // ========================================
 function openEditTaskModal(task) {
-  let selectedPriority = task.priority;
+  let selectedPriority = task.priority || "medium";
 
   const modal = createModal({
     id: 'edit-task-modal',
@@ -417,7 +467,8 @@ function openEditTaskModal(task) {
     type: 'text',
     value: task.text,
     placeholder: typeof t === 'function' ? t('task_description', 'Task description') : 'Task description',
-    required: true
+    required: true,
+    maxLength: 200
   });
   modal.body.appendChild(textField.field);
 
@@ -489,22 +540,33 @@ function openEditTaskModal(task) {
           return;
         }
 
-        updateTask(task.id, {
+        const success = updateTask(task.id, {
           text: text,
           priority: selectedPriority,
           category: categoryField.input.value,
           dueDate: dateField.input.value || null
         });
 
+        if (!success) {
+          if (typeof showToast === 'function') {
+            showToast('❌ ' + (typeof t === 'function' ? t('save_failed', 'Failed to update task') : 'Failed to update task'), 'error');
+          }
+          return;
+        }
+
         modal.close();
-        renderTaskList(
-          document.querySelector(".filter-btn.active")?.dataset.filter || "all",
-          document.getElementById("task-search-input")?.value || ""
-        );
+        setTimeout(() => {
+          renderTaskList(
+            document.querySelector(".filter-btn.active")?.dataset.filter || "all",
+            document.getElementById("task-search-input")?.value || ""
+          );
+        }, 250);
       }
     }
   ]);
   modal.body.appendChild(actions);
+
+  setTimeout(() => textField.input.focus(), 100);
 }
 
 // ========================================
@@ -578,12 +640,22 @@ function openCompleteTaskModal(task) {
       label: '✅ ' + (typeof t === 'function' ? t('done', 'Done') : 'Done'),
       type: 'primary',
       onClick: () => {
-        completeTask(task.id, selectedDifficulty, dateField.input.value);
+        const success = completeTask(task.id, selectedDifficulty, dateField.input.value);
+
+        if (!success) {
+          if (typeof showToast === 'function') {
+            showToast('❌ ' + (typeof t === 'function' ? t('save_failed', 'Failed to complete task') : 'Failed to complete task'), 'error');
+          }
+          return;
+        }
+
         modal.close();
-        renderTaskList(
-          document.querySelector(".filter-btn.active")?.dataset.filter || "all",
-          document.getElementById("task-search-input")?.value || ""
-        );
+        setTimeout(() => {
+          renderTaskList(
+            document.querySelector(".filter-btn.active")?.dataset.filter || "all",
+            document.getElementById("task-search-input")?.value || ""
+          );
+        }, 250);
       }
     }
   ]);
@@ -591,9 +663,51 @@ function openCompleteTaskModal(task) {
 }
 
 // ========================================
+// ✅ دوال إضافية
+// ========================================
+
+/**
+ * عدد المهام النشطة
+ */
+function getActiveTasks() {
+  return getAllTasks().filter(t => !t.completed);
+}
+
+/**
+ * عدد المهام المتأخرة
+ */
+function getOverdueTasks() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return getAllTasks().filter(t => {
+    if (t.completed || !t.dueDate) return false;
+    const dueDate = parseDate(t.dueDate);
+    return dueDate && dueDate < today;
+  });
+}
+
+/**
+ * عدد المهام المستحقة اليوم
+ */
+function getTodayTasks() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return getAllTasks().filter(t => {
+    if (t.completed || !t.dueDate) return false;
+    const dueDate = parseDate(t.dueDate);
+    return dueDate && dueDate.getTime() === today.getTime();
+  });
+}
+
+// ========================================
 // التصدير
 // ========================================
 window.renderTasks = renderTasks;
 window.renderTaskList = renderTaskList;
+window.getActiveTasks = getActiveTasks;
+window.getOverdueTasks = getOverdueTasks;
+window.getTodayTasks = getTodayTasks;
 
-console.log("✅ Tasks.js loaded successfully!");
+console.log("✅ Tasks.js v2.0 loaded successfully!");

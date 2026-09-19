@@ -1,6 +1,6 @@
 // ========================================
-// MY LIFE - BACKUP & RESTORE SYSTEM
-// نظام النسخ الاحتياطي والاستعادة
+// MY LIFE - BACKUP & RESTORE SYSTEM v2.0
+// (Safe Export + Validation + Better UX)
 // ========================================
 
 // ========================================
@@ -89,7 +89,12 @@ function calculateMetadata(data) {
         let count = 0;
         days.forEach(day => {
             if (data.routine[day] && data.routine[day].hours) {
-                const hasActivity = data.routine[day].hours.some(h => h && h.trim() !== "");
+                const hasActivity = data.routine[day].hours.some(h => {
+                    if (!h) return false;
+                    if (typeof h === 'string') return h.trim() !== "";
+                    if (typeof h === 'object') return !!(h.activity && h.activity.trim() !== "");
+                    return false;
+                });
                 if (hasActivity) count++;
             }
         });
@@ -107,12 +112,22 @@ function exportBackup() {
     try {
         const backup = createBackupObject();
         if (!backup) {
-            showToast("❌ Failed to create backup", "error");
+            if (typeof showToast === 'function') {
+                showToast("❌ Failed to create backup", "error");
+            }
             return false;
         }
 
         const json = JSON.stringify(backup, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
+
+        // ✅ التحقق من دعم URL.createObjectURL
+        if (!window.URL || !window.URL.createObjectURL) {
+            // Fallback: تنزيل مباشر عبر data URL
+            downloadViaDataURL(json);
+            return true;
+        }
+
         const url = URL.createObjectURL(blob);
 
         const date = new Date();
@@ -124,10 +139,15 @@ function exportBackup() {
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
+        a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+
+        // ✅ تنظيف بعد فترة
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
 
         saveBackupMetadata({
             lastExport: new Date().toISOString(),
@@ -136,12 +156,40 @@ function exportBackup() {
             totalItems: backup.metadata
         });
 
-        showToast(`✅ Backup exported successfully! (${filename})`, "success");
+        if (typeof showToast === 'function') {
+            showToast(`✅ Backup exported successfully! (${filename})`, "success");
+        }
         return true;
     } catch (error) {
         console.error("Export error:", error);
-        showToast("❌ Export failed: " + error.message, "error");
+        if (typeof showToast === 'function') {
+            showToast("❌ Export failed: " + error.message, "error");
+        }
         return false;
+    }
+}
+
+/**
+ * ✅ طريقة احتياطية للتنزيل
+ */
+function downloadViaDataURL(json) {
+    const date = new Date();
+    const dateStr = date.getFullYear() + '-' + 
+                   String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                   String(date.getDate()).padStart(2, '0');
+    const filename = `My-Life-Backup-${dateStr}.json`;
+
+    const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    if (typeof showToast === 'function') {
+        showToast(`✅ Backup exported! (${filename})`, "success");
     }
 }
 
@@ -151,6 +199,12 @@ function exportBackup() {
 
 function importBackup(file) {
     return new Promise((resolve, reject) => {
+        // ✅ التحقق من الحجم
+        if (file.size > 50 * 1024 * 1024) {
+            reject({ error: "File is too large (max 50 MB)" });
+            return;
+        }
+
         const reader = new FileReader();
 
         reader.onload = function(event) {
@@ -223,48 +277,75 @@ function validateBackup(backup) {
 
 function restoreBackup(backupData) {
     try {
-        const tempBackup = createBackupObject();
-        if (!tempBackup) {
-            throw new Error("Failed to create temporary backup");
-        }
-
         const data = backupData.data;
 
-        if (data.profile) {
-            localStorage.setItem(BACKUP_KEYS.PROFILE, JSON.stringify(data.profile));
-        }
-
-        if (data.routine) {
-            localStorage.setItem(BACKUP_KEYS.ROUTINE, JSON.stringify(data.routine));
-        }
-
-        if (data.tasks) {
-            localStorage.setItem(BACKUP_KEYS.TASKS, JSON.stringify(data.tasks));
-        }
-
-        if (data.notes) {
-            localStorage.setItem(BACKUP_KEYS.NOTES, JSON.stringify(data.notes));
-        }
-
-        if (data.events) {
-            localStorage.setItem(BACKUP_KEYS.EVENTS, JSON.stringify(data.events));
-        }
-
-        if (data.programs) {
-            localStorage.setItem(BACKUP_KEYS.PROGRAMS, JSON.stringify(data.programs));
-        }
-
-        if (data.notifications) {
-            localStorage.setItem(BACKUP_KEYS.NOTIFICATIONS, JSON.stringify(data.notifications));
-        }
-
-        saveBackupMetadata({
-            lastRestore: new Date().toISOString(),
-            restoredAt: backupData.createdAt,
-            totalItems: backupData.metadata || calculateMetadata(backupData.data)
+        // ✅ حفظ القيم القديمة (للتراجع عند الفشل)
+        const oldValues = {};
+        Object.values(BACKUP_KEYS).forEach(key => {
+            oldValues[key] = localStorage.getItem(key);
         });
 
-        return true;
+        try {
+            if (data.profile) {
+                localStorage.setItem(BACKUP_KEYS.PROFILE, JSON.stringify(data.profile));
+            }
+
+            if (data.routine) {
+                localStorage.setItem(BACKUP_KEYS.ROUTINE, JSON.stringify(data.routine));
+            }
+
+            if (data.tasks) {
+                localStorage.setItem(BACKUP_KEYS.TASKS, JSON.stringify(data.tasks));
+            }
+
+            if (data.notes) {
+                localStorage.setItem(BACKUP_KEYS.NOTES, JSON.stringify(data.notes));
+            }
+
+            if (data.events) {
+                localStorage.setItem(BACKUP_KEYS.EVENTS, JSON.stringify(data.events));
+            }
+
+            if (data.programs) {
+                localStorage.setItem(BACKUP_KEYS.PROGRAMS, JSON.stringify(data.programs));
+            }
+
+            if (data.notifications) {
+                localStorage.setItem(BACKUP_KEYS.NOTIFICATIONS, JSON.stringify(data.notifications));
+            }
+
+            // ✅ إبطال الكاش في الذاكرة
+            if (typeof invalidateAllCaches === 'function') {
+                invalidateAllCaches();
+            }
+
+            saveBackupMetadata({
+                lastRestore: new Date().toISOString(),
+                restoredAt: backupData.createdAt,
+                totalItems: backupData.metadata || calculateMetadata(backupData.data)
+            });
+
+            return true;
+
+        } catch (innerError) {
+            // ❌ فشل الحفظ → استرجع القيم القديمة
+            console.error("Restore failed, rolling back...", innerError);
+            
+            Object.entries(oldValues).forEach(([key, value]) => {
+                try {
+                    if (value === null) {
+                        localStorage.removeItem(key);
+                    } else {
+                        localStorage.setItem(key, value);
+                    }
+                } catch (e) {
+                    console.error("Rollback error:", e);
+                }
+            });
+
+            throw innerError;
+        }
+
     } catch (error) {
         console.error("Restore error:", error);
         throw error;
@@ -374,11 +455,15 @@ function showBackupPreview(preview) {
                         try {
                             const success = restoreBackup(preview);
                             if (success) {
-                                showToast("✅ " + (typeof t === 'function' ? t('backup_restored', 'Backup restored successfully!') : 'Backup restored successfully!'), "success");
+                                if (typeof showToast === 'function') {
+                                    showToast("✅ " + (typeof t === 'function' ? t('backup_restored', 'Backup restored successfully!') : 'Backup restored successfully!'), "success");
+                                }
                                 setTimeout(() => location.reload(), 1500);
                             }
                         } catch (error) {
-                            showToast("❌ Restore failed: " + error.message, "error");
+                            if (typeof showToast === 'function') {
+                                showToast("❌ Restore failed: " + error.message, "error");
+                            }
                         }
                     }
                 });
@@ -503,6 +588,7 @@ function renderBackupSection() {
 
     // ===== زر Export =====
     const exportBtn = document.createElement("button");
+    exportBtn.type = "button";
     exportBtn.style.cssText = `
         width: 100%;
         padding: 12px;
@@ -514,8 +600,10 @@ function renderBackupSection() {
         font-size: 16px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
         margin-bottom: 10px;
+        min-height: 48px;
+        -webkit-tap-highlight-color: transparent;
     `;
     exportBtn.textContent = "📤 " + (typeof t === 'function' ? t('export_backup', 'Export Backup') : 'Export Backup');
 
@@ -535,6 +623,7 @@ function renderBackupSection() {
 
     // ===== زر Import =====
     const importBtn = document.createElement("button");
+    importBtn.type = "button";
     importBtn.style.cssText = `
         width: 100%;
         padding: 12px;
@@ -546,7 +635,9 @@ function renderBackupSection() {
         font-size: 16px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+        min-height: 48px;
+        -webkit-tap-highlight-color: transparent;
     `;
     importBtn.textContent = "📥 " + (typeof t === 'function' ? t('import_backup', 'Import Backup') : 'Import Backup');
 
@@ -564,15 +655,17 @@ function renderBackupSection() {
     importBtn.addEventListener("click", function() {
         const fileInput = document.createElement("input");
         fileInput.type = "file";
-        fileInput.accept = ".json";
+        fileInput.accept = ".json,application/json";
         fileInput.style.display = "none";
 
         fileInput.addEventListener("change", function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            if (!file.name.endsWith('.json')) {
-                showToast("❌ " + (typeof t === 'function' ? t('select_json', 'Please select a JSON file') : 'Please select a JSON file'), "error");
+            if (!file.name.toLowerCase().endsWith('.json')) {
+                if (typeof showToast === 'function') {
+                    showToast("❌ " + (typeof t === 'function' ? t('select_json', 'Please select a JSON file') : 'Please select a JSON file'), "error");
+                }
                 return;
             }
 
@@ -581,7 +674,9 @@ function renderBackupSection() {
                     showBackupPreview(preview);
                 })
                 .catch(error => {
-                    showToast("❌ " + error.error, "error");
+                    if (typeof showToast === 'function') {
+                        showToast("❌ " + error.error, "error");
+                    }
                 });
         });
 
@@ -609,6 +704,35 @@ function renderBackupSection() {
 }
 
 // ========================================
+// ✅ دوال إضافية مفيدة
+// ========================================
+
+/**
+ * الحصول على حجم الـ Backup المتوقع
+ */
+function getBackupSize() {
+    const backup = createBackupObject();
+    if (!backup) return { bytes: 0, kb: "0", mb: "0" };
+
+    const json = JSON.stringify(backup);
+    const bytes = new Blob([json]).size;
+
+    return {
+        bytes: bytes,
+        kb: (bytes / 1024).toFixed(2),
+        mb: (bytes / 1024 / 1024).toFixed(2)
+    };
+}
+
+/**
+ * هل يوجد backup سابق؟
+ */
+function hasPreviousBackup() {
+    const metadata = getBackupMetadata();
+    return !!metadata.lastExport;
+}
+
+// ========================================
 // تصدير الدوال
 // ========================================
 
@@ -618,5 +742,7 @@ window.restoreBackup = restoreBackup;
 window.showBackupPreview = showBackupPreview;
 window.renderBackupSection = renderBackupSection;
 window.getBackupMetadata = getBackupMetadata;
+window.getBackupSize = getBackupSize;
+window.hasPreviousBackup = hasPreviousBackup;
 
-console.log("✅ Backup & Restore system loaded successfully!");
+console.log("✅ Backup & Restore v2.0 loaded successfully!");

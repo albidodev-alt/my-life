@@ -1,6 +1,7 @@
 /* ========================================
    NOTES V2.0 - STYLES
    نظام الملاحظات الجديد والمستقل
+   (Mobile Fixes + Touch + Safe Areas)
    ======================================== */
 
 /* ========================================
@@ -67,6 +68,10 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   white-space: nowrap;
   box-shadow: var(--shadow-sm);
+  min-height: 48px;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .notes-add-main-btn:hover {
@@ -109,11 +114,14 @@
   color: var(--text-muted);
   font-size: 18px;
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .notes-search-input {
   width: 100%;
-  height: 46px;
+  height: 48px;
   padding: 0 16px 0 44px;
   background: var(--bg-input);
   color: var(--text-primary);
@@ -122,6 +130,8 @@
   font-family: var(--font-body);
   font-size: 14px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .notes-search-input::placeholder {
@@ -132,6 +142,16 @@
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(79, 142, 219, 0.12);
+}
+
+/* ✅ إصلاح أيقونة البحث في RTL */
+[dir="rtl"] .notes-search-icon {
+  left: auto;
+  right: 14px;
+}
+
+[dir="rtl"] .notes-search-input {
+  padding: 0 44px 0 16px;
 }
 
 .notes-stats {
@@ -167,6 +187,7 @@
   display: flex;
   flex-direction: column;
   min-height: 180px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .notes-card:hover {
@@ -252,8 +273,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border: none;
   border-radius: 8px;
@@ -262,6 +283,7 @@
   cursor: pointer;
   font-size: 16px;
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .notes-card-action-btn:hover {
@@ -385,6 +407,9 @@
   justify-content: center;
   z-index: var(--z-modal);
   animation: notesFadeIn 0.3s ease;
+  padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
 @keyframes notesFadeIn {
@@ -418,7 +443,10 @@
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-lg);
   max-height: 90vh;
+  max-height: 90dvh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .notes-modal-close-btn {
@@ -434,6 +462,12 @@
   border-radius: 6px;
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   line-height: 1;
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .notes-modal-close-btn:hover {
@@ -448,6 +482,7 @@
   font-family: var(--font-handwritten);
   font-size: 26px;
   font-weight: 600;
+  padding-right: 40px;
 }
 
 .notes-modal-label {
@@ -471,6 +506,9 @@
   font-size: 14px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   margin-bottom: 16px;
+  min-height: 48px;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .notes-modal-input:focus,
@@ -522,6 +560,10 @@
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   flex: 1;
+  min-height: 48px;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .notes-modal-save-btn {
@@ -592,6 +634,42 @@ body.dark-mode .notes-modal-cancel-btn:hover {
 }
 
 /* ========================================
+   ✅ HOVER ONLY ON TOUCH-FREE DEVICES
+   ======================================== */
+@media (hover: none) {
+  .notes-card:hover,
+  .notes-add-main-btn:hover,
+  .notes-card-action-btn:hover,
+  .notes-modal-close-btn:hover,
+  .notes-modal-save-btn:hover,
+  .notes-modal-cancel-btn:hover {
+    transform: none !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+  
+  .notes-card:hover {
+    border-color: var(--border-color) !important;
+  }
+  
+  .notes-card-pinned:hover {
+    border-color: rgba(79, 142, 219, 0.45) !important;
+  }
+  
+  .notes-modal-close-btn:hover {
+    background-color: transparent !important;
+    color: var(--text-muted) !important;
+  }
+  
+  .notes-modal-save-btn:hover {
+    box-shadow: var(--shadow-sm) !important;
+  }
+  
+  .notes-modal-cancel-btn:hover {
+    background: var(--bg-input) !important;
+  }
+}
+
+/* ========================================
    RESPONSIVE
    ======================================== */
 
@@ -626,6 +704,23 @@ body.dark-mode .notes-modal-cancel-btn:hover {
   .notes-stats {
     text-align: right;
   }
+
+  /* ✅ حقول بحجم 16px لمنع التكبير على iOS */
+  .notes-search-input,
+  .notes-modal-input,
+  .notes-modal-textarea {
+    font-size: 16px !important;
+  }
+
+  .notes-search-input {
+    height: 50px;
+  }
+
+  /* ✅ أزرار لمس أكبر */
+  .notes-card-action-btn {
+    width: 42px;
+    height: 42px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -650,6 +745,65 @@ body.dark-mode .notes-modal-cancel-btn:hover {
   .notes-modal-cancel-btn {
     width: 100%;
   }
+
+  /* ✅ أزرار لمس أكبر على الشاشات الصغيرة */
+  .notes-card-action-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  }
+
+  .notes-modal-close-btn {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+/* ========================================
+   ✅ LANDSCAPE MODE (Mobile)
+   ======================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+  .notes-modal {
+    max-height: 95vh;
+    max-height: 95dvh;
+    padding: 16px 20px;
+  }
+
+  .notes-modal-title {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .notes-modal-textarea {
+    min-height: 80px;
+  }
+
+  .notes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
+/* ========================================
+   ✅ PRINT
+   ======================================== */
+@media print {
+  .notes-add-main-btn,
+  .notes-search-container,
+  .notes-card-actions,
+  .notes-modal-overlay {
+    display: none !important;
+  }
+
+  .notes-card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
+  }
+
+  .notes-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
 }
 
 /* ========================================
@@ -663,4 +817,25 @@ body.dark-mode .notes-modal-cancel-btn:hover {
 .notes-modal-close-btn:focus-visible {
   outline: 3px solid rgba(79, 142, 219, 0.3);
   outline-offset: 2px;
+}
+
+/* ========================================
+   ✅ REDUCED MOTION
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .notes-card,
+  .notes-modal,
+  .notes-modal-overlay,
+  .notes-add-main-btn,
+  .notes-card-action-btn,
+  .notes-modal-close-btn,
+  .notes-modal-save-btn,
+  .notes-modal-cancel-btn {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .notes-modal-input-error {
+    animation: none !important;
+  }
 }

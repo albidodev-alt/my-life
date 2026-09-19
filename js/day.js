@@ -1,3 +1,7 @@
+// ========================================
+// MY LIFE HUB - DAY VIEW (Fixed Modals)
+// ========================================
+
 const activitySuggestions = [
   { icon: "☀️", name: "Wake Up", lucide: "alarm-clock" },
   { icon: "😴", name: "Sleep", lucide: "moon" },
@@ -107,7 +111,7 @@ function formatSleepDisplay(label, time, label2, time2) {
 }
 
 // ========================================
-// مودال النوم
+// مودال النوم (باستخدام createModal)
 // ========================================
 
 function openSleepModal(dayName) {
@@ -115,63 +119,118 @@ function openSleepModal(dayName) {
   const sH = data.sleepHour ?? 23, sM = data.sleepMinute ?? 0;
   const wH = data.wakeHour ?? 6, wM = data.wakeMinute ?? 0;
 
-  const overlay = document.createElement('div');
-  overlay.id = 'modal-overlay';
-  const modal = document.createElement('div');
-  modal.id = 'hour-modal';
-
   const t = (k, fb) => typeof window.t === 'function' ? window.t(k, fb) : fb;
 
-  modal.innerHTML = `
-    <h3>${t('sleep_settings', 'Sleep Settings')}</h3>
-    <p class="modal-subtitle">${t('set_sleep_wake', 'Set your sleep and wake-up times')}</p>
-    
-    <p class="modal-subtitle" style="font-weight:600;margin-top:8px;">${t('sleep_time', 'Sleep Time')}</p>
-    <div style="display:flex;gap:12px;margin-bottom:12px;">
-      <select id="sleep-hour" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border-input);background:var(--bg-input);color:var(--text-primary);">
-        ${Array.from({length:24}, (_,i) => `<option value="${i}" ${i===sH?'selected':''}>${String(i).padStart(2,'0')}:00</option>`).join('')}
-      </select>
-      <select id="sleep-minute" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border-input);background:var(--bg-input);color:var(--text-primary);">
-        ${Array.from({length:12}, (_,i) => i*5).map(i => `<option value="${i}" ${i===sM?'selected':''}>:${String(i).padStart(2,'0')}</option>`).join('')}
-      </select>
-    </div>
+  const modal = createModal({
+    id: 'sleep-modal',
+    title: `<span data-lucide="moon"></span> ${t('sleep_settings', 'Sleep Settings')}`,
+    size: 'small'
+  });
 
-    <p class="modal-subtitle" style="font-weight:600;margin-top:8px;">${t('wake_time', 'Wake Time')}</p>
-    <div style="display:flex;gap:12px;margin-bottom:16px;">
-      <select id="wake-hour" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border-input);background:var(--bg-input);color:var(--text-primary);">
-        ${Array.from({length:24}, (_,i) => `<option value="${i}" ${i===wH?'selected':''}>${String(i).padStart(2,'0')}:00</option>`).join('')}
-      </select>
-      <select id="wake-minute" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border-input);background:var(--bg-input);color:var(--text-primary);">
-        ${Array.from({length:12}, (_,i) => i*5).map(i => `<option value="${i}" ${i===wM?'selected':''}>:${String(i).padStart(2,'0')}</option>`).join('')}
-      </select>
-    </div>
+  // رسالة توضيحية
+  const subtitle = document.createElement('p');
+  subtitle.className = 'modal-base-message';
+  subtitle.style.marginBottom = '16px';
+  subtitle.textContent = t('set_sleep_wake', 'Set your sleep and wake-up times');
+  modal.body.appendChild(subtitle);
 
-    <div style="display:flex;gap:8px;margin-top:8px;">
-      <button id="sleep-cancel" style="flex:1;padding:12px;border:1px solid var(--border-input);border-radius:6px;background:var(--bg-input);color:var(--text-secondary);cursor:pointer;font-family:var(--font-handwritten);font-size:16px;font-weight:600;">${t('cancel', 'Cancel')}</button>
-      <button id="sleep-save" style="flex:1;padding:12px;background:var(--primary-gradient);color:white;border:none;border-radius:6px;cursor:pointer;font-family:var(--font-handwritten);font-size:16px;font-weight:600;">💾 ${t('save', 'Save')}</button>
-    </div>
-    <button id="close-modal-btn" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);padding:4px 8px;border-radius:6px;line-height:1;">✕</button>
-  `;
+  // ===== وقت النوم =====
+  const sleepLabel = document.createElement('label');
+  sleepLabel.className = 'modal-base-label';
+  sleepLabel.innerHTML = '<span data-lucide="moon" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;color:#6366f1;"></span> ' + t('sleep_time', 'Sleep Time');
+  modal.body.appendChild(sleepLabel);
 
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
+  const sleepRow = document.createElement('div');
+  sleepRow.style.cssText = 'display:flex;gap:12px;margin-bottom:16px;';
 
-  const close = () => overlay.remove();
+  const sleepHourSelect = document.createElement('select');
+  sleepHourSelect.className = 'modal-base-select';
+  sleepHourSelect.style.flex = '1';
+  for (let i = 0; i < 24; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = String(i).padStart(2, '0') + ':00';
+    if (i === sH) opt.selected = true;
+    sleepHourSelect.appendChild(opt);
+  }
 
-  modal.querySelector('#sleep-save').onclick = () => {
-    const data = getDayData(dayName);
-    data.sleepHour = +modal.querySelector('#sleep-hour').value;
-    data.sleepMinute = +modal.querySelector('#sleep-minute').value;
-    data.wakeHour = +modal.querySelector('#wake-hour').value;
-    data.wakeMinute = +modal.querySelector('#wake-minute').value;
-    saveDayData(dayName, data);
-    close();
-    openDay(dayName);
-  };
+  const sleepMinuteSelect = document.createElement('select');
+  sleepMinuteSelect.className = 'modal-base-select';
+  sleepMinuteSelect.style.flex = '1';
+  for (let i = 0; i < 12; i++) {
+    const m = i * 5;
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = ':' + String(m).padStart(2, '0');
+    if (m === sM) opt.selected = true;
+    sleepMinuteSelect.appendChild(opt);
+  }
 
-  modal.querySelector('#sleep-cancel').onclick = close;
-  modal.querySelector('#close-modal-btn').onclick = close;
-  overlay.onclick = e => { if (e.target === overlay) close(); };
+  sleepRow.appendChild(sleepHourSelect);
+  sleepRow.appendChild(sleepMinuteSelect);
+  modal.body.appendChild(sleepRow);
+
+  // ===== وقت الاستيقاظ =====
+  const wakeLabel = document.createElement('label');
+  wakeLabel.className = 'modal-base-label';
+  wakeLabel.innerHTML = '<span data-lucide="sun" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;color:#f59e0b;"></span> ' + t('wake_time', 'Wake Time');
+  modal.body.appendChild(wakeLabel);
+
+  const wakeRow = document.createElement('div');
+  wakeRow.style.cssText = 'display:flex;gap:12px;margin-bottom:16px;';
+
+  const wakeHourSelect = document.createElement('select');
+  wakeHourSelect.className = 'modal-base-select';
+  wakeHourSelect.style.flex = '1';
+  for (let i = 0; i < 24; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = String(i).padStart(2, '0') + ':00';
+    if (i === wH) opt.selected = true;
+    wakeHourSelect.appendChild(opt);
+  }
+
+  const wakeMinuteSelect = document.createElement('select');
+  wakeMinuteSelect.className = 'modal-base-select';
+  wakeMinuteSelect.style.flex = '1';
+  for (let i = 0; i < 12; i++) {
+    const m = i * 5;
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = ':' + String(m).padStart(2, '0');
+    if (m === wM) opt.selected = true;
+    wakeMinuteSelect.appendChild(opt);
+  }
+
+  wakeRow.appendChild(wakeHourSelect);
+  wakeRow.appendChild(wakeMinuteSelect);
+  modal.body.appendChild(wakeRow);
+
+  // ===== الأزرار =====
+  const actions = createModalActions([
+    {
+      label: t('cancel', 'Cancel'),
+      type: 'secondary',
+      onClick: () => modal.close()
+    },
+    {
+      label: `<span data-lucide="check"></span> ${t('save', 'Save')}`,
+      type: 'primary',
+      onClick: () => {
+        const d = getDayData(dayName);
+        d.sleepHour = +sleepHourSelect.value;
+        d.sleepMinute = +sleepMinuteSelect.value;
+        d.wakeHour = +wakeHourSelect.value;
+        d.wakeMinute = +wakeMinuteSelect.value;
+        saveDayData(dayName, d);
+        modal.close();
+        setTimeout(() => openDay(dayName), 250);
+      }
+    }
+  ]);
+  modal.body.appendChild(actions);
+
+  if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
 // ========================================
@@ -327,7 +386,6 @@ function openDay(dayName) {
   dfContent.append(dfLabel, dfValue);
   dfBox.append(dfIcon, dfContent, dfEdit);
   
-  // ✅ استخدام promptModal بدلاً من prompt
   dfBox.onclick = () => {
     promptModal({
       title: typeof t === 'function' ? t('day_for', 'Day For') : 'Day For',
@@ -515,15 +573,10 @@ function swapActivity(dayName, hourIndex) {
 }
 
 // ========================================
-// مودال النشاط
+// مودال النشاط (باستخدام createModal)
 // ========================================
 
 function openHourModal(dayName, hourIndex, label, currentActivity) {
-  const overlay = document.createElement('div');
-  overlay.id = 'modal-overlay';
-  const modal = document.createElement('div');
-  modal.id = 'hour-modal';
-
   const t = (k, fb) => typeof window.t === 'function' ? window.t(k, fb) : fb;
   const data = getDayData(dayName);
   const hourData = data.hours[hourIndex];
@@ -534,206 +587,223 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
   const translatedCurrentActivity = primaryActivity ? t(primaryActivity, primaryActivity) : '';
   const translatedAlternative = alternativeActivity ? t(alternativeActivity, alternativeActivity) : '';
 
-  modal.innerHTML = `
-    <h3>${label}</h3>
-    
-    <div class="activity-section">
-      <div class="activity-section-label">
-        <span data-lucide="star" class="activity-section-icon primary-icon"></span>
-        <span>${t('primary_activity', 'Primary Activity')}</span>
-      </div>
-      
-      ${primaryActivity ? `
-        <div class="activity-display-card primary-card">
-          <span data-lucide="${getActivityIcon(primaryActivity)}" class="activity-display-icon"></span>
-          <span class="activity-display-name">${translatedCurrentActivity}</span>
-        </div>
-      ` : `
-        <div class="activity-display-card empty-card">
-          <span data-lucide="circle-dashed" class="activity-display-icon"></span>
-          <span class="activity-display-name">${t('no_activity_selected', 'No activity selected')}</span>
-        </div>
-      `}
-    </div>
-    
-    ${primaryActivity ? `
-      <div class="activity-section">
-        <div class="activity-section-label">
-          <span data-lucide="refresh-cw" class="activity-section-icon alt-icon"></span>
-          <span>${t('alternative_activity', 'Alternative Activity')}</span>
-          ${alternativeActivity ? `
-            <button type="button" class="activity-remove-btn" id="remove-alternative-btn" title="${t('remove_alternative', 'Remove Alternative')}">
-              <span data-lucide="trash-2"></span>
-            </button>
-          ` : ''}
-        </div>
-        
-        ${alternativeActivity ? `
-          <div class="activity-display-card alternative-card">
-            <span data-lucide="${getActivityIcon(alternativeActivity)}" class="activity-display-icon"></span>
-            <span class="activity-display-name">${translatedAlternative}</span>
-            <button type="button" class="activity-change-btn" id="change-alternative-btn" title="${t('change_alternative', 'Change Alternative')}">
-              <span data-lucide="pencil"></span>
-            </button>
-          </div>
-        ` : `
-          <button type="button" class="activity-add-alt-btn" id="add-alternative-btn">
-            <span data-lucide="plus"></span>
-            <span>${t('add_alternative', 'Add Alternative Activity')}</span>
-          </button>
-        `}
-      </div>
-    ` : ''}
-    
-    <p class="modal-subtitle" style="margin-top: 16px;">${t('choose_activity', 'Choose an activity')}</p>
-    
-    <div id="suggestions-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
-      ${activitySuggestions.map(item => `
-        <button class="suggestion-btn${item.name === primaryActivity ? ' selected' : ''}" 
-                data-activity="${item.name}">
-          <span data-lucide="${item.lucide}" class="suggestion-btn-icon"></span>
-          <span class="suggestion-btn-label">${t(item.name, item.name)}</span>
-        </button>
-      `).join('')}
-    </div>
-
-    <input type="text" id="custom-activity-input" 
-           placeholder="${t('type_own_activity', 'Or type your own...')}" 
-           class="activity-custom-input">
-
-    <div class="modal-actions-row">
-      <button id="save-custom-btn" class="modal-save-btn">
-        <span data-lucide="check"></span>
-        ${t('save', 'Save')}
-      </button>
-      ${primaryActivity ? `
-        <button id="remove-activity-btn" class="modal-remove-btn">
-          <span data-lucide="trash-2"></span>
-          ${t('remove', 'Remove')}
-        </button>
-      ` : ''}
-    </div>
-    
-    <button id="close-modal-btn" class="modal-close-btn">
-      <span data-lucide="x"></span>
-    </button>
-  `;
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-
-  const close = () => overlay.remove();
-
-  modal.querySelectorAll('#suggestions-grid .suggestion-btn').forEach(btn => {
-    btn.onclick = () => {
-      const name = btn.dataset.activity;
-      const data = getDayData(dayName);
-      const existing = data.hours[hourIndex];
-      
-      if (typeof existing === 'object' && existing.alternative) {
-        data.hours[hourIndex] = {
-          activity: name,
-          alternative: existing.alternative,
-          showingAlternative: false
-        };
-      } else {
-        data.hours[hourIndex] = name;
-      }
-      
-      saveDayData(dayName, data);
-      close();
-      openDay(dayName);
-    };
+  const modal = createModal({
+    id: 'hour-modal',
+    title: label,
+    size: 'medium'
   });
 
-  const customInput = modal.querySelector('#custom-activity-input');
-  modal.querySelector('#save-custom-btn').onclick = () => {
-    if (customInput.value.trim()) {
-      const data = getDayData(dayName);
-      const existing = data.hours[hourIndex];
-      const newActivity = customInput.value.trim();
+  // ===== القسم الأساسي =====
+  const primarySection = document.createElement('div');
+  primarySection.className = 'activity-section';
+  
+  const primaryLabel = document.createElement('div');
+  primaryLabel.className = 'activity-section-label';
+  primaryLabel.innerHTML = `
+    <span data-lucide="star" class="activity-section-icon primary-icon"></span>
+    <span>${t('primary_activity', 'Primary Activity')}</span>
+  `;
+  primarySection.appendChild(primaryLabel);
+
+  if (primaryActivity) {
+    const primaryCard = document.createElement('div');
+    primaryCard.className = 'activity-display-card primary-card';
+    primaryCard.innerHTML = `
+      <span data-lucide="${getActivityIcon(primaryActivity)}" class="activity-display-icon"></span>
+      <span class="activity-display-name">${translatedCurrentActivity}</span>
+    `;
+    primarySection.appendChild(primaryCard);
+  } else {
+    const emptyCard = document.createElement('div');
+    emptyCard.className = 'activity-display-card empty-card';
+    emptyCard.innerHTML = `
+      <span data-lucide="circle-dashed" class="activity-display-icon"></span>
+      <span class="activity-display-name">${t('no_activity_selected', 'No activity selected')}</span>
+    `;
+    primarySection.appendChild(emptyCard);
+  }
+  modal.body.appendChild(primarySection);
+
+  // ===== قسم البديل =====
+  if (primaryActivity) {
+    const altSection = document.createElement('div');
+    altSection.className = 'activity-section';
+    
+    const altLabel = document.createElement('div');
+    altLabel.className = 'activity-section-label';
+    altLabel.innerHTML = `
+      <span data-lucide="refresh-cw" class="activity-section-icon alt-icon"></span>
+      <span>${t('alternative_activity', 'Alternative Activity')}</span>
+    `;
+
+    if (alternativeActivity) {
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'activity-remove-btn';
+      removeBtn.title = t('remove_alternative', 'Remove Alternative');
+      removeBtn.innerHTML = '<span data-lucide="trash-2"></span>';
+      removeBtn.onclick = (e) => {
+        e.stopPropagation();
+        const d = getDayData(dayName);
+        const existing = d.hours[hourIndex];
+        if (typeof existing === 'object') {
+          d.hours[hourIndex] = existing.activity || '';
+        }
+        saveDayData(dayName, d);
+        modal.close();
+        setTimeout(() => openDay(dayName), 250);
+      };
+      altLabel.appendChild(removeBtn);
+    }
+    altSection.appendChild(altLabel);
+
+    if (alternativeActivity) {
+      const altCard = document.createElement('div');
+      altCard.className = 'activity-display-card alternative-card';
+      altCard.innerHTML = `
+        <span data-lucide="${getActivityIcon(alternativeActivity)}" class="activity-display-icon"></span>
+        <span class="activity-display-name">${translatedAlternative}</span>
+      `;
+      
+      const changeBtn = document.createElement('button');
+      changeBtn.type = 'button';
+      changeBtn.className = 'activity-change-btn';
+      changeBtn.title = t('change_alternative', 'Change Alternative');
+      changeBtn.innerHTML = '<span data-lucide="pencil"></span>';
+      changeBtn.onclick = (e) => {
+        e.stopPropagation();
+        modal.close();
+        setTimeout(() => openAlternativeModal(dayName, hourIndex), 250);
+      };
+      altCard.appendChild(changeBtn);
+      
+      altSection.appendChild(altCard);
+    } else {
+      const addAltBtn = document.createElement('button');
+      addAltBtn.type = 'button';
+      addAltBtn.className = 'activity-add-alt-btn';
+      addAltBtn.innerHTML = `
+        <span data-lucide="plus"></span>
+        <span>${t('add_alternative', 'Add Alternative Activity')}</span>
+      `;
+      addAltBtn.onclick = () => {
+        modal.close();
+        setTimeout(() => openAlternativeModal(dayName, hourIndex), 250);
+      };
+      altSection.appendChild(addAltBtn);
+    }
+    modal.body.appendChild(altSection);
+  }
+
+  // ===== اختيار النشاط =====
+  const chooseLabel = document.createElement('p');
+  chooseLabel.className = 'modal-base-message';
+  chooseLabel.style.marginTop = '16px';
+  chooseLabel.style.marginBottom = '12px';
+  chooseLabel.textContent = t('choose_activity', 'Choose an activity');
+  modal.body.appendChild(chooseLabel);
+
+  const suggestionsGrid = document.createElement('div');
+  suggestionsGrid.id = 'suggestions-grid';
+  suggestionsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;';
+
+  activitySuggestions.forEach(item => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'suggestion-btn' + (item.name === primaryActivity ? ' selected' : '');
+    btn.dataset.activity = item.name;
+    btn.innerHTML = `
+      <span data-lucide="${item.lucide}" class="suggestion-btn-icon"></span>
+      <span class="suggestion-btn-label">${t(item.name, item.name)}</span>
+    `;
+    btn.onclick = () => {
+      const d = getDayData(dayName);
+      const existing = d.hours[hourIndex];
       
       if (typeof existing === 'object' && existing.alternative) {
-        data.hours[hourIndex] = {
-          activity: newActivity,
+        d.hours[hourIndex] = {
+          activity: item.name,
           alternative: existing.alternative,
           showingAlternative: false
         };
       } else {
-        data.hours[hourIndex] = newActivity;
+        d.hours[hourIndex] = item.name;
       }
       
-      saveDayData(dayName, data);
-      close();
-      openDay(dayName);
+      saveDayData(dayName, d);
+      modal.close();
+      setTimeout(() => openDay(dayName), 250);
+    };
+    suggestionsGrid.appendChild(btn);
+  });
+  modal.body.appendChild(suggestionsGrid);
+
+  // ===== حقل الإدخال المخصص =====
+  const customInput = document.createElement('input');
+  customInput.type = 'text';
+  customInput.className = 'activity-custom-input';
+  customInput.placeholder = t('type_own_activity', 'Or type your own...');
+  modal.body.appendChild(customInput);
+
+  // ===== الأزرار =====
+  const buttons = [];
+
+  if (primaryActivity) {
+    buttons.push({
+      label: `<span data-lucide="trash-2"></span> ${t('remove', 'Remove')}`,
+      type: 'danger',
+      onClick: () => {
+        const d = getDayData(dayName);
+        d.hours[hourIndex] = '';
+        saveDayData(dayName, d);
+        modal.close();
+        setTimeout(() => openDay(dayName), 250);
+      }
+    });
+  }
+
+  buttons.push({
+    label: `<span data-lucide="check"></span> ${t('save', 'Save')}`,
+    type: 'primary',
+    onClick: () => {
+      const value = customInput.value.trim();
+      if (!value) {
+        customInput.classList.add('modal-base-input-error');
+        customInput.focus();
+        setTimeout(() => customInput.classList.remove('modal-base-input-error'), 500);
+        return;
+      }
+      
+      const d = getDayData(dayName);
+      const existing = d.hours[hourIndex];
+      
+      if (typeof existing === 'object' && existing.alternative) {
+        d.hours[hourIndex] = {
+          activity: value,
+          alternative: existing.alternative,
+          showingAlternative: false
+        };
+      } else {
+        d.hours[hourIndex] = value;
+      }
+      
+      saveDayData(dayName, d);
+      modal.close();
+      setTimeout(() => openDay(dayName), 250);
     }
-  };
+  });
 
-  const removeBtn = modal.querySelector('#remove-activity-btn');
-  if (removeBtn) {
-    removeBtn.onclick = () => {
-      const data = getDayData(dayName);
-      data.hours[hourIndex] = '';
-      saveDayData(dayName, data);
-      close();
-      openDay(dayName);
-    };
-  }
+  const actions = createModalActions(buttons);
+  modal.body.appendChild(actions);
 
-  const addAltBtn = modal.querySelector('#add-alternative-btn');
-  if (addAltBtn) {
-    addAltBtn.onclick = () => {
-      close();
-      openAlternativeModal(dayName, hourIndex);
-    };
-  }
-
-  const changeAltBtn = modal.querySelector('#change-alternative-btn');
-  if (changeAltBtn) {
-    changeAltBtn.onclick = (e) => {
-      e.stopPropagation();
-      close();
-      openAlternativeModal(dayName, hourIndex);
-    };
-  }
-
-  const removeAltBtn = modal.querySelector('#remove-alternative-btn');
-  if (removeAltBtn) {
-    removeAltBtn.onclick = (e) => {
-      e.stopPropagation();
-      const data = getDayData(dayName);
-      const existing = data.hours[hourIndex];
-      
-      if (typeof existing === 'object') {
-        if (existing.activity) {
-          data.hours[hourIndex] = existing.activity;
-        } else {
-          data.hours[hourIndex] = '';
-        }
-      }
-      
-      saveDayData(dayName, data);
-      close();
-      openDay(dayName);
-    };
-  }
-
-  modal.querySelector('#close-modal-btn').onclick = close;
-  overlay.onclick = e => { if (e.target === overlay) close(); };
-
-  setTimeout(() => { if (typeof initLucideIcons === 'function') initLucideIcons(); }, 50);
+  if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
 // ========================================
-// نافذة اختيار النشاط البديل
+// نافذة اختيار النشاط البديل (باستخدام createModal)
 // ========================================
 
 function openAlternativeModal(dayName, hourIndex) {
-  const overlay = document.createElement('div');
-  overlay.id = 'modal-overlay';
-  const modal = document.createElement('div');
-  modal.id = 'hour-modal';
-
   const t = (k, fb) => typeof window.t === 'function' ? window.t(k, fb) : fb;
   const data = getDayData(dayName);
   const hourData = data.hours[hourIndex];
@@ -742,113 +812,115 @@ function openAlternativeModal(dayName, hourIndex) {
 
   let selectedAlternative = currentAlternative || '';
 
-  modal.innerHTML = `
-    <h3>
-      <span data-lucide="refresh-cw" style="width: 22px; height: 22px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></span>
-      ${t('choose_alternative', 'Choose Alternative')}
-    </h3>
-    
-    <div class="alternative-primary-info">
-      <span data-lucide="${getActivityIcon(primaryActivity)}" class="alternative-primary-icon"></span>
-      <span class="alternative-primary-label">${t('primary_activity', 'Primary')}:</span>
-      <strong class="alternative-primary-name">${t(primaryActivity, primaryActivity)}</strong>
-    </div>
-    
-    <p class="modal-subtitle">${t('choose_alternative_hint', 'Choose an alternative activity for this hour')}</p>
-    
-    <div id="alternative-grid" class="alternative-grid">
-      ${activitySuggestions.filter(item => item.name !== primaryActivity).map(item => `
-        <button class="alternative-option-btn${item.name === selectedAlternative ? ' selected' : ''}" 
-                data-activity="${item.name}">
-          <span data-lucide="${item.lucide}" class="alternative-option-icon"></span>
-          <span class="alternative-option-label">${t(item.name, item.name)}</span>
-        </button>
-      `).join('')}
-    </div>
-
-    <input type="text" id="custom-alternative-input" 
-           placeholder="${t('type_own_activity', 'Or type your own...')}" 
-           class="activity-custom-input"
-           value="${selectedAlternative && !activitySuggestions.find(s => s.name === selectedAlternative) ? escapeHtmlAlt(selectedAlternative) : ''}">
-
-    <div class="modal-actions-row">
-      <button id="save-alternative-btn" class="modal-save-btn">
-        <span data-lucide="check"></span>
-        ${t('save', 'Save')}
-      </button>
-      <button id="cancel-alternative-btn" class="modal-cancel-btn">
-        <span data-lucide="x"></span>
-        ${t('cancel', 'Cancel')}
-      </button>
-    </div>
-    
-    <button id="close-modal-btn" class="modal-close-btn">
-      <span data-lucide="x"></span>
-    </button>
-  `;
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-
-  const close = () => overlay.remove();
-
-  modal.querySelectorAll('.alternative-option-btn').forEach(btn => {
-    btn.onclick = () => {
-      modal.querySelectorAll('.alternative-option-btn').forEach(b => {
-        b.classList.remove('selected');
-      });
-      btn.classList.add('selected');
-      selectedAlternative = btn.dataset.activity;
-      const customInput = modal.querySelector('#custom-alternative-input');
-      if (customInput) customInput.value = '';
-    };
+  const modal = createModal({
+    id: 'alternative-modal',
+    title: `<span data-lucide="refresh-cw"></span> ${t('choose_alternative', 'Choose Alternative')}`,
+    size: 'medium'
   });
 
-  const customInput = modal.querySelector('#custom-alternative-input');
+  // ===== معلومات النشاط الأساسي =====
+  const primaryInfo = document.createElement('div');
+  primaryInfo.className = 'alternative-primary-info';
+  primaryInfo.innerHTML = `
+    <span data-lucide="${getActivityIcon(primaryActivity)}" class="alternative-primary-icon"></span>
+    <span class="alternative-primary-label">${t('primary_activity', 'Primary')}:</span>
+    <strong class="alternative-primary-name">${t(primaryActivity, primaryActivity)}</strong>
+  `;
+  modal.body.appendChild(primaryInfo);
 
-  customInput?.addEventListener('input', function() {
+  // ===== رسالة توضيحية =====
+  const hint = document.createElement('p');
+  hint.className = 'modal-base-message';
+  hint.style.marginBottom = '12px';
+  hint.textContent = t('choose_alternative_hint', 'Choose an alternative activity for this hour');
+  modal.body.appendChild(hint);
+
+  // ===== شبكة البدائل =====
+  const grid = document.createElement('div');
+  grid.className = 'alternative-grid';
+  grid.id = 'alternative-grid';
+
+  const filteredSuggestions = activitySuggestions.filter(item => item.name !== primaryActivity);
+
+  filteredSuggestions.forEach(item => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'alternative-option-btn' + (item.name === selectedAlternative ? ' selected' : '');
+    btn.dataset.activity = item.name;
+    btn.innerHTML = `
+      <span data-lucide="${item.lucide}" class="alternative-option-icon"></span>
+      <span class="alternative-option-label">${t(item.name, item.name)}</span>
+    `;
+    btn.onclick = () => {
+      grid.querySelectorAll('.alternative-option-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedAlternative = item.name;
+      customInput.value = '';
+    };
+    grid.appendChild(btn);
+  });
+  modal.body.appendChild(grid);
+
+  // ===== حقل الإدخال المخصص =====
+  const isCustomValue = selectedAlternative && !activitySuggestions.find(s => s.name === selectedAlternative);
+  
+  const customInput = document.createElement('input');
+  customInput.type = 'text';
+  customInput.className = 'activity-custom-input';
+  customInput.placeholder = t('type_own_activity', 'Or type your own...');
+  customInput.value = isCustomValue ? selectedAlternative : '';
+  
+  customInput.addEventListener('input', function() {
     if (this.value.trim()) {
-      modal.querySelectorAll('.alternative-option-btn').forEach(b => {
-        b.classList.remove('selected');
-      });
+      grid.querySelectorAll('.alternative-option-btn').forEach(b => b.classList.remove('selected'));
       selectedAlternative = '';
     }
   });
+  modal.body.appendChild(customInput);
 
-  modal.querySelector('#save-alternative-btn').onclick = () => {
-    const custom = customInput.value.trim();
-    const finalAlternative = custom || selectedAlternative;
-    
-    if (!finalAlternative) {
-      customInput.classList.add('notes-modal-input-error');
-      setTimeout(() => customInput.classList.remove('notes-modal-input-error'), 500);
-      return;
+  // ===== الأزرار =====
+  const actions = createModalActions([
+    {
+      label: `<span data-lucide="x"></span> ${t('cancel', 'Cancel')}`,
+      type: 'secondary',
+      onClick: () => {
+        modal.close();
+        setTimeout(() => openHourModal(dayName, hourIndex, formatHourRange(hourIndex), primaryActivity), 250);
+      }
+    },
+    {
+      label: `<span data-lucide="check"></span> ${t('save', 'Save')}`,
+      type: 'primary',
+      onClick: () => {
+        const custom = customInput.value.trim();
+        const finalAlternative = custom || selectedAlternative;
+        
+        if (!finalAlternative) {
+          customInput.classList.add('modal-base-input-error');
+          customInput.focus();
+          setTimeout(() => customInput.classList.remove('modal-base-input-error'), 500);
+          return;
+        }
+        
+        const d = getDayData(dayName);
+        const hd = d.hours[hourIndex];
+        const primary = getActivityName(hd) || '';
+        
+        d.hours[hourIndex] = {
+          activity: primary,
+          alternative: finalAlternative,
+          showingAlternative: false
+        };
+        
+        saveDayData(dayName, d);
+        modal.close();
+        setTimeout(() => openDay(dayName), 250);
+      }
     }
-    
-    const data = getDayData(dayName);
-    const hourData = data.hours[hourIndex];
-    const primary = getActivityName(hourData) || '';
-    
-    data.hours[hourIndex] = {
-      activity: primary,
-      alternative: finalAlternative,
-      showingAlternative: false
-    };
-    
-    saveDayData(dayName, data);
-    close();
-    openDay(dayName);
-  };
+  ]);
+  modal.body.appendChild(actions);
 
-  modal.querySelector('#cancel-alternative-btn').onclick = () => {
-    close();
-    openHourModal(dayName, hourIndex, formatHourRange(hourIndex), primaryActivity);
-  };
-
-  modal.querySelector('#close-modal-btn').onclick = close;
-  overlay.onclick = e => { if (e.target === overlay) close(); };
-
-  setTimeout(() => { if (typeof initLucideIcons === 'function') initLucideIcons(); }, 50);
+  if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
 // ========================================
