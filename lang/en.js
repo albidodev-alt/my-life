@@ -64,19 +64,34 @@ const translationsEN = {
     "yesterday": "Yesterday",
     "days_ago": "days ago",
     "drops": "Drops",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "got_it": "Got it",
+    "warning": "Warning",
+    "cannot_undo": "Cannot be undone!",
 
     // ========================================
     // الروتين - Routine
     // ========================================
     "my_routine": "My Routine",
     "no_activity": "No activity",
-    "day_for": "Day For? ",
-    "click_to_set": "Click to set",
+    "day_for": "Day For",
+    "click_to_set": "Click to set your focus for today",
     "what_is_day_for": "What is this day for?",
     "choose_activity": "Choose an activity",
     "type_own_activity": "Or type your own...",
     "current_activity": "Current",
     "no_activity_selected": "No activity selected",
+    "primary_activity": "Primary Activity",
+    "alternative_activity": "Alternative Activity",
+    "add_alternative": "Add Alternative Activity",
+    "change_alternative": "Change Alternative",
+    "remove_alternative": "Remove Alternative",
+    "choose_alternative": "Choose Alternative",
+    "choose_alternative_hint": "Choose an alternative activity for this hour",
+    "swap_activity": "Swap with alternative",
 
     // ========================================
     // أيام الأسبوع - Week Days
@@ -112,10 +127,13 @@ const translationsEN = {
     "get_ready": "Get ready for a good night's sleep!",
     "start_winding_down": "Start winding down!",
     "time_to_go_to_bed": "Time to go to bed!",
+    "time_to_sleep_soon": "Time to Sleep Soon",
+    "overdue_task": "Overdue Task",
 
     // ========================================
     // الأنشطة - Activities
     // ========================================
+    "Wake Up": "Wake Up",
     "Sleep": "Sleep",
     "Study": "Study",
     "University": "University",
@@ -132,6 +150,7 @@ const translationsEN = {
     // نظام الساعات - Hour System
     // ========================================
     "hour_system": "Hour System",
+    "hours": "hours",
 
     // ========================================
     // المهام - Tasks
@@ -140,6 +159,7 @@ const translationsEN = {
     "task_description": "Task description",
     "priority": "Priority",
     "high": "High",
+    "medium": "Medium",
     "low": "Low",
     "category": "Category",
     "university": "University",
@@ -159,6 +179,7 @@ const translationsEN = {
     "search_tasks": "Search tasks...",
     "no_tasks_found": "No tasks found matching your search",
     "no_tasks_priority": "No tasks with this priority",
+    "delete_task": "Delete Task",
 
     // ========================================
     // الإنجازات - Achievements
@@ -166,7 +187,7 @@ const translationsEN = {
     "filter_by_difficulty": "Filter by difficulty:",
     "no_completed_with_difficulty": "No completed tasks with ",
     "delete_permanently": "Delete permanently",
-    "delete_confirm": "Delete \"",
+    "delete_confirm": "Delete",
     "permanently": "permanently?",
 
     // ========================================
@@ -179,7 +200,7 @@ const translationsEN = {
     "try_different_keyword": "Try searching with a different keyword",
     "untitled": "Untitled",
     "pinned": "Pinned",
-    "delete_note_confirm": "Delete \"",
+    "delete_note_confirm": "Delete",
     "enter_note_title": "Enter note title...",
     "content": "Content",
     "write_note_here": "Write your note here...",
@@ -187,6 +208,8 @@ const translationsEN = {
     "add_note_btn": "Add Note",
     "new_note": "New Note",
     "edit_note": "Edit Note",
+    "delete_note": "Delete Note",
+    "edited": "edited",
 
     // ========================================
     // الأحداث - Events
@@ -209,6 +232,7 @@ const translationsEN = {
     "left": "left",
     "enter_event_title": "Enter event title...",
     "add_description": "Add a description...",
+    "delete_event": "Delete Event",
 
     // ========================================
     // البرامج التعليمية - Learning Programs
@@ -230,6 +254,7 @@ const translationsEN = {
     "status": "Status",
     "created": "Created",
     "create_learning_program": "Create Learning Program",
+    "create_first_program": "Create your first learning program",
     "program_name": "Program Name",
     "program_name_placeholder": "e.g. Read a Book",
     "describe_program": "Describe your program...",
@@ -239,14 +264,21 @@ const translationsEN = {
     "resource_name": "Resource name...",
     "url_optional": "URL (optional)",
     "add_resource": "Add Resource",
-    "create_program": "Create Program →",
+    "create_program": "Create Program",
     "add_steps": "Add Steps →",
     "add_steps_first": "Add Steps First →",
     "add_step": "Add Step",
-    "enter_step_name": "Enter step name:",
-    "edit_step_name": "Edit step name:",
+    "step_name": "Step Name",
+    "step_name_placeholder": "e.g. Read Chapter 1",
+    "invalid_step_name": "Step name must be 1-100 characters",
+    "enter_step_name": "Enter a descriptive name for this step",
+    "edit_step": "Edit Step",
+    "edit_step_name": "Edit the step name",
+    "delete_step": "Delete Step",
     "delete_step_confirm": "Delete this step?",
+    "delete_resource": "Delete Resource",
     "delete_resource_confirm": "Delete this resource?",
+    "delete_program": "Delete Program",
     "delete_program_confirm": "Delete this program permanently?",
     "no_resources": "No resources added.",
     "start_session": "Start Session",
@@ -256,18 +288,71 @@ const translationsEN = {
     "learning_placeholder": "e.g. I understood the concept...",
     "rating": "Rating",
     "complete_step": "Complete Step",
-    "complete_step_confirm": "Complete this step? You spent ",
+    "complete_step_confirm": "Complete this step? You spent",
     "minutes": "minutes.",
     "completed_successfully": "Completed successfully!",
     "sessions_completed": "Sessions Completed",
     "no_sessions": "No sessions completed yet. Start your first session!",
     "all_steps_completed": "All Steps Completed!",
-    "program_completed": "Program Completed! All",
+    "program_completed": "Program Completed!",
     "steps_done": "steps done!",
     "next_step": "Next Step",
+    "no_steps": "No Steps",
     "easy": "Easy",
     "medium": "Medium",
     "hard": "Hard",
+    "version": "Version",
+    "contains": "Contains",
+
+    // ========================================
+    // مجموعة البحر - Sea Collection
+    // ========================================
+    "drops_collection": "My Sea Collection",
+    "drops_current": "Current drops",
+    "drops_item_1": "Sea Grass",
+    "drops_item_2": "Shell",
+    "drops_item_3": "Fish",
+    "drops_item_4": "Sardine",
+    "drops_item_5": "Shrimp",
+    "drops_item_6": "Waves",
+    "drops_item_7": "Sailboat",
+    "drops_item_8": "Ship",
+    "drops_item_9": "Anchor",
+    "drops_item_10": "Sea Gem",
+    "drops_all_items": "All Items",
+    "drops_next": "Next Item",
+    "drops_remaining": "drops left",
+    "drops_max_level": "You unlocked everything!",
+    "drops_max_desc": "Amazing job! You have collected all items.",
+    "drops_no_items": "Complete tasks to collect your first item!",
+
+    // ========================================
+    // النسخ الاحتياطي - Backup
+    // ========================================
+    "restore_backup": "Restore Backup",
+    "backup_desc": "Your data is stored locally on this device. Export a backup to save your data, or import a previously exported backup.",
+    "last_backup": "Last backup",
+    "backup_note": "🔒 Your data never leaves your device. Backups are stored locally.",
+    "restore_warning": "Restoring this backup will replace all your current data.",
+    "confirm_restore": "Confirm Restore",
+    "yes_restore": "Yes, Restore",
+    "backup_restored": "Backup restored successfully!",
+    "select_json": "Please select a JSON file",
+    "last_chance": "Last Chance!",
+    "yes_delete_all": "Yes, Delete All",
+    "data_cleared": "All data cleared",
+    "delete_all_data": "Do you want to delete all your data",
+    "delete_all_warning": "Tasks, notes, events, programs, routine, and settings will be permanently deleted.",
+    "all_your_data": "All Your Data",
+
+    // ========================================
+    // PWA Install
+    // ========================================
+    "install_app": "Install App",
+    "install_desc": "Install this app on your device for quick access and offline use.",
+    "install_note": "💡 Install for offline access and quick launch",
+    "app_installed": "App Already Installed",
+    "change_photo": "Click to change photo",
 
     // ========================================
     // الإشعارات - Notifications

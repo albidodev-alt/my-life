@@ -103,19 +103,18 @@ function getEventsByMonth(events, year, month) {
   });
 }
 
+function escapeHtmlEvt(text) {
+  if (!text) return "";
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 // ========================================
 // عرض تفاصيل الحدث في نافذة منبثقة
 // ========================================
 
 function openEventDetailsModal(events, dateStr) {
-  const overlay = document.createElement("div");
-  overlay.className = "notes-modal-overlay";
-  overlay.id = "events-details-modal-overlay";
-
-  const modal = document.createElement("div");
-  modal.className = "notes-modal";
-  modal.id = "events-details-modal";
-
   const formattedDate = new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
     weekday: 'long',
     year: 'numeric',
@@ -123,15 +122,19 @@ function openEventDetailsModal(events, dateStr) {
     day: 'numeric'
   });
 
-  const title = document.createElement("h3");
-  title.className = "notes-modal-title";
-  title.textContent = formattedDate;
-  modal.appendChild(title);
+  const modal = createModal({
+    id: 'events-details-modal',
+    title: formattedDate,
+    size: 'medium'
+  });
 
   const countLabel = document.createElement("p");
-  countLabel.className = "modal-subtitle";
+  countLabel.className = "modal-base-message";
+  countLabel.style.marginBottom = "16px";
+  countLabel.style.fontSize = "14px";
+  countLabel.style.color = "var(--text-muted)";
   countLabel.textContent = events.length + " " + (typeof t === 'function' ? t('events', 'event') : "event") + (events.length > 1 ? "s" : "");
-  modal.appendChild(countLabel);
+  modal.body.appendChild(countLabel);
 
   const eventsList = document.createElement("div");
   eventsList.style.cssText = `
@@ -187,7 +190,7 @@ function openEventDetailsModal(events, dateStr) {
     `;
 
     if (event.description) {
-      descRow.innerHTML = '<span data-lucide="file-text" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + escapeHtml(event.description);
+      descRow.innerHTML = '<span data-lucide="file-text" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + escapeHtmlEvt(event.description);
     } else {
       descRow.textContent = typeof t === 'function' ? t('no_description', 'No description') : "No description";
       descRow.style.opacity = "0.5";
@@ -250,7 +253,7 @@ function openEventDetailsModal(events, dateStr) {
 
     editBtn.addEventListener("click", function(e) {
       e.stopPropagation();
-      overlay.remove();
+      modal.close();
       openEventModal(event);
     });
 
@@ -277,13 +280,18 @@ function openEventDetailsModal(events, dateStr) {
       this.style.color = "#ef4444";
     });
 
+    // ✨ استخدام deleteModal
     deleteBtn.addEventListener("click", function(e) {
       e.stopPropagation();
-      if (confirm('Delete "' + event.title + '" permanently?')) {
-        deleteEvent(event.id);
-        overlay.remove();
-        renderEventsPage();
-      }
+      deleteModal({
+        itemName: event.title,
+        itemType: 'event',
+        onConfirm: () => {
+          deleteEvent(event.id);
+          modal.close();
+          renderEventsPage();
+        }
+      });
     });
 
     actionsRow.appendChild(editBtn);
@@ -296,46 +304,20 @@ function openEventDetailsModal(events, dateStr) {
     eventsList.appendChild(eventCard);
   });
 
-  modal.appendChild(eventsList);
+  modal.body.appendChild(eventsList);
 
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "notes-modal-close-btn";
-  closeBtn.innerHTML = '<span data-lucide="x" style="width: 20px; height: 20px;"></span>';
-  closeBtn.setAttribute("aria-label", "Close");
-
-  closeBtn.addEventListener("click", function() {
-    overlay.remove();
-  });
-
-  modal.appendChild(closeBtn);
-
-  const closeModalBtn = document.createElement("button");
-  closeModalBtn.className = "notes-modal-save-btn";
-  closeModalBtn.innerHTML = '<span data-lucide="x" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('close', 'Close') : "Close");
-  closeModalBtn.style.marginTop = "8px";
-
-  closeModalBtn.addEventListener("click", function() {
-    overlay.remove();
-  });
-
-  modal.appendChild(closeModalBtn);
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-
-  overlay.addEventListener("click", function(e) {
-    if (e.target === overlay) overlay.remove();
-  });
-
-  document.addEventListener("keydown", function(e) {
-    if (e.key === "Escape" && document.getElementById("events-details-modal-overlay")) {
-      overlay.remove();
+  const closeActions = createModalActions([
+    {
+      label: typeof t === 'function' ? t('close', 'Close') : 'Close',
+      type: 'secondary',
+      onClick: () => modal.close()
     }
-  });
+  ]);
+  modal.body.appendChild(closeActions);
 }
 
 // ========================================
-// عرض صفحة الأحداث (معدلة مع Lucide والترجمة)
+// عرض صفحة الأحداث
 // ========================================
 
 function renderEventsPage() {
@@ -348,7 +330,6 @@ function renderEventsPage() {
 
   app.innerHTML = `
     <div id="events-container">
-      <!-- Header -->
       <div class="events-header">
         <div style="display: flex; align-items: center; gap: 12px;">
           <span data-lucide="calendar" style="width: 32px; height: 32px; color: var(--primary);"></span>
@@ -360,7 +341,6 @@ function renderEventsPage() {
         </button>
       </div>
 
-      <!-- Calendar -->
       <div class="calendar-wrapper">
         <div class="calendar-nav">
           <button class="calendar-nav-btn" id="calendar-prev">
@@ -386,7 +366,6 @@ function renderEventsPage() {
         </div>
       </div>
 
-      <!-- Events List -->
       <div class="events-list-section">
         <div id="events-list"></div>
       </div>
@@ -529,7 +508,7 @@ function renderEventsPage() {
     const descSpan = document.createElement("span");
     descSpan.className = "event-description";
     if (event.description) {
-      descSpan.innerHTML = '<span data-lucide="file-text" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + escapeHtml(event.description);
+      descSpan.innerHTML = '<span data-lucide="file-text" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + escapeHtmlEvt(event.description);
     }
 
     infoDiv.appendChild(titleDiv);
@@ -581,12 +560,17 @@ function renderEventsPage() {
     deleteBtn.title = typeof t === 'function' ? t('delete', 'Delete event') : "Delete event";
     deleteBtn.setAttribute("aria-label", "Delete event");
 
+    // ✨ استخدام deleteModal
     deleteBtn.addEventListener("click", function(e) {
       e.stopPropagation();
-      if (confirm('Delete "' + event.title + '"?')) {
-        deleteEvent(event.id);
-        renderEventsPage();
-      }
+      deleteModal({
+        itemName: event.title,
+        itemType: 'event',
+        onConfirm: () => {
+          deleteEvent(event.id);
+          renderEventsPage();
+        }
+      });
     });
 
     actionsDiv.appendChild(deleteBtn);
@@ -679,113 +663,66 @@ function renderEventsPage() {
 }
 
 // ========================================
-// نافذة إضافة/تعديل حدث (مع دعم الترجمة)
+// نافذة إضافة/تعديل حدث
 // ========================================
 
 function openEventModal(editEvent = null) {
   const isEditing = editEvent !== null;
-  const overlay = document.createElement("div");
-  overlay.className = "notes-modal-overlay";
-  overlay.id = "events-modal-overlay";
 
-  const modal = document.createElement("div");
-  modal.className = "notes-modal";
-  modal.id = "events-modal";
+  const modal = createModal({
+    id: 'event-modal',
+    title: isEditing 
+      ? '<span data-lucide="pencil"></span> ' + (typeof t === 'function' ? t('edit_event', 'Edit Event') : 'Edit Event')
+      : '<span data-lucide="plus"></span> ' + (typeof t === 'function' ? t('add_event', 'Add Event') : 'Add Event'),
+    size: 'medium'
+  });
 
-  const title = document.createElement("h3");
-  title.className = "notes-modal-title";
-  title.innerHTML = isEditing 
-    ? '<span data-lucide="pencil" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></span> ' + (typeof t === 'function' ? t('edit_event', 'Edit Event') : "Edit Event")
-    : '<span data-lucide="plus" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></span> ' + (typeof t === 'function' ? t('add_event', 'Add Event') : "Add Event");
+  const titleField = createModalField({
+    id: 'events-modal-title-input',
+    label: typeof t === 'function' ? t('title', 'Title') : 'Title',
+    type: 'text',
+    value: isEditing ? editEvent.title : '',
+    placeholder: typeof t === 'function' ? t('enter_event_title', 'Enter event title...') : 'Enter event title...',
+    required: true,
+    maxLength: 120
+  });
+  modal.body.appendChild(titleField.field);
 
-  const titleLabel = document.createElement("label");
-  titleLabel.className = "notes-modal-label";
-  titleLabel.textContent = typeof t === 'function' ? t('title', 'Title') : "Title";
-  titleLabel.setAttribute("for", "events-modal-title-input");
+  const dateField = createModalField({
+    id: 'events-modal-date-input',
+    label: typeof t === 'function' ? t('date', 'Date') : 'Date',
+    type: 'date',
+    value: isEditing ? editEvent.date : '',
+    required: true
+  });
+  modal.body.appendChild(dateField.field);
 
-  const titleInput = document.createElement("input");
-  titleInput.type = "text";
-  titleInput.id = "events-modal-title-input";
-  titleInput.className = "notes-modal-input";
-  titleInput.placeholder = typeof t === 'function' ? t('enter_event_title', 'Enter event title...') : "Enter event title...";
-  titleInput.maxLength = 120;
-  titleInput.value = isEditing ? editEvent.title : "";
-
-  const dateLabel = document.createElement("label");
-  dateLabel.className = "notes-modal-label";
-  dateLabel.textContent = typeof t === 'function' ? t('date', 'Date') : "Date";
-  dateLabel.setAttribute("for", "events-modal-date-input");
-
-  const dateInput = document.createElement("input");
-  dateInput.type = "date";
-  dateInput.id = "events-modal-date-input";
-  dateInput.className = "notes-modal-input";
-  dateInput.value = isEditing ? editEvent.date : "";
-
-  const descLabel = document.createElement("label");
-  descLabel.className = "notes-modal-label";
-  descLabel.textContent = typeof t === 'function' ? t('description', 'Description (optional)') : "Description (optional)";
-  descLabel.setAttribute("for", "events-modal-desc-input");
-
-  const descInput = document.createElement("textarea");
-  descInput.id = "events-modal-desc-input";
-  descInput.className = "notes-modal-textarea";
-  descInput.placeholder = typeof t === 'function' ? t('add_description', 'Add a description...') : "Add a description...";
-  descInput.rows = 3;
-  descInput.value = isEditing ? editEvent.description : "";
-
-  const actionsDiv = document.createElement("div");
-  actionsDiv.className = "notes-modal-actions";
-
-  const saveBtn = document.createElement("button");
-  saveBtn.className = "notes-modal-save-btn";
-  saveBtn.innerHTML = isEditing 
-    ? '<span data-lucide="check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('update', 'Update') : "Update")
-    : '<span data-lucide="plus" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('add', 'Add') : "Add");
-
-  const cancelBtn = document.createElement("button");
-  cancelBtn.className = "notes-modal-cancel-btn";
-  cancelBtn.innerHTML = '<span data-lucide="x" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('cancel', 'Cancel') : "Cancel");
-
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "notes-modal-close-btn";
-  closeBtn.innerHTML = '<span data-lucide="x" style="width: 20px; height: 20px;"></span>';
-
-  modal.appendChild(closeBtn);
-  modal.appendChild(title);
-  modal.appendChild(titleLabel);
-  modal.appendChild(titleInput);
-  modal.appendChild(dateLabel);
-  modal.appendChild(dateInput);
-  modal.appendChild(descLabel);
-  modal.appendChild(descInput);
-  actionsDiv.appendChild(cancelBtn);
-  actionsDiv.appendChild(saveBtn);
-  modal.appendChild(actionsDiv);
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-
-  function closeModal() {
-    overlay.remove();
-  }
+  const descField = createModalField({
+    id: 'events-modal-desc-input',
+    label: typeof t === 'function' ? t('description', 'Description (optional)') : 'Description (optional)',
+    type: 'textarea',
+    rows: 3,
+    value: isEditing ? editEvent.description : '',
+    placeholder: typeof t === 'function' ? t('add_description', 'Add a description...') : 'Add a description...'
+  });
+  modal.body.appendChild(descField.field);
 
   function handleSave() {
-    const newTitle = titleInput.value.trim();
-    const newDate = dateInput.value;
-    const newDesc = descInput.value.trim();
+    const newTitle = titleField.input.value.trim();
+    const newDate = dateField.input.value;
+    const newDesc = descField.input.value.trim();
 
     if (!newTitle) {
-      titleInput.classList.add("notes-modal-input-error");
-      titleInput.focus();
-      setTimeout(() => titleInput.classList.remove("notes-modal-input-error"), 500);
+      titleField.input.classList.add("modal-base-input-error");
+      titleField.input.focus();
+      setTimeout(() => titleField.input.classList.remove("modal-base-input-error"), 500);
       return;
     }
 
     if (!newDate) {
-      dateInput.classList.add("notes-modal-input-error");
-      dateInput.focus();
-      setTimeout(() => dateInput.classList.remove("notes-modal-input-error"), 500);
+      dateField.input.classList.add("modal-base-input-error");
+      dateField.input.focus();
+      setTimeout(() => dateField.input.classList.remove("modal-base-input-error"), 500);
       return;
     }
 
@@ -798,41 +735,32 @@ function openEventModal(editEvent = null) {
     }
 
     if (success) {
-      closeModal();
+      modal.close();
       renderEventsPage();
     }
   }
 
-  saveBtn.addEventListener("click", handleSave);
-  cancelBtn.addEventListener("click", closeModal);
-  closeBtn.addEventListener("click", closeModal);
-
-  overlay.addEventListener("click", function(e) {
-    if (e.target === overlay) closeModal();
-  });
-
-  document.addEventListener("keydown", function(e) {
-    if (e.key === "Escape" && document.getElementById("events-modal-overlay")) {
-      closeModal();
+  const actions = createModalActions([
+    {
+      label: typeof t === 'function' ? t('cancel', 'Cancel') : 'Cancel',
+      type: 'secondary',
+      onClick: () => modal.close()
+    },
+    {
+      label: isEditing 
+        ? '<span data-lucide="check"></span> ' + (typeof t === 'function' ? t('update', 'Update') : 'Update')
+        : '<span data-lucide="plus"></span> ' + (typeof t === 'function' ? t('add', 'Add') : 'Add'),
+      type: 'primary',
+      onClick: handleSave
     }
-  });
+  ]);
+  modal.body.appendChild(actions);
 
-  setTimeout(() => titleInput.focus(), 100);
+  setTimeout(() => titleField.input.focus(), 100);
 }
 
 // ========================================
-// دالة مساعدة للتهريب الآمن
-// ========================================
-
-function escapeHtml(text) {
-  if (!text) return "";
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-// ========================================
-// تصدير الدالة للاستخدام من main.js
+// تصدير الدالة
 // ========================================
 
 window.renderEventsPage = renderEventsPage;

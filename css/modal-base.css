@@ -1,0 +1,810 @@
+/* ========================================
+   MY LIFE HUB - MODAL BASE STYLES
+   نظام النوافذ الموحدة - التنسيقات
+   ======================================== */
+
+/* ========================================
+   1. OVERLAY - الخلفية المعتمة
+   ======================================== */
+
+.modal-base-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: var(--shadow-overlay);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding: 16px;
+  animation: modalOverlayFadeIn 0.3s ease;
+  transition: opacity 0.2s ease;
+}
+
+.modal-base-overlay.closing {
+  opacity: 0;
+}
+
+@keyframes modalOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ========================================
+   2. MODAL BASE - النافذة الأساسية
+   ======================================== */
+
+.modal-base {
+  background: var(--bg-modal);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  animation: modalBaseSlideUp 0.3s ease;
+  overflow: hidden;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+}
+
+.modal-base.closing {
+  animation: modalBaseSlideDown 0.2s ease forwards;
+}
+
+@keyframes modalBaseSlideUp {
+  from {
+    transform: translateY(30px) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes modalBaseSlideDown {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(20px) scale(0.96);
+    opacity: 0;
+  }
+}
+
+/* ========================================
+   3. MODAL SIZES - أحجام النوافذ
+   ======================================== */
+
+.modal-base-small {
+  max-width: 400px;
+}
+
+.modal-base-medium {
+  max-width: 560px;
+}
+
+.modal-base-large {
+  max-width: 800px;
+}
+
+/* ========================================
+   4. MODAL HEADER - رأس النافذة
+   ======================================== */
+
+.modal-base-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+  min-height: 64px;
+}
+
+.modal-base-title {
+  margin: 0;
+  font-family: var(--font-handwritten);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.modal-base-title svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  color: var(--primary);
+  stroke-width: 2;
+}
+
+.modal-base-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.modal-base-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: rotate(90deg);
+}
+
+.modal-base-close:active {
+  transform: rotate(90deg) scale(0.92);
+}
+
+.modal-base-close svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
+}
+
+/* ========================================
+   5. MODAL BODY - جسم النافذة
+   ======================================== */
+
+.modal-base-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Scrollbar أنيق */
+.modal-base-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-base-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-base-body::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.modal-base-body::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ========================================
+   6. MODAL ACTIONS - أزرار الإجراءات
+   ======================================== */
+
+.modal-base-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+
+.modal-base-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-family: var(--font-handwritten);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.modal-base-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.modal-base-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.5;
+  flex-shrink: 0;
+}
+
+/* Primary Button */
+.modal-base-btn-primary {
+  background: var(--primary-gradient);
+  color: #ffffff;
+  box-shadow: var(--shadow-sm);
+}
+
+.modal-base-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.modal-base-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Secondary Button */
+.modal-base-btn-secondary {
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-input);
+}
+
+.modal-base-btn-secondary:hover:not(:disabled) {
+  background: var(--bg-hover);
+  transform: translateY(-2px);
+}
+
+.modal-base-btn-secondary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Danger Button */
+.modal-base-btn-danger {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.modal-base-btn-danger:hover:not(:disabled) {
+  background: #c0392b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.modal-base-btn-danger:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* ========================================
+   7. MODAL FIELDS - حقول الإدخال
+   ======================================== */
+
+.modal-base-field {
+  margin-bottom: 16px;
+}
+
+.modal-base-field:last-child {
+  margin-bottom: 0;
+}
+
+.modal-base-label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.modal-base-input,
+.modal-base-textarea,
+.modal-base-select {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-input);
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+.modal-base-input::placeholder,
+.modal-base-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.modal-base-input:focus,
+.modal-base-textarea:focus,
+.modal-base-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 142, 219, 0.12);
+}
+
+.modal-base-textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.6;
+}
+
+.modal-base-select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%238a9ba8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 40px;
+}
+
+/* Error State */
+.modal-base-input-error {
+  border-color: var(--danger) !important;
+  animation: modalBaseShake 0.3s ease;
+}
+
+@keyframes modalBaseShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+/* Error Message */
+.modal-base-error-message {
+  display: none;
+  color: var(--danger);
+  font-size: 13px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.modal-base-error-message.show {
+  display: block;
+}
+
+/* Helper Text */
+.modal-base-helper {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* ========================================
+   8. MESSAGE CONTENT - محتوى الرسائل
+   ======================================== */
+
+.modal-base-message {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.modal-base-message strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Warning Box */
+.modal-base-warning {
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  margin: 16px 0;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.5;
+}
+
+.modal-base-warning svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Icon Centered */
+.modal-base-icon-centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 8px auto 20px;
+  background: var(--primary-light);
+  border-radius: 50%;
+  color: var(--primary);
+}
+
+.modal-base-icon-centered svg {
+  width: 32px;
+  height: 32px;
+  stroke-width: 2;
+}
+
+.modal-base-icon-centered.danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+.modal-base-icon-centered.success {
+  background: rgba(76, 175, 132, 0.1);
+  color: var(--success);
+}
+
+.modal-base-icon-centered.warning {
+  background: rgba(245, 166, 35, 0.1);
+  color: var(--warning);
+}
+
+/* ========================================
+   9. DELETE MODAL - نافذة الحذف المميزة
+   ======================================== */
+
+/* نافذة الحذف تحتاج position relative لزر الإغلاق */
+#delete-modal {
+  position: relative;
+}
+
+/* إخفاء الـ header الافتراضي في نافذة الحذف */
+#delete-modal .modal-base-header {
+  display: none;
+}
+
+/* الـ body يبدأ من الأعلى */
+#delete-modal .modal-base-body {
+  padding-top: 32px;
+}
+
+/* تأثير ظهور أيقونة الحذف */
+@keyframes deleteIconPop {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* تأثير نبض للأيقونة للعمليات الخطيرة */
+@keyframes deleteIconPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(231, 76, 94, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 12px rgba(231, 76, 94, 0);
+  }
+}
+
+/* ========================================
+   10. DARK MODE SUPPORT
+   ======================================== */
+
+body.dark-mode .modal-base {
+  background: var(--bg-modal);
+  border-color: var(--border-color);
+}
+
+body.dark-mode .modal-base-close:hover {
+  background: var(--bg-hover);
+}
+
+body.dark-mode .modal-base-btn-secondary {
+  background: var(--bg-input);
+  color: var(--text-light);
+  border-color: var(--border-input);
+}
+
+body.dark-mode .modal-base-btn-secondary:hover {
+  background: var(--bg-hover);
+}
+
+body.dark-mode .modal-base-input,
+body.dark-mode .modal-base-textarea,
+body.dark-mode .modal-base-select {
+  background: var(--bg-input);
+  color: var(--text-light);
+  border-color: var(--border-input);
+}
+
+body.dark-mode .modal-base-select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+body.dark-mode .modal-base-warning {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+/* ========================================
+   11. RTL SUPPORT - دعم العربية
+   ======================================== */
+
+[dir="rtl"] .modal-base-select {
+  background-position: left 12px center;
+  padding-right: 14px;
+  padding-left: 40px;
+}
+
+[dir="rtl"] .modal-base-close:hover {
+  transform: rotate(-90deg);
+}
+
+[dir="rtl"] .modal-base-close:active {
+  transform: rotate(-90deg) scale(0.92);
+}
+
+[dir="rtl"] .modal-base-btn svg {
+  transform: scaleX(-1);
+}
+
+/* ========================================
+   12. RESPONSIVE - الجوال (Bottom Sheet Style)
+   ======================================== */
+
+@media (max-width: 768px) {
+  .modal-base-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-base {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 24px 24px 0 0;
+    animation: modalBaseSlideUpMobile 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  @keyframes modalBaseSlideUpMobile {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  /* ===== مقبض صغير في الأعلى (مثل تطبيقات iOS) ===== */
+  .modal-base::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 4px;
+    z-index: 10;
+  }
+
+  .modal-base-header {
+    padding: 24px 20px 16px;
+    min-height: auto;
+  }
+
+  .modal-base-title {
+    font-size: 18px;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .modal-base-title svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* ===== زر الإغلاق دائري في الأعلى ===== */
+  .modal-base-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    background: var(--bg-surface);
+    border-radius: 50%;
+    z-index: 11;
+  }
+
+  .modal-base-body {
+    padding: 0 20px 20px;
+  }
+
+  /* ===== الأزرار: عمود واحد ===== */
+  .modal-base-actions {
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 20px calc(20px + env(safe-area-inset-bottom, 0));
+    border-top: 1px solid var(--border-light);
+    background: var(--bg-modal);
+    margin: 20px -20px -20px;
+  }
+
+  .modal-base-btn {
+    width: 100%;
+    flex: none;
+    padding: 14px 20px;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+
+  .modal-base-field:last-child {
+    margin-bottom: 0;
+  }
+
+  /* ========================================
+     ✅ نافذة الحذف على الهاتف
+     ======================================== */
+  #delete-modal {
+    border-radius: 24px 24px 0 0;
+    overflow: visible;
+  }
+
+  /* إخفاء المقبض الصغير في نافذة الحذف */
+  #delete-modal::before {
+    display: none;
+  }
+
+  #delete-modal .modal-base-body {
+    padding: 44px 20px calc(20px + env(safe-area-inset-bottom, 0)) !important;
+    text-align: center;
+  }
+
+  /* أيقونة الحذف أكبر وأجمل على الهاتف */
+  #delete-modal .modal-base-body > div:first-child {
+    width: 72px !important;
+    height: 72px !important;
+    margin: 8px auto 20px !important;
+  }
+
+  #delete-modal .modal-base-body > div:first-child span[data-lucide] {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  /* ===== أزرار الحذف: عمود واحد، الحذف أخيرًا ===== */
+  #delete-modal .modal-base-body > div:last-child {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    margin-top: 24px !important;
+    padding-top: 20px !important;
+    border-top: 1px solid var(--border-light) !important;
+  }
+
+  #delete-modal .modal-base-body > div:last-child button {
+    width: 100% !important;
+    padding: 14px 20px !important;
+    font-size: 16px !important;
+    border-radius: 12px !important;
+    min-height: 50px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-base {
+    max-height: 92vh;
+  }
+
+  .modal-base-header {
+    padding: 22px 16px 14px;
+  }
+
+  .modal-base-title {
+    font-size: 17px;
+  }
+
+  .modal-base-body {
+    padding: 0 16px 16px;
+  }
+
+  .modal-base-actions {
+    padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0));
+    margin: 16px -16px -16px;
+  }
+
+  .modal-base-btn {
+    padding: 13px 16px;
+    font-size: 15px;
+  }
+
+  .modal-base-close {
+    width: 30px;
+    height: 30px;
+    top: 10px;
+    right: 10px;
+  }
+
+  #delete-modal .modal-base-body {
+    padding: 40px 16px calc(16px + env(safe-area-inset-bottom, 0)) !important;
+  }
+
+  #delete-modal .modal-base-body > div:first-child {
+    width: 64px !important;
+    height: 64px !important;
+  }
+
+  #delete-modal .modal-base-body > div:first-child span[data-lucide] {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  #delete-modal .modal-base-body > div:last-child button {
+    padding: 13px 16px !important;
+    font-size: 15px !important;
+  }
+}
+
+/* ========================================
+   13. ACCESSIBILITY - إمكانية الوصول
+   ======================================== */
+
+.modal-base-close:focus-visible,
+.modal-base-btn:focus-visible {
+  outline: 3px solid rgba(79, 142, 219, 0.3);
+  outline-offset: 2px;
+}
+
+.modal-base-input:focus-visible,
+.modal-base-textarea:focus-visible,
+.modal-base-select:focus-visible {
+  outline: none;
+}
+
+/* Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .modal-base-overlay,
+  .modal-base,
+  .modal-base.closing {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .modal-base-input-error {
+    animation: none !important;
+  }
+
+  #delete-modal [style*="deleteIconPop"],
+  #delete-modal [style*="deleteIconPulse"] {
+    animation: none !important;
+  }
+}

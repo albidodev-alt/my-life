@@ -13,7 +13,6 @@ let notificationsCache = null;
 // ========================================
 
 function getAllNotifications() {
-  // ✅ استخدام الكاش إذا كان موجوداً
   if (notificationsCache !== null) return notificationsCache;
   
   try {
@@ -29,7 +28,7 @@ function getAllNotifications() {
 }
 
 function saveAllNotifications(notifications) {
-  notificationsCache = notifications; // ✅ تحديث الكاش
+  notificationsCache = notifications;
   try {
     localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifications));
   } catch (error) {
@@ -100,7 +99,6 @@ function tr(key, fallback) {
 function updateNotificationBadge() {
   const count = getUnreadCount();
   const badge = document.getElementById("notification-badge");
-  const icon = document.getElementById("notification-icon");
   
   if (badge) {
     if (count > 0) {
@@ -113,7 +111,7 @@ function updateNotificationBadge() {
 }
 
 // ========================================
-// إنشاء الإشعارات تلقائياً (مع الترجمة)
+// إنشاء الإشعارات تلقائياً
 // ========================================
 
 function generateNotifications() {
@@ -130,45 +128,45 @@ function generateNotifications() {
 
   const notifications = [];
   
-  // ===== 1. المهام المقررة اليوم =====
+  // 1. المهام المقررة اليوم
   const tasks = getAllTasks();
   const todayTasks = tasks.filter(t => t.dueDate === todayStr && !t.completed);
   
   todayTasks.forEach(task => {
     notifications.push({
       type: "task",
-      title: tr('task_due_today', 'Task Due Today'), // ✅ بدون إيموجي
+      title: tr('task_due_today', 'Task Due Today'),
       message: `"${task.text}" ` + tr('is_due_today', 'is due today!'),
       relatedId: task.id
     });
   });
   
-  // ===== 2. المهام المتأخرة =====
+  // 2. المهام المتأخرة
   const overdueTasks = tasks.filter(t => t.dueDate && t.dueDate < todayStr && !t.completed);
   
   overdueTasks.forEach(task => {
     notifications.push({
       type: "task",
-      title: tr('overdue_task', 'Overdue Task'), // ✅ بدون إيموجي
+      title: tr('overdue_task', 'Overdue Task'),
       message: `"${task.text}" ` + tr('is_overdue', 'is overdue!'),
       relatedId: task.id
     });
   });
   
-  // ===== 3. أحداث الغد =====
+  // 3. أحداث الغد
   const events = getAllEvents();
   const tomorrowEvents = events.filter(e => e.date === tomorrowStr);
   
   tomorrowEvents.forEach(event => {
     notifications.push({
       type: "event",
-      title: tr('event_tomorrow', 'Event Tomorrow'), // ✅ بدون إيموجي
+      title: tr('event_tomorrow', 'Event Tomorrow'),
       message: `"${event.title}" ` + tr('is_tomorrow', 'is tomorrow!'),
       relatedId: event.id
     });
   });
   
-  // ===== 4. أحداث الأيام القادمة (3 أيام) =====
+  // 4. أحداث الأيام القادمة
   const threeDaysLater = new Date(today);
   threeDaysLater.setDate(threeDaysLater.getDate() + 3);
   const threeDaysStr = threeDaysLater.getFullYear() + '-' + 
@@ -182,13 +180,13 @@ function generateNotifications() {
     const daysLeft = Math.ceil((dateObj - today) / (1000 * 60 * 60 * 24));
     notifications.push({
       type: "event",
-      title: tr('upcoming_event', 'Upcoming Event'), // ✅ بدون إيموجي
+      title: tr('upcoming_event', 'Upcoming Event'),
       message: `"${event.title}" ` + tr('is_in', 'is in') + ` ${daysLeft} ` + (daysLeft > 1 ? tr('days', 'days') : tr('day', 'day')) + `!`,
       relatedId: event.id
     });
   });
   
-  // ===== 5. وقت النوم =====
+  // 5. وقت النوم
   const todayName = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][today.getDay()];
   const dayData = getDayData(todayName);
   
@@ -201,7 +199,6 @@ function generateNotifications() {
     sleepTime.setHours(dayData.sleepHour, dayData.sleepMinute, 0, 0);
     
     const now = new Date();
-    
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     const sleepHourNum = dayData.sleepHour;
@@ -217,7 +214,7 @@ function generateNotifications() {
     if (currentTotalMinutes >= oneHourBeforeTotal && currentTotalMinutes < halfHourBeforeTotal) {
       notifications.push({
         type: "sleep",
-        title: tr('bedtime_reminder', 'Bedtime Reminder'), // ✅ بدون إيموجي
+        title: tr('bedtime_reminder', 'Bedtime Reminder'),
         message: tr('you_should_go_to_bed_1h', 'You should go to bed in about 1 hour') + ` (${sleepTimeStr}). ` + tr('get_ready', 'Get ready for a good night\'s sleep!'),
         relatedId: null
       });
@@ -225,7 +222,7 @@ function generateNotifications() {
     else if (currentTotalMinutes >= halfHourBeforeTotal && currentTotalMinutes < sleepTotal) {
       notifications.push({
         type: "sleep",
-        title: tr('time_to_sleep_soon', 'Time to Sleep Soon'), // ✅ بدون إيموجي
+        title: tr('time_to_sleep_soon', 'Time to Sleep Soon'),
         message: tr('you_should_go_to_bed_30min', 'You should go to bed in about 30 minutes') + ` (${sleepTimeStr}). ` + tr('start_winding_down', 'Start winding down!'),
         relatedId: null
       });
@@ -233,13 +230,13 @@ function generateNotifications() {
     else if (currentTotalMinutes >= sleepTotal && currentTotalMinutes < sleepTotal + 60) {
       notifications.push({
         type: "sleep",
-        title: tr('time_to_sleep', 'Time to Sleep!'), // ✅ بدون إيموجي
+        title: tr('time_to_sleep', 'Time to Sleep!'),
         message: tr('its', 'It\'s') + ` ${sleepTimeStr}. ` + tr('time_to_go_to_bed', 'Time to go to bed!'),
         relatedId: null
       });
     }
     
-    // ✅ تقرير النوم اليومي
+    // تقرير النوم اليومي
     const wakeHourNum = dayData.wakeHour;
     const wakeMinuteNum = dayData.wakeMinute;
     const wakeTotal = wakeHourNum * 60 + wakeMinuteNum;
@@ -264,7 +261,7 @@ function generateNotifications() {
       
       notifications.push({
         type: "sleep",
-        title: tr('sleep_report', 'Sleep Report'), // ✅ بدون إيموجي
+        title: tr('sleep_report', 'Sleep Report'),
         message: tr('sleep', 'Sleep') + `: ${formatTime12(dayData.sleepHour, dayData.sleepMinute)} - ${formatTime12(dayData.wakeHour, dayData.wakeMinute)} (${Math.round(sleepDuration)}h) ${qualityEmoji} ${qualityLabel}`,
         relatedId: null
       });
@@ -293,7 +290,7 @@ function formatTime12(hour, minute = 0) {
 }
 
 // ========================================
-// تحديث الإشعارات (تنظيف القديمة وإضافة الجديدة)
+// تحديث الإشعارات
 // ========================================
 
 function refreshNotifications() {
@@ -322,136 +319,87 @@ function refreshNotifications() {
 }
 
 // ========================================
-// عرض نافذة الإشعارات (مع الترجمة)
+// عرض نافذة الإشعارات (باستخدام createModal)
 // ========================================
 
 function openNotificationsModal() {
   const notifications = getAllNotifications();
   
-  const overlay = document.createElement("div");
-  overlay.className = "notes-modal-overlay";
-  overlay.id = "notifications-modal-overlay";
-  
-  const modal = document.createElement("div");
-  modal.className = "notes-modal";
-  modal.id = "notifications-modal";
-  modal.style.maxWidth = "500px";
-  
-  const titleRow = document.createElement("div");
-  titleRow.style.cssText = `
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  `;
-  
-  const titleWrapper = document.createElement("div");
-  titleWrapper.style.cssText = `
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  `;
-  
-  const titleIcon = document.createElement("span");
-  titleIcon.setAttribute("data-lucide", "bell");
-  titleIcon.style.cssText = `
-    width: 24px;
-    height: 24px;
-    color: var(--primary);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  `;
-  
-  const title = document.createElement("h3");
-  title.className = "notes-modal-title";
-  title.textContent = tr('notifications', 'Notifications');
-  title.style.marginBottom = "0";
-  
-  titleWrapper.appendChild(titleIcon);
-  titleWrapper.appendChild(title);
-  
-  const actionsRow = document.createElement("div");
-  actionsRow.style.cssText = "display: flex; gap: 8px;";
-  
+  const modal = createModal({
+    id: 'notifications-modal',
+    title: '<span data-lucide="bell"></span> ' + tr('notifications', 'Notifications'),
+    size: 'medium'
+  });
+
+  // شريط الإجراءات (تحديد الكل + حذف الكل)
+  const topActions = document.createElement("div");
+  topActions.style.cssText = "display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;";
+
   const markAllBtn = document.createElement("button");
-  markAllBtn.innerHTML = '<span data-lucide="check-check" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('mark_all_read', 'Mark all read');
-  markAllBtn.style.cssText = `
-    padding: 6px 12px;
-    border: none;
-    border-radius: 6px;
-    background: var(--primary-light);
-    color: var(--primary-dark);
-    font-family: var(--font-handwritten);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  `;
-  markAllBtn.addEventListener("mouseenter", function() {
-    this.style.background = "var(--primary)";
-    this.style.color = "white";
-  });
-  markAllBtn.addEventListener("mouseleave", function() {
-    this.style.background = "var(--primary-light)";
-    this.style.color = "var(--primary-dark)";
-  });
+  markAllBtn.type = "button";
+  markAllBtn.className = "modal-base-btn modal-base-btn-secondary";
+  markAllBtn.style.cssText = "flex: 1; min-width: 120px; padding: 8px 12px; font-size: 13px;";
+  markAllBtn.innerHTML = '<span data-lucide="check-check"></span> ' + tr('mark_all_read', 'Mark all read');
+
+  // ✅ استخدام confirmModal بدلاً من confirm
   markAllBtn.addEventListener("click", function() {
-    if (confirm(tr('mark_all_read_confirm', 'Mark all notifications as read?'))) {
-      markAllNotificationsAsRead();
-      openNotificationsModal();
-    }
+    confirmModal({
+      title: tr('mark_all_read', 'Mark All Read'),
+      message: tr('mark_all_read_confirm', 'Mark all notifications as read?'),
+      confirmLabel: tr('confirm', 'Confirm'),
+      cancelLabel: tr('cancel', 'Cancel'),
+      type: 'primary',
+      icon: 'check-check',
+      onConfirm: () => {
+        markAllNotificationsAsRead();
+        modal.close();
+        openNotificationsModal();
+      }
+    });
   });
-  
-  actionsRow.appendChild(markAllBtn);
-  
+
   const deleteAllBtn = document.createElement("button");
-  deleteAllBtn.innerHTML = '<span data-lucide="trash-2" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('clear_all', 'Clear all');
-  deleteAllBtn.style.cssText = `
-    padding: 6px 12px;
-    border: none;
-    border-radius: 6px;
-    background: rgba(231, 76, 94, 0.1);
-    color: var(--danger);
-    font-family: var(--font-handwritten);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  `;
-  deleteAllBtn.addEventListener("mouseenter", function() {
-    this.style.background = "var(--danger)";
-    this.style.color = "white";
-  });
-  deleteAllBtn.addEventListener("mouseleave", function() {
-    this.style.background = "rgba(231, 76, 94, 0.1)";
-    this.style.color = "var(--danger)";
-  });
+  deleteAllBtn.type = "button";
+  deleteAllBtn.className = "modal-base-btn modal-base-btn-danger";
+  deleteAllBtn.style.cssText = "flex: 1; min-width: 120px; padding: 8px 12px; font-size: 13px;";
+  deleteAllBtn.innerHTML = '<span data-lucide="trash-2"></span> ' + tr('clear_all', 'Clear all');
+
+  // ✅ استخدام confirmModal بدلاً من confirm
   deleteAllBtn.addEventListener("click", function() {
-    if (confirm(tr('delete_all_confirm', 'Delete all notifications?'))) {
-      deleteAllNotifications();
-      openNotificationsModal();
-    }
+    confirmModal({
+      title: tr('clear_all', 'Clear All'),
+      message: tr('delete_all_confirm', 'Delete all notifications?'),
+      confirmLabel: tr('delete', 'Delete'),
+      cancelLabel: tr('cancel', 'Cancel'),
+      type: 'danger',
+      icon: 'trash-2',
+      onConfirm: () => {
+        deleteAllNotifications();
+        modal.close();
+        openNotificationsModal();
+      }
+    });
   });
-  
-  actionsRow.appendChild(deleteAllBtn);
-  
-  titleRow.appendChild(titleWrapper);
-  titleRow.appendChild(actionsRow);
-  modal.appendChild(titleRow);
-  
+
+  topActions.appendChild(markAllBtn);
+  topActions.appendChild(deleteAllBtn);
+  modal.body.appendChild(topActions);
+
+  // عدد الإشعارات
   const countLabel = document.createElement("p");
-  countLabel.className = "modal-subtitle";
+  countLabel.className = "modal-base-message";
+  countLabel.style.cssText = "margin-bottom: 12px; font-size: 14px; color: var(--text-muted);";
   countLabel.textContent = `${notifications.length} ` + tr('notifications', 'notifications');
-  modal.appendChild(countLabel);
-  
+  modal.body.appendChild(countLabel);
+
+  // قائمة الإشعارات
   const listContainer = document.createElement("div");
   listContainer.style.cssText = `
     max-height: 400px;
     overflow-y: auto;
     margin: 12px 0;
   `;
-  
+
   if (notifications.length === 0) {
     const empty = document.createElement("div");
     empty.style.cssText = `
@@ -561,6 +509,7 @@ function openNotificationsModal() {
       
       if (!notification.read) {
         const readBtn = document.createElement("button");
+        readBtn.type = "button";
         readBtn.innerHTML = '<span data-lucide="check" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('mark_read', 'Mark as read');
         readBtn.style.cssText = `
           padding: 4px 12px;
@@ -585,12 +534,14 @@ function openNotificationsModal() {
         readBtn.addEventListener("click", function(e) {
           e.stopPropagation();
           markNotificationAsRead(notification.id);
+          modal.close();
           openNotificationsModal();
         });
         actionsDiv.appendChild(readBtn);
       }
       
       const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
       deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('delete', 'Delete');
       deleteBtn.style.cssText = `
         padding: 4px 12px;
@@ -612,17 +563,29 @@ function openNotificationsModal() {
         this.style.background = "rgba(231, 76, 94, 0.1)";
         this.style.color = "var(--danger)";
       });
+
+      // ✅ استخدام confirmModal بدلاً من confirm
       deleteBtn.addEventListener("click", function(e) {
         e.stopPropagation();
-        if (confirm(tr('delete_notification_confirm', 'Delete this notification?'))) {
-          deleteNotification(notification.id);
-          openNotificationsModal();
-        }
+        confirmModal({
+          title: tr('delete', 'Delete'),
+          message: tr('delete_notification_confirm', 'Delete this notification?'),
+          confirmLabel: tr('delete', 'Delete'),
+          cancelLabel: tr('cancel', 'Cancel'),
+          type: 'danger',
+          icon: 'trash-2',
+          onConfirm: () => {
+            deleteNotification(notification.id);
+            modal.close();
+            openNotificationsModal();
+          }
+        });
       });
       actionsDiv.appendChild(deleteBtn);
       
       if (notification.relatedId && (notification.type === "task" || notification.type === "event")) {
         const viewBtn = document.createElement("button");
+        viewBtn.type = "button";
         viewBtn.innerHTML = '<span data-lucide="eye" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('view', 'View');
         viewBtn.style.cssText = `
           padding: 4px 12px;
@@ -645,7 +608,7 @@ function openNotificationsModal() {
         });
         viewBtn.addEventListener("click", function(e) {
           e.stopPropagation();
-          closeNotificationsModal();
+          modal.close();
           if (notification.type === "task") {
             navigateTo("task");
           } else if (notification.type === "event") {
@@ -666,39 +629,17 @@ function openNotificationsModal() {
     });
   }
   
-  modal.appendChild(listContainer);
-  
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "notes-modal-close-btn";
-  closeBtn.innerHTML = '<span data-lucide="x" style="width: 20px; height: 20px;"></span>';
-  closeBtn.addEventListener("click", closeNotificationsModal);
-  modal.appendChild(closeBtn);
-  
-  const closeModalBtn = document.createElement("button");
-  closeModalBtn.className = "notes-modal-save-btn";
-  closeModalBtn.innerHTML = '<span data-lucide="x" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('close', 'Close');
-  closeModalBtn.style.marginTop = "8px";
-  closeModalBtn.addEventListener("click", closeNotificationsModal);
-  modal.appendChild(closeModalBtn);
-  
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-  
-  overlay.addEventListener("click", function(e) {
-    if (e.target === overlay) closeNotificationsModal();
-  });
-  
-  document.addEventListener("keydown", function(e) {
-    if (e.key === "Escape" && document.getElementById("notifications-modal-overlay")) {
-      closeNotificationsModal();
+  modal.body.appendChild(listContainer);
+
+  // زر الإغلاق
+  const closeActions = createModalActions([
+    {
+      label: tr('close', 'Close'),
+      type: 'secondary',
+      onClick: () => modal.close()
     }
-  });
-  
-  setTimeout(function() {
-    if (typeof initLucideIcons === 'function') {
-      initLucideIcons();
-    }
-  }, 50);
+  ]);
+  modal.body.appendChild(closeActions);
   
   updateNotificationBadge();
 }
@@ -796,7 +737,7 @@ function setupNotificationButton() {
 }
 
 // ========================================
-// تصدير الدوال للاستخدام من main.js
+// تصدير الدوال
 // ========================================
 
 window.openNotificationsModal = openNotificationsModal;

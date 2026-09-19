@@ -64,19 +64,34 @@ const translationsFR = {
     "yesterday": "Hier",
     "days_ago": "jours",
     "drops": "Gouttes",
+    "confirm": "Confirmer",
+    "yes": "Oui",
+    "no": "Non",
+    "ok": "OK",
+    "got_it": "Compris",
+    "warning": "Avertissement",
+    "cannot_undo": "Cette action est irréversible !",
 
     // ========================================
     // الروتين - Routine
     // ========================================
     "my_routine": "Ma Routine",
     "no_activity": "Aucune activité",
-    "day_for": "Jour pour? ",
-    "click_to_set": "Cliquez pour définir",
+    "day_for": "Jour pour",
+    "click_to_set": "Cliquez pour définir votre objectif du jour",
     "what_is_day_for": "À quoi sert ce jour?",
     "choose_activity": "Choisissez une activité",
     "type_own_activity": "Ou tapez la vôtre...",
     "current_activity": "Actuel",
     "no_activity_selected": "Aucune activité sélectionnée",
+    "primary_activity": "Activité Principale",
+    "alternative_activity": "Activité Alternative",
+    "add_alternative": "Ajouter une activité alternative",
+    "change_alternative": "Changer l'alternative",
+    "remove_alternative": "Supprimer l'alternative",
+    "choose_alternative": "Choisir une alternative",
+    "choose_alternative_hint": "Choisissez une activité alternative pour cette heure",
+    "swap_activity": "Échanger avec l'alternative",
 
     // ========================================
     // أيام الأسبوع - Week Days
@@ -112,10 +127,13 @@ const translationsFR = {
     "get_ready": "Préparez-vous pour une bonne nuit de sommeil !",
     "start_winding_down": "Commencez à vous détendre !",
     "time_to_go_to_bed": "Il est temps d'aller au lit !",
+    "time_to_sleep_soon": "Bientôt l'heure de dormir",
+    "overdue_task": "Tâche en retard",
 
     // ========================================
     // الأنشطة - Activities
     // ========================================
+    "Wake Up": "Réveil",
     "Sleep": "Sommeil",
     "Study": "Étude",
     "University": "Université",
@@ -132,6 +150,7 @@ const translationsFR = {
     // نظام الساعات - Hour System
     // ========================================
     "hour_system": "Système d'heures",
+    "hours": "heures",
 
     // ========================================
     // المهام - Tasks
@@ -140,6 +159,7 @@ const translationsFR = {
     "task_description": "Description de la tâche",
     "priority": "Priorité",
     "high": "Élevée",
+    "medium": "Moyenne",
     "low": "Basse",
     "category": "Catégorie",
     "university": "Université",
@@ -159,6 +179,7 @@ const translationsFR = {
     "search_tasks": "Rechercher des tâches...",
     "no_tasks_found": "Aucune tâche trouvée correspondant à votre recherche",
     "no_tasks_priority": "Aucune tâche avec cette priorité",
+    "delete_task": "Supprimer la tâche",
 
     // ========================================
     // الإنجازات - Achievements
@@ -166,7 +187,7 @@ const translationsFR = {
     "filter_by_difficulty": "Filtrer par difficulté :",
     "no_completed_with_difficulty": "Aucune tâche terminée avec la difficulté ",
     "delete_permanently": "Supprimer définitivement",
-    "delete_confirm": "Supprimer \"",
+    "delete_confirm": "Supprimer",
     "permanently": "définitivement ?",
 
     // ========================================
@@ -179,7 +200,7 @@ const translationsFR = {
     "try_different_keyword": "Essayez de rechercher avec un mot-clé différent",
     "untitled": "Sans titre",
     "pinned": "Épinglé",
-    "delete_note_confirm": "Supprimer \"",
+    "delete_note_confirm": "Supprimer",
     "enter_note_title": "Entrez le titre de la note...",
     "content": "Contenu",
     "write_note_here": "Écrivez votre note ici...",
@@ -187,6 +208,8 @@ const translationsFR = {
     "add_note_btn": "Ajouter une note",
     "new_note": "Nouvelle note",
     "edit_note": "Modifier la note",
+    "delete_note": "Supprimer la note",
+    "edited": "modifié",
 
     // ========================================
     // الأحداث - Events
@@ -209,6 +232,7 @@ const translationsFR = {
     "left": "restantes",
     "enter_event_title": "Entrez le titre de l'événement...",
     "add_description": "Ajoutez une description...",
+    "delete_event": "Supprimer l'événement",
 
     // ========================================
     // البرامج التعليمية - Learning Programs
@@ -230,6 +254,7 @@ const translationsFR = {
     "status": "Statut",
     "created": "Créé",
     "create_learning_program": "Créer un programme d'apprentissage",
+    "create_first_program": "Créez votre premier programme d'apprentissage",
     "program_name": "Nom du programme",
     "program_name_placeholder": "Ex: Lire un livre",
     "describe_program": "Décrivez votre programme...",
@@ -239,14 +264,21 @@ const translationsFR = {
     "resource_name": "Nom de la ressource...",
     "url_optional": "URL (optionnel)",
     "add_resource": "Ajouter une ressource",
-    "create_program": "Créer le programme →",
+    "create_program": "Créer le programme",
     "add_steps": "Ajouter des étapes →",
     "add_steps_first": "Ajoutez d'abord des étapes →",
     "add_step": "Ajouter une étape",
-    "enter_step_name": "Entrez le nom de l'étape :",
-    "edit_step_name": "Modifier le nom de l'étape :",
+    "step_name": "Nom de l'étape",
+    "step_name_placeholder": "Ex: Lire le chapitre 1",
+    "invalid_step_name": "Le nom de l'étape doit contenir entre 1 et 100 caractères",
+    "enter_step_name": "Entrez un nom descriptif pour cette étape",
+    "edit_step": "Modifier l'étape",
+    "edit_step_name": "Modifier le nom de l'étape",
+    "delete_step": "Supprimer l'étape",
     "delete_step_confirm": "Supprimer cette étape ?",
+    "delete_resource": "Supprimer la ressource",
     "delete_resource_confirm": "Supprimer cette ressource ?",
+    "delete_program": "Supprimer le programme",
     "delete_program_confirm": "Supprimer ce programme définitivement ?",
     "no_resources": "Aucune ressource ajoutée.",
     "start_session": "Démarrer la session",
@@ -256,18 +288,71 @@ const translationsFR = {
     "learning_placeholder": "Ex: J'ai compris le concept...",
     "rating": "Évaluation",
     "complete_step": "Terminer l'étape",
-    "complete_step_confirm": "Terminer cette étape ? Vous avez passé ",
+    "complete_step_confirm": "Terminer cette étape ? Vous avez passé",
     "minutes": "minutes.",
     "completed_successfully": "Terminé avec succès !",
     "sessions_completed": "Sessions terminées",
     "no_sessions": "Aucune session terminée pour le moment. Commencez votre première session !",
     "all_steps_completed": "Toutes les étapes sont terminées !",
-    "program_completed": "Programme terminé ! Toutes les",
+    "program_completed": "Programme terminé !",
     "steps_done": "étapes sont faites !",
     "next_step": "Prochaine étape",
+    "no_steps": "Aucune étape",
     "easy": "Facile",
     "medium": "Moyen",
     "hard": "Difficile",
+    "version": "Version",
+    "contains": "Contient",
+
+    // ========================================
+    // مجموعة البحر - Sea Collection
+    // ========================================
+    "drops_collection": "Ma Collection Marine",
+    "drops_current": "Gouttes actuelles",
+    "drops_item_1": "Herbe Marine",
+    "drops_item_2": "Coquillage",
+    "drops_item_3": "Poisson",
+    "drops_item_4": "Sardine",
+    "drops_item_5": "Crevette",
+    "drops_item_6": "Vagues",
+    "drops_item_7": "Voilier",
+    "drops_item_8": "Navire",
+    "drops_item_9": "Ancre",
+    "drops_item_10": "Perle de Mer",
+    "drops_all_items": "Tous les Éléments",
+    "drops_next": "Élément Suivant",
+    "drops_remaining": "gouttes restantes",
+    "drops_max_level": "Vous avez tout débloqué !",
+    "drops_max_desc": "Excellent travail ! Vous avez collecté tous les éléments.",
+    "drops_no_items": "Terminez des tâches pour collecter votre premier élément !",
+
+    // ========================================
+    // النسخ الاحتياطي - Backup
+    // ========================================
+    "restore_backup": "Restaurer la sauvegarde",
+    "backup_desc": "Vos données sont stockées localement sur cet appareil. Exportez une sauvegarde pour sauvegarder vos données, ou importez une sauvegarde précédemment exportée.",
+    "last_backup": "Dernière sauvegarde",
+    "backup_note": "🔒 Vos données ne quittent jamais votre appareil. Les sauvegardes sont stockées localement.",
+    "restore_warning": "Restaurer cette sauvegarde remplacera toutes vos données actuelles.",
+    "confirm_restore": "Confirmer la restauration",
+    "yes_restore": "Oui, restaurer",
+    "backup_restored": "Sauvegarde restaurée avec succès !",
+    "select_json": "Veuillez sélectionner un fichier JSON",
+    "last_chance": "Dernière chance !",
+    "yes_delete_all": "Oui, tout supprimer",
+    "data_cleared": "Toutes les données ont été effacées",
+    "delete_all_data": "Voulez-vous supprimer toutes vos données",
+    "delete_all_warning": "Les tâches, notes, événements, programmes, routine et paramètres seront définitivement supprimés.",
+    "all_your_data": "Toutes vos données",
+
+    // ========================================
+    // PWA Install
+    // ========================================
+    "install_app": "Installer l'application",
+    "install_desc": "Installez cette application sur votre appareil pour un accès rapide et une utilisation hors ligne.",
+    "install_note": "💡 Installez pour un accès hors ligne et un lancement rapide",
+    "app_installed": "Application déjà installée",
+    "change_photo": "Cliquez pour changer la photo",
 
     // ========================================
     // الإشعارات - Notifications

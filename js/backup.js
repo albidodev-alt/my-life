@@ -84,7 +84,6 @@ function calculateMetadata(data) {
         daysWithRoutine: 0
     };
 
-    // حساب عدد الأيام التي تحتوي على روتين
     if (data.routine && typeof data.routine === 'object') {
         const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
         let count = 0;
@@ -112,19 +111,16 @@ function exportBackup() {
             return false;
         }
 
-        // تحويل إلى JSON
         const json = JSON.stringify(backup, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
 
-        // إنشاء اسم الملف
         const date = new Date();
         const dateStr = date.getFullYear() + '-' + 
                        String(date.getMonth() + 1).padStart(2, '0') + '-' + 
                        String(date.getDate()).padStart(2, '0');
         const filename = `My-Life-Backup-${dateStr}.json`;
 
-        // تنزيل الملف
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
@@ -133,7 +129,6 @@ function exportBackup() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        // حفظ metadata آخر تصدير
         saveBackupMetadata({
             lastExport: new Date().toISOString(),
             filename: filename,
@@ -160,18 +155,15 @@ function importBackup(file) {
 
         reader.onload = function(event) {
             try {
-                // قراءة الملف
                 const content = event.target.result;
                 const backup = JSON.parse(content);
 
-                // التحقق من صحة الملف
                 const validation = validateBackup(backup);
                 if (!validation.valid) {
                     reject({ error: validation.error });
                     return;
                 }
 
-                // عرض معلومات الـ Backup للمستخدم
                 const metadata = backup.metadata || calculateMetadata(backup.data);
                 const preview = {
                     createdAt: backup.createdAt,
@@ -199,27 +191,22 @@ function importBackup(file) {
 // ========================================
 
 function validateBackup(backup) {
-    // 1. التحقق من وجود البيانات الأساسية
     if (!backup) {
         return { valid: false, error: "Backup is empty" };
     }
 
-    // 2. التحقق من اسم التطبيق
     if (backup.app !== BACKUP_APP_NAME) {
         return { valid: false, error: "This backup does not belong to My Life" };
     }
 
-    // 3. التحقق من الإصدار
     if (!backup.version || backup.version > BACKUP_VERSION) {
         return { valid: false, error: `Unsupported version: ${backup.version}. Current version: ${BACKUP_VERSION}` };
     }
 
-    // 4. التحقق من وجود البيانات
     if (!backup.data || typeof backup.data !== 'object') {
         return { valid: false, error: "Backup data is missing or invalid" };
     }
 
-    // 5. التحقق من هيكل البيانات (تحقق من وجود المفاتيح الأساسية)
     const requiredKeys = ['profile', 'routine', 'tasks', 'notes', 'events', 'programs', 'notifications'];
     const missingKeys = requiredKeys.filter(key => !(key in backup.data));
     
@@ -236,16 +223,13 @@ function validateBackup(backup) {
 
 function restoreBackup(backupData) {
     try {
-        // 1. إنشاء نسخة احتياطية مؤقتة من البيانات الحالية
         const tempBackup = createBackupObject();
         if (!tempBackup) {
             throw new Error("Failed to create temporary backup");
         }
 
-        // 2. استعادة البيانات
         const data = backupData.data;
 
-        // استعادة كل قسم
         if (data.profile) {
             localStorage.setItem(BACKUP_KEYS.PROFILE, JSON.stringify(data.profile));
         }
@@ -274,7 +258,6 @@ function restoreBackup(backupData) {
             localStorage.setItem(BACKUP_KEYS.NOTIFICATIONS, JSON.stringify(data.notifications));
         }
 
-        // 3. حفظ metadata آخر استعادة
         saveBackupMetadata({
             lastRestore: new Date().toISOString(),
             restoredAt: backupData.createdAt,
@@ -293,113 +276,120 @@ function restoreBackup(backupData) {
 // ========================================
 
 function showBackupPreview(preview) {
-    const overlay = document.createElement("div");
-    overlay.className = "notes-modal-overlay";
-    overlay.id = "backup-preview-overlay";
-
-    const modal = document.createElement("div");
-    modal.className = "notes-modal";
-    modal.id = "backup-preview-modal";
-    modal.style.maxWidth = "500px";
-
     const metadata = preview.metadata;
 
-    const html = `
-        <button class="notes-modal-close-btn" id="backup-preview-close">✕</button>
-        <h3 class="notes-modal-title">📋 Restore Backup</h3>
-        
-        <div style="margin: 16px 0; padding: 12px; background: var(--bg-surface); border-radius: 8px; border: 1px solid var(--border-light);">
-            <p style="margin: 4px 0; font-size: 14px; color: var(--text-secondary);">
-                <strong>Created:</strong> ${new Date(preview.createdAt).toLocaleString()}
-            </p>
-            <p style="margin: 4px 0; font-size: 14px; color: var(--text-secondary);">
-                <strong>Version:</strong> ${preview.version}
-            </p>
-        </div>
+    const modal = createModal({
+        id: 'backup-preview-modal',
+        title: '📋 ' + (typeof t === 'function' ? t('restore_backup', 'Restore Backup') : 'Restore Backup'),
+        size: 'medium'
+    });
 
-        <div style="margin: 16px 0; padding: 12px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
-            <h4 style="margin: 0 0 8px 0; font-family: var(--font-handwritten); color: var(--text-primary);">Contains:</h4>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
-                    📋 Tasks: ${metadata.totalTasks || 0}
-                </div>
-                <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
-                    📝 Notes: ${metadata.totalNotes || 0}
-                </div>
-                <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
-                    📅 Events: ${metadata.totalEvents || 0}
-                </div>
-                <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
-                    🎓 Programs: ${metadata.totalPrograms || 0}
-                </div>
-                <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
-                    🔔 Notifications: ${metadata.totalNotifications || 0}
-                </div>
-                <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
-                    📆 Routine Days: ${metadata.daysWithRoutine || 0}
-                </div>
+    // ===== معلومات الملف =====
+    const infoBox = document.createElement('div');
+    infoBox.style.cssText = `
+        margin: 0 0 16px 0;
+        padding: 12px;
+        background: var(--bg-surface);
+        border-radius: 8px;
+        border: 1px solid var(--border-light);
+    `;
+    infoBox.innerHTML = `
+        <p style="margin: 4px 0; font-size: 14px; color: var(--text-secondary);">
+            <strong>${typeof t === 'function' ? t('created', 'Created') : 'Created'}:</strong> ${new Date(preview.createdAt).toLocaleString()}
+        </p>
+        <p style="margin: 4px 0; font-size: 14px; color: var(--text-secondary);">
+            <strong>${typeof t === 'function' ? t('version', 'Version') : 'Version'}:</strong> ${preview.version}
+        </p>
+    `;
+    modal.body.appendChild(infoBox);
+
+    // ===== محتويات النسخة =====
+    const contentsBox = document.createElement('div');
+    contentsBox.style.cssText = `
+        margin: 0 0 16px 0;
+        padding: 12px;
+        background: var(--bg-card);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+    `;
+    contentsBox.innerHTML = `
+        <h4 style="margin: 0 0 8px 0; font-family: var(--font-handwritten); color: var(--text-primary);">
+            ${typeof t === 'function' ? t('contains', 'Contains') : 'Contains'}:
+        </h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
+                📋 ${typeof t === 'function' ? t('tasks', 'Tasks') : 'Tasks'}: ${metadata.totalTasks || 0}
+            </div>
+            <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
+                📝 ${typeof t === 'function' ? t('notes', 'Notes') : 'Notes'}: ${metadata.totalNotes || 0}
+            </div>
+            <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
+                📅 ${typeof t === 'function' ? t('events', 'Events') : 'Events'}: ${metadata.totalEvents || 0}
+            </div>
+            <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
+                🎓 ${typeof t === 'function' ? t('program', 'Programs') : 'Programs'}: ${metadata.totalPrograms || 0}
+            </div>
+            <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
+                🔔 ${typeof t === 'function' ? t('notifications', 'Notifications') : 'Notifications'}: ${metadata.totalNotifications || 0}
+            </div>
+            <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
+                📆 ${typeof t === 'function' ? t('routine', 'Routine Days') : 'Routine Days'}: ${metadata.daysWithRoutine || 0}
             </div>
         </div>
-
-        <div style="margin: 16px 0; padding: 12px; background: rgba(239, 68, 68, 0.08); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
-            <p style="margin: 0; font-size: 14px; color: #dc2626; font-weight: 500;">
-                ⚠️ Restoring this backup will replace all your current data.
-            </p>
-        </div>
-
-        <div class="notes-modal-actions">
-            <button class="notes-modal-cancel-btn" id="backup-preview-cancel">Cancel</button>
-            <button class="notes-modal-save-btn" id="backup-preview-restore" style="background: linear-gradient(135deg, #dc2626, #ef4444);">
-                🔄 Restore Backup
-            </button>
-        </div>
     `;
+    modal.body.appendChild(contentsBox);
 
-    modal.innerHTML = html;
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
+    // ===== تحذير =====
+    const warningBox = document.createElement('div');
+    warningBox.className = 'modal-base-warning';
+    warningBox.innerHTML = `
+        <span data-lucide="alert-triangle"></span>
+        <span>${typeof t === 'function' ? t('restore_warning', 'Restoring this backup will replace all your current data.') : 'Restoring this backup will replace all your current data.'}</span>
+    `;
+    modal.body.appendChild(warningBox);
 
-    // ===== إضافة الأحداث =====
-    function closeModal() {
-        overlay.remove();
-    }
-
-    document.getElementById("backup-preview-close").addEventListener("click", closeModal);
-    document.getElementById("backup-preview-cancel").addEventListener("click", closeModal);
-
-    overlay.addEventListener("click", function(e) {
-        if (e.target === overlay) closeModal();
-    });
-
-    document.getElementById("backup-preview-restore").addEventListener("click", function() {
-        if (confirm("⚠️ Are you sure? This will REPLACE all your current data with the backup data.")) {
-            try {
-                const success = restoreBackup(preview);
-                if (success) {
-                    closeModal();
-                    showToast("✅ Backup restored successfully!", "success");
-                    
-                    // تحديث الواجهة
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1000);
-                }
-            } catch (error) {
-                showToast("❌ Restore failed: " + error.message, "error");
+    // ===== الأزرار =====
+    const actions = createModalActions([
+        {
+            label: typeof t === 'function' ? t('cancel', 'Cancel') : 'Cancel',
+            type: 'secondary',
+            onClick: () => modal.close()
+        },
+        {
+            label: '🔄 ' + (typeof t === 'function' ? t('restore_backup', 'Restore Backup') : 'Restore Backup'),
+            type: 'danger',
+            onClick: () => {
+                modal.close();
+                // تأكيد ثانٍ
+                confirmModal({
+                    title: '⚠️ ' + (typeof t === 'function' ? t('confirm_restore', 'Confirm Restore') : 'Confirm Restore'),
+                    message: typeof t === 'function' 
+                        ? 'سيتم استبدال جميع بياناتك الحالية ببيانات النسخة الاحتياطية. هل أنت متأكد؟'
+                        : 'This will REPLACE all your current data with the backup data. Are you sure?',
+                    confirmLabel: typeof t === 'function' ? t('yes_restore', 'Yes, Restore') : 'Yes, Restore',
+                    cancelLabel: typeof t === 'function' ? t('cancel', 'Cancel') : 'Cancel',
+                    type: 'danger',
+                    icon: 'alert-octagon',
+                    onConfirm: () => {
+                        try {
+                            const success = restoreBackup(preview);
+                            if (success) {
+                                showToast("✅ " + (typeof t === 'function' ? t('backup_restored', 'Backup restored successfully!') : 'Backup restored successfully!'), "success");
+                                setTimeout(() => location.reload(), 1500);
+                            }
+                        } catch (error) {
+                            showToast("❌ Restore failed: " + error.message, "error");
+                        }
+                    }
+                });
             }
         }
-    });
-
-    // ===== ✅ إعادة تهيئة أيقونات Lucide =====
-    setTimeout(function() {
-        if (typeof initLucideIcons === 'function') {
-            initLucideIcons();
-        }
-    }, 50);
+    ]);
+    modal.body.appendChild(actions);
 }
 
 // ========================================
-// 9. حفظ واسترجاع Metadata آخر Backup
+// 9. حفظ واسترجاع Metadata
 // ========================================
 
 function saveBackupMetadata(metadata) {
@@ -424,50 +414,7 @@ function getBackupMetadata() {
 }
 
 // ========================================
-// 10. عرض Toast Notifications
-// ========================================
-
-function showToast(message, type = "info") {
-    const existingToast = document.getElementById("backup-toast");
-    if (existingToast) {
-        existingToast.remove();
-    }
-
-    const toast = document.createElement("div");
-    toast.id = "backup-toast";
-    toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 12px 24px;
-        background: ${type === "success" ? "#4caf84" : type === "error" ? "#ef4444" : "#4f8edb"};
-        color: white;
-        border-radius: 12px;
-        font-family: var(--font-handwritten);
-        font-size: 16px;
-        font-weight: 500;
-        z-index: 10000;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        max-width: 90%;
-        text-align: center;
-        animation: slideUp 0.3s ease;
-    `;
-
-    toast.textContent = message;
-    document.body.appendChild(toast);
-
-    setTimeout(function() {
-        toast.style.opacity = "0";
-        toast.style.transition = "opacity 0.3s ease";
-        setTimeout(function() {
-            toast.remove();
-        }, 300);
-    }, 4000);
-}
-
-// ========================================
-// 11. واجهة Backup في Profile
+// 10. واجهة Backup في Profile
 // ========================================
 
 function renderBackupSection() {
@@ -477,7 +424,7 @@ function renderBackupSection() {
     section.className = "profile-section";
     section.id = "backup-section";
 
-    // ===== العنوان مع أيقونة =====
+    // ===== العنوان =====
     const titleWrapper = document.createElement("div");
     titleWrapper.style.cssText = `
         display: flex;
@@ -499,7 +446,7 @@ function renderBackupSection() {
 
     const title = document.createElement("h3");
     title.className = "profile-section-title";
-    title.textContent = "Data & Backup";
+    title.textContent = typeof t === 'function' ? t('data_backup', 'Data & Backup') : 'Data & Backup';
     title.style.marginBottom = "0";
 
     titleWrapper.appendChild(icon);
@@ -514,10 +461,12 @@ function renderBackupSection() {
         margin-bottom: 16px;
         font-family: var(--font-body);
     `;
-    desc.textContent = "Your data is stored locally on this device. Export a backup to save your data, or import a previously exported backup.";
+    desc.textContent = typeof t === 'function' 
+        ? t('backup_desc', 'Your data is stored locally on this device. Export a backup to save your data, or import a previously exported backup.')
+        : 'Your data is stored locally on this device. Export a backup to save your data, or import a previously exported backup.';
     section.appendChild(desc);
 
-    // ===== معلومات آخر نسخ احتياطي =====
+    // ===== معلومات آخر نسخ =====
     if (metadata.lastExport) {
         const infoDiv = document.createElement("div");
         infoDiv.style.cssText = `
@@ -538,7 +487,7 @@ function renderBackupSection() {
             font-size: 13px;
             color: var(--text-secondary);
         `;
-        infoText.textContent = `📦 Last backup: ${new Date(metadata.lastExport).toLocaleString()}`;
+        infoText.textContent = `📦 ${typeof t === 'function' ? t('last_backup', 'Last backup') : 'Last backup'}: ${new Date(metadata.lastExport).toLocaleString()}`;
 
         const sizeText = document.createElement("span");
         sizeText.style.cssText = `
@@ -568,7 +517,7 @@ function renderBackupSection() {
         transition: all 0.2s ease;
         margin-bottom: 10px;
     `;
-    exportBtn.textContent = "📤 Export Backup";
+    exportBtn.textContent = "📤 " + (typeof t === 'function' ? t('export_backup', 'Export Backup') : 'Export Backup');
 
     exportBtn.addEventListener("mouseenter", function() {
         this.style.transform = "translateY(-2px)";
@@ -599,7 +548,7 @@ function renderBackupSection() {
         cursor: pointer;
         transition: all 0.2s ease;
     `;
-    importBtn.textContent = "📥 Import Backup";
+    importBtn.textContent = "📥 " + (typeof t === 'function' ? t('import_backup', 'Import Backup') : 'Import Backup');
 
     importBtn.addEventListener("mouseenter", function() {
         this.style.borderColor = "var(--primary)";
@@ -613,7 +562,6 @@ function renderBackupSection() {
     });
 
     importBtn.addEventListener("click", function() {
-        // إنشاء input file مخفي
         const fileInput = document.createElement("input");
         fileInput.type = "file";
         fileInput.accept = ".json";
@@ -623,13 +571,11 @@ function renderBackupSection() {
             const file = e.target.files[0];
             if (!file) return;
 
-            // التحقق من امتداد الملف
             if (!file.name.endsWith('.json')) {
-                showToast("❌ Please select a JSON file", "error");
+                showToast("❌ " + (typeof t === 'function' ? t('select_json', 'Please select a JSON file') : 'Please select a JSON file'), "error");
                 return;
             }
 
-            // استيراد الملف
             importBackup(file)
                 .then(preview => {
                     showBackupPreview(preview);
@@ -654,14 +600,16 @@ function renderBackupSection() {
         text-align: center;
         font-style: italic;
     `;
-    note.textContent = "🔒 Your data never leaves your device. Backups are stored locally.";
+    note.textContent = typeof t === 'function' 
+        ? t('backup_note', '🔒 Your data never leaves your device. Backups are stored locally.')
+        : '🔒 Your data never leaves your device. Backups are stored locally.';
     section.appendChild(note);
 
     return section;
 }
 
 // ========================================
-// 12. تصدير الدوال للاستخدام من ملفات أخرى
+// تصدير الدوال
 // ========================================
 
 window.exportBackup = exportBackup;
@@ -669,7 +617,6 @@ window.importBackup = importBackup;
 window.restoreBackup = restoreBackup;
 window.showBackupPreview = showBackupPreview;
 window.renderBackupSection = renderBackupSection;
-window.showToast = showToast;
 window.getBackupMetadata = getBackupMetadata;
 
 console.log("✅ Backup & Restore system loaded successfully!");

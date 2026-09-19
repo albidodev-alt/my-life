@@ -13,7 +13,7 @@ function renderProfile() {
   const currentHourSystem = typeof getHourSystem === 'function' ? getHourSystem() : '12h';
   const savedLanguage = localStorage.getItem("language") || "en";
 
-  // ===== بناء HTML كامل مرة واحدة (أسرع بكثير) =====
+  // ===== بناء HTML كامل مرة واحدة =====
   app.innerHTML = `
     <button id="back-btn" class="profile-back-btn">
       ← ${typeof t === 'function' ? t('back', 'Back') : 'Back'}
@@ -35,15 +35,15 @@ function renderProfile() {
       </div>
 
       <div class="profile-name" id="profile-name-display" title="${profile.name || 'User 1'}">
-        ${escapeHtmlProfile(profile.name || 'User 1')}
+        ${escapeHtml(profile.name || 'User 1')}
       </div>
 
-      <div class="profile-bio" id="profile-bio-display" title="${escapeHtmlProfile(profile.bio || '')}">
-        ${escapeHtmlProfile(profile.bio || 'Building my life one day at a time.')}
+      <div class="profile-bio" id="profile-bio-display" title="${escapeHtml(profile.bio || '')}">
+        ${escapeHtml(profile.bio || 'Building my life one day at a time.')}
       </div>
 
-      <!-- ===== شريط القطرات ===== -->
-      <div class="completed-counter-bar">
+      <!-- ===== شريط القطرات (قابل للضغط) ===== -->
+      <div class="completed-counter-bar" id="drops-clickable" style="cursor: pointer;" title="${typeof t === 'function' ? t('drops_view', 'View collection') : 'View collection'}">
         <span class="completed-counter-drop" data-lucide="droplet"></span>
         <span class="completed-counter-number">${stats.completedTasks}</span>
         <span class="completed-counter-label">${typeof t === 'function' ? t('drops', 'Drops') : 'Drops'}</span>
@@ -84,7 +84,7 @@ function renderProfile() {
           type="text"
           id="profile-name-input"
           class="profile-field-input"
-          value="${escapeHtmlProfile(profile.name || 'User 1')}"
+          value="${escapeHtml(profile.name || 'User 1')}"
           placeholder="${typeof t === 'function' ? t('name', 'Your name') : 'Your name'}"
           maxlength="20"
         />
@@ -103,7 +103,7 @@ function renderProfile() {
           rows="3"
           maxlength="100"
           placeholder="${typeof t === 'function' ? t('bio', 'Tell us about yourself...') : 'Tell us about yourself...'}"
-        >${escapeHtmlProfile(profile.bio || '')}</textarea>
+        >${escapeHtml(profile.bio || '')}</textarea>
         <div class="profile-char-counter" id="bio-counter">
           ${(profile.bio || 'Building my life one day at a time.').length} / 100
         </div>
@@ -164,16 +164,10 @@ function renderProfile() {
         <span data-lucide="download" class="profile-section-icon"></span>
         <h3 class="profile-section-title">${typeof t === 'function' ? t('install_app', 'Install App') : 'Install App'}</h3>
       </div>
-      <p class="profile-section-desc">
-        ${typeof t === 'function' ? t('install_desc', 'Install this app on your device for quick access and offline use.') : 'Install this app on your device for quick access and offline use.'}
-      </p>
       <button id="profile-install-btn" class="profile-install-btn" style="display:none;">
         <span data-lucide="download"></span>
         ${typeof t === 'function' ? t('install_app', 'Install App') : 'Install App'}
       </button>
-      <p class="profile-section-note">
-        ${typeof t === 'function' ? t('install_note', '💡 Install for offline access and quick launch') : '💡 Install for offline access and quick launch'}
-      </p>
     </div>
 
     <!-- ===== Achievements ===== -->
@@ -221,7 +215,14 @@ function renderProfile() {
   // 1. زر الرجوع
   document.getElementById('back-btn')?.addEventListener('click', () => renderWeek());
 
-  // 2. صورة البروفايل
+  // 2. شريط القطرات
+  document.getElementById('drops-clickable')?.addEventListener('click', function() {
+    if (typeof renderDropsPage === 'function') {
+      renderDropsPage();
+    }
+  });
+
+  // 3. صورة البروفايل
   const avatarImg = document.getElementById('profile-avatar-img');
   const fileInput = document.getElementById('avatar-file-input');
 
@@ -242,7 +243,7 @@ function renderProfile() {
     reader.readAsDataURL(file);
   });
 
-  // 3. حقل الاسم
+  // 4. حقل الاسم
   const nameInput = document.getElementById('profile-name-input');
   const nameCounter = document.getElementById('name-counter');
 
@@ -266,7 +267,7 @@ function renderProfile() {
     updateUserHeader();
   });
 
-  // 4. حقل البايو
+  // 5. حقل البايو
   const bioInput = document.getElementById('profile-bio-input');
   const bioCounter = document.getElementById('bio-counter');
 
@@ -289,7 +290,7 @@ function renderProfile() {
     }
   });
 
-  // 5. اللغة
+  // 6. اللغة
   document.getElementById('language-select')?.addEventListener('change', function() {
     if (typeof changeLanguage === 'function') {
       changeLanguage(this.value);
@@ -299,50 +300,53 @@ function renderProfile() {
     }
   });
 
-  // 6. نظام الساعات (جديد)
+  // 7. نظام الساعات
   document.getElementById('hour-system-select')?.addEventListener('change', function() {
     const selectedSystem = this.value;
     
     if (typeof setHourSystem === 'function') {
       setHourSystem(selectedSystem);
       
-      // عرض Toast
       const systemName = selectedSystem === '24h' ? '24h' : '12h (AM/PM)';
-      if (typeof showToast === 'function') {
-        showToast(`🕐 ${typeof t === 'function' ? t('hour_system', 'Hour System') : 'Hour System'}: ${systemName}`, 'success');
-      }
+      showToast(`🕐 ${typeof t === 'function' ? t('hour_system', 'Hour System') : 'Hour System'}: ${systemName}`, 'success');
     } else {
       localStorage.setItem('hourSystem', selectedSystem);
     }
   });
 
-  // 7. مسح البيانات
+  // 8. مسح البيانات
   document.getElementById('clear-data-btn')?.addEventListener('click', function() {
-    if (!confirm("⚠️ Are you sure you want to delete ALL your data?\n\nThis includes:\n- All tasks\n- All notes\n- All events\n- All programs\n- All routine data\n- All notifications\n- Your profile settings\n\nThis action cannot be undone!")) return;
-    
-    if (!confirm("⚠️ Last chance! Are you absolutely sure?")) return;
+    deleteModal({
+      itemName: '',
+      itemType: 'all',
+      onConfirm: () => {
+        deleteModal({
+          itemName: '',
+          itemType: 'all',
+          onConfirm: () => {
+            const keys = [
+              "myLifeHub_routine",
+              "myLifeHub_tasks",
+              "myLifeHub_notes_v2",
+              "myLifeHub_events",
+              "myLifeHub_programs",
+              "myLifeHub_profile",
+              "myLifeHub_notifications",
+              "myLifeHub_backup_metadata"
+            ];
 
-    const keys = [
-      "myLifeHub_routine",
-      "myLifeHub_tasks",
-      "myLifeHub_notes_v2",
-      "myLifeHub_events",
-      "myLifeHub_programs",
-      "myLifeHub_profile",
-      "myLifeHub_notifications",
-      "myLifeHub_backup_metadata"
-    ];
+            keys.forEach(key => localStorage.removeItem(key));
 
-    keys.forEach(key => localStorage.removeItem(key));
+            showToast('🗑️ ' + (typeof t === 'function' ? t('data_cleared', 'All data cleared') : 'All data cleared'), 'error');
 
-    if (typeof showToast === 'function') {
-      showToast('🗑️ All data has been cleared. Refreshing...', 'error');
-    }
-
-    setTimeout(() => location.reload(), 1500);
+            setTimeout(() => location.reload(), 1500);
+          }
+        });
+      }
+    });
   });
 
-  // 8. PWA Install
+  // 9. PWA Install
   const installBtn = document.getElementById('profile-install-btn');
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
@@ -363,7 +367,7 @@ function renderProfile() {
     }
   }
 
-  // 9. Achievements
+  // 10. Achievements
   document.getElementById('view-achievements-btn')?.addEventListener('click', function() {
     if (typeof window.renderCompleted === 'function') {
       document.querySelectorAll(".nav-btn, .bottom-nav-btn").forEach(btn => btn.classList.remove("active"));
@@ -373,7 +377,7 @@ function renderProfile() {
     }
   });
 
-  // 10. Backup Section
+  // 11. Backup Section
   if (typeof renderBackupSection === 'function') {
     const backupSlot = document.getElementById('backup-section-slot');
     if (backupSlot) {
@@ -381,12 +385,8 @@ function renderProfile() {
     }
   }
 
-  // 11. إعادة تهيئة Lucide
-  setTimeout(() => {
-    if (typeof initLucideIcons === 'function') {
-      initLucideIcons();
-    }
-  }, 30);
+  // 12. إعادة تهيئة Lucide
+  if (typeof debouncedLucide === 'function') debouncedLucide(30);
 
   updateUserHeader();
 }
@@ -395,8 +395,9 @@ function renderProfile() {
 // Helper: Escape HTML
 // ========================================
 function escapeHtmlProfile(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
+  if (typeof escapeHtml === "function") return escapeHtml(text);
+  if (!text) return "";
+  const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
 }
@@ -459,50 +460,11 @@ function saveProfileData(data) {
 }
 
 // ========================================
-// Toast Notification
-// ========================================
-function showToast(message, type = "info") {
-  const existingToast = document.getElementById("profile-toast");
-  if (existingToast) existingToast.remove();
-
-  const toast = document.createElement("div");
-  toast.id = "profile-toast";
-  toast.style.cssText = `
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 12px 24px;
-    background: ${type === "success" ? "#4caf84" : type === "error" ? "#ef4444" : "#4f8edb"};
-    color: white;
-    border-radius: 12px;
-    font-family: var(--font-handwritten);
-    font-size: 16px;
-    font-weight: 500;
-    z-index: 10000;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    max-width: 90%;
-    text-align: center;
-    animation: slideUp 0.3s ease;
-  `;
-
-  toast.textContent = message;
-  document.body.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.opacity = "0";
-    toast.style.transition = "opacity 0.3s ease";
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-// ========================================
-// تصدير الدوال
+// التصدير
 // ========================================
 window.renderProfile = renderProfile;
 window.getProfileStats = getProfileStats;
 window.getProfileData = getProfileData;
 window.saveProfileData = saveProfileData;
-window.showToast = showToast;
 
 console.log("✅ Profile.js (optimized) loaded successfully!");

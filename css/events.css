@@ -314,7 +314,10 @@
   margin-top: 2px;
 }
 
-/* ===== أزرار الإجراءات ===== */
+/* ========================================
+   أزرار الإجراءات (موحّدة مثل الملاحظات والمهام)
+   ======================================== */
+
 .event-actions {
   display: flex;
   align-items: center;
@@ -322,48 +325,45 @@
   flex-shrink: 0;
 }
 
-.event-pin-btn {
-  background: none;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-  opacity: 0.4;
-  padding: 6px 8px;
-  border-radius: 6px;
-  transition: opacity 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
-}
-
-.event-pin-btn:hover {
-  opacity: 1;
-  background-color: var(--bg-hover);
-  transform: scale(1.1);
-}
-
-.event-pin-btn:active {
-  transform: scale(0.95);
-}
-
+/* ===== زر موحّد لكل الأزرار ===== */
+.event-pin-btn,
+.event-edit-btn,
 .event-delete-btn {
-  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
   border: none;
-  font-size: 18px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
   cursor: pointer;
-  opacity: 0.3;
-  padding: 6px 10px;
-  border-radius: 6px;
-  transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
   flex-shrink: 0;
 }
 
-.event-delete-btn:hover {
-  opacity: 1;
-  background-color: rgba(231, 76, 94, 0.10);
-  color: var(--danger);
-  transform: scale(1.1);
+/* ===== Hover الأساسي (تثبيت + تعديل) ===== */
+.event-pin-btn:hover,
+.event-edit-btn:hover {
+  background: var(--bg-hover);
+  color: var(--primary);
+  transform: scale(1.08);
 }
 
+/* ===== Active (كل الأزرار) ===== */
+.event-pin-btn:active,
+.event-edit-btn:active,
 .event-delete-btn:active {
   transform: scale(0.95);
+}
+
+/* ===== زر الحذف — hover أحمر ===== */
+.event-delete-btn:hover {
+  background: rgba(231, 76, 94, 0.10);
+  color: var(--danger);
+  transform: scale(1.08);
 }
 
 /* ========================================
@@ -442,8 +442,13 @@ body.dark-mode .calendar-nav-btn:hover {
   background-color: var(--bg-hover);
 }
 
-body.dark-mode .event-pin-btn:hover {
+body.dark-mode .event-pin-btn:hover,
+body.dark-mode .event-edit-btn:hover {
   background-color: var(--bg-hover);
+}
+
+body.dark-mode .event-delete-btn:hover {
+  background-color: rgba(231, 76, 94, 0.15);
 }
 
 /* ========================================
@@ -492,6 +497,14 @@ body.dark-mode .event-pin-btn:hover {
   #events-details-modal .notes-modal {
     max-width: 95%;
     padding: 24px 20px;
+  }
+
+  /* أزرار أصغر على الجوال */
+  .event-pin-btn,
+  .event-edit-btn,
+  .event-delete-btn {
+    width: 32px;
+    height: 32px;
   }
 }
 
@@ -547,6 +560,15 @@ body.dark-mode .event-pin-btn:hover {
   #events-details-modal .notes-modal-title {
     font-size: 18px;
   }
+
+  /* أزرار أصغر على الجوال الصغير */
+  .event-pin-btn,
+  .event-edit-btn,
+  .event-delete-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+  }
 }
 
 /* ========================================
@@ -556,6 +578,7 @@ body.dark-mode .event-pin-btn:hover {
 .events-add-btn:focus-visible,
 .calendar-nav-btn:focus-visible,
 .event-pin-btn:focus-visible,
+.event-edit-btn:focus-visible,
 .event-delete-btn:focus-visible {
   outline: 3px solid rgba(79, 142, 219, 0.3);
   outline-offset: 2px;

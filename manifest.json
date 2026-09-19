@@ -2,13 +2,15 @@
   "name": "My Life",
   "short_name": "My Life",
   "description": "Your personal life management hub - routine, tasks, notes, events, and learning programs",
-  "start_url": "/my-life/",
-  "scope": "/my-life/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#fffdf7",
   "theme_color": "#4f8edb",
   "orientation": "portrait",
   "categories": ["productivity", "lifestyle", "education"],
+  "lang": "en",
+  "dir": "ltr",
   "icons": [
     {
       "src": "icons/icon-512.png",

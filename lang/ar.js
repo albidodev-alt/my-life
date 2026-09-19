@@ -12,7 +12,7 @@ const translationsAR = {
     "completed": "المكتملة",
     "notes": "الملاحظات",
     "events": "الأحداث",
-    "program": "البرامج ",
+    "program": "البرامج",
     "profile": "الملف الشخصي",
     "settings": "الإعدادات",
     "achievements": "الإنجازات",
@@ -64,19 +64,34 @@ const translationsAR = {
     "yesterday": "أمس",
     "days_ago": "أيام مضت",
     "drops": "قطرات",
+    "confirm": "تأكيد",
+    "yes": "نعم",
+    "no": "لا",
+    "ok": "حسناً",
+    "got_it": "فهمت",
+    "warning": "تحذير",
+    "cannot_undo": "لا يمكن التراجع عن هذا الإجراء!",
 
     // ========================================
     // الروتين - Routine
     // ========================================
     "my_routine": "روتيني",
     "no_activity": "لا يوجد نشاط",
-    "day_for": "اليوم مخصص لـ ",
-    "click_to_set": "اضغط للتحديد",
+    "day_for": "اليوم مخصص لـ",
+    "click_to_set": "اضغط لتحديد هدفك لهذا اليوم",
     "what_is_day_for": "ماذا ستفعل اليوم؟",
     "choose_activity": "اختر نشاطاً",
     "type_own_activity": "أو اكتب نشاطك الخاص...",
     "current_activity": "الحالي",
     "no_activity_selected": "لم يتم اختيار نشاط",
+    "primary_activity": "النشاط الأساسي",
+    "alternative_activity": "النشاط البديل",
+    "add_alternative": "أضف نشاطاً بديلاً",
+    "change_alternative": "تغيير البديل",
+    "remove_alternative": "حذف البديل",
+    "choose_alternative": "اختر النشاط البديل",
+    "choose_alternative_hint": "اختر نشاطاً بديلاً لهذه الساعة",
+    "swap_activity": "التبديل مع البديل",
 
     // ========================================
     // أيام الأسبوع - Week Days
@@ -112,10 +127,13 @@ const translationsAR = {
     "get_ready": "استعد لنوم جيد!",
     "start_winding_down": "ابدأ بالاسترخاء!",
     "time_to_go_to_bed": "حان وقت النوم!",
+    "time_to_sleep_soon": "اقترب وقت النوم",
+    "overdue_task": "مهمة متأخرة",
 
     // ========================================
     // الأنشطة - Activities
     // ========================================
+    "Wake Up": "الاستيقاظ",
     "Sleep": "نوم",
     "Study": "دراسة",
     "University": "جامعة",
@@ -132,6 +150,7 @@ const translationsAR = {
     // نظام الساعات - Hour System
     // ========================================
     "hour_system": "نظام الساعات",
+    "hours": "ساعات",
 
     // ========================================
     // المهام - Tasks
@@ -140,6 +159,7 @@ const translationsAR = {
     "task_description": "وصف المهمة",
     "priority": "الأولوية",
     "high": "عالية",
+    "medium": "متوسطة",
     "low": "منخفضة",
     "category": "التصنيف",
     "university": "جامعة",
@@ -159,6 +179,7 @@ const translationsAR = {
     "search_tasks": "ابحث في المهام...",
     "no_tasks_found": "لا توجد مهام مطابقة لبحثك",
     "no_tasks_priority": "لا توجد مهام بهذه الأولوية",
+    "delete_task": "حذف المهمة",
 
     // ========================================
     // الإنجازات - Achievements
@@ -166,7 +187,7 @@ const translationsAR = {
     "filter_by_difficulty": "تصفية حسب الصعوبة:",
     "no_completed_with_difficulty": "لا توجد مهام مكتملة بصعوبة ",
     "delete_permanently": "حذف نهائياً",
-    "delete_confirm": "حذف \"",
+    "delete_confirm": "حذف",
     "permanently": "نهائياً؟",
 
     // ========================================
@@ -179,7 +200,7 @@ const translationsAR = {
     "try_different_keyword": "حاول البحث بكلمة مختلفة",
     "untitled": "بدون عنوان",
     "pinned": "مثبتة",
-    "delete_note_confirm": "حذف \"",
+    "delete_note_confirm": "حذف",
     "enter_note_title": "أدخل عنوان الملاحظة...",
     "content": "المحتوى",
     "write_note_here": "اكتب ملاحظتك هنا...",
@@ -187,6 +208,8 @@ const translationsAR = {
     "add_note_btn": "إضافة ملاحظة",
     "new_note": "ملاحظة جديدة",
     "edit_note": "تعديل الملاحظة",
+    "delete_note": "حذف الملاحظة",
+    "edited": "تم التعديل",
 
     // ========================================
     // الأحداث - Events
@@ -209,6 +232,7 @@ const translationsAR = {
     "left": "متبقية",
     "enter_event_title": "أدخل عنوان الحدث...",
     "add_description": "أضف وصفاً...",
+    "delete_event": "حذف الحدث",
 
     // ========================================
     // البرامج التعليمية - Learning Programs
@@ -230,6 +254,7 @@ const translationsAR = {
     "status": "الحالة",
     "created": "تم الإنشاء",
     "create_learning_program": "إنشاء برنامج تعليمي",
+    "create_first_program": "أنشئ برنامجك التعليمي الأول",
     "program_name": "اسم البرنامج",
     "program_name_placeholder": "مثال: اقرأ كتاباً",
     "describe_program": "صف برنامجك...",
@@ -239,14 +264,21 @@ const translationsAR = {
     "resource_name": "اسم المورد...",
     "url_optional": "الرابط (اختياري)",
     "add_resource": "أضف مورداً",
-    "create_program": "إنشاء البرنامج →",
-    "add_steps": "أضف خطوات →",
-    "add_steps_first": "أضف خطوات أولاً →",
+    "create_program": "إنشاء البرنامج",
+    "add_steps": "أضف خطوات ←",
+    "add_steps_first": "أضف خطوات أولاً ←",
     "add_step": "أضف خطوة",
-    "enter_step_name": "أدخل اسم الخطوة:",
-    "edit_step_name": "عدل اسم الخطوة:",
+    "step_name": "اسم الخطوة",
+    "step_name_placeholder": "مثال: اقرأ الفصل الأول",
+    "invalid_step_name": "اسم الخطوة يجب أن يكون بين 1 و 100 حرف",
+    "enter_step_name": "أدخل اسماً وصفياً لهذه الخطوة",
+    "edit_step": "تعديل الخطوة",
+    "edit_step_name": "عدّل اسم الخطوة",
+    "delete_step": "حذف الخطوة",
     "delete_step_confirm": "هل تريد حذف هذه الخطوة؟",
+    "delete_resource": "حذف المورد",
     "delete_resource_confirm": "هل تريد حذف هذا المورد؟",
+    "delete_program": "حذف البرنامج",
     "delete_program_confirm": "هل تريد حذف هذا البرنامج نهائياً؟",
     "no_resources": "لا توجد موارد مضافة.",
     "start_session": "ابدأ الجلسة",
@@ -256,18 +288,71 @@ const translationsAR = {
     "learning_placeholder": "مثال: فهمت المفهوم...",
     "rating": "التقييم",
     "complete_step": "إكمال الخطوة",
-    "complete_step_confirm": "إكمال هذه الخطوة؟ لقد استغرقت ",
+    "complete_step_confirm": "إكمال هذه الخطوة؟ لقد استغرقت",
     "minutes": "دقائق.",
     "completed_successfully": "تم الإكمال بنجاح!",
     "sessions_completed": "الجلسات المكتملة",
     "no_sessions": "لا توجد جلسات مكتملة بعد. ابدأ جلستك الأولى!",
     "all_steps_completed": "كل الخطوات مكتملة!",
-    "program_completed": "البرنامج مكتمل! كل",
+    "program_completed": "البرنامج مكتمل!",
     "steps_done": "خطوة مكتملة!",
     "next_step": "الخطوة التالية",
+    "no_steps": "لا توجد خطوات",
     "easy": "سهل",
     "medium": "متوسط",
     "hard": "صعب",
+    "version": "الإصدار",
+    "contains": "يحتوي على",
+
+    // ========================================
+    // مجموعة البحر - Sea Collection
+    // ========================================
+    "drops_collection": "مجموعتي البحرية",
+    "drops_current": "القطرات الحالية",
+    "drops_item_1": "أعشاب بحرية",
+    "drops_item_2": "صدفة",
+    "drops_item_3": "سمكة",
+    "drops_item_4": "سردين",
+    "drops_item_5": "جمبري",
+    "drops_item_6": "أمواج",
+    "drops_item_7": "قارب صغير",
+    "drops_item_8": "سفينة",
+    "drops_item_9": "مرساة",
+    "drops_item_10": "جوهرة البحر",
+    "drops_all_items": "كل العناصر",
+    "drops_next": "العنصر التالي",
+    "drops_remaining": "قطرة متبقية",
+    "drops_max_level": "لقد فتحت كل شيء!",
+    "drops_max_desc": "عمل رائع! لقد جمعت كل العناصر.",
+    "drops_no_items": "أكمل المهام لتجمع أول عنصر لك!",
+
+    // ========================================
+    // النسخ الاحتياطي - Backup
+    // ========================================
+    "restore_backup": "استعادة النسخة الاحتياطية",
+    "backup_desc": "بياناتك مخزّنة محليًا على جهازك. صدّر نسخة احتياطية لحفظ بياناتك، أو استورد نسخة سبق تصديرها.",
+    "last_backup": "آخر نسخة احتياطية",
+    "backup_note": "🔒 بياناتك لا تغادر جهازك أبدًا. النسخ الاحتياطية محفوظة محليًا.",
+    "restore_warning": "استعادة هذه النسخة ستستبدل جميع بياناتك الحالية.",
+    "confirm_restore": "تأكيد الاستعادة",
+    "yes_restore": "نعم، استعد",
+    "backup_restored": "تم استعادة النسخة الاحتياطية بنجاح!",
+    "select_json": "الرجاء اختيار ملف JSON",
+    "last_chance": "آخر فرصة!",
+    "yes_delete_all": "نعم، احذف الكل",
+    "data_cleared": "تم مسح جميع البيانات",
+    "delete_all_data": "هل تريد حذف جميع بياناتك",
+    "delete_all_warning": "سيتم حذف المهام والملاحظات والأحداث والبرامج والروتين والإعدادات نهائيًا.",
+    "all_your_data": "جميع بياناتك",
+
+    // ========================================
+    // PWA Install
+    // ========================================
+    "install_app": "تثبيت التطبيق",
+    "install_desc": "ثبّت هذا التطبيق على جهازك للوصول السريع والاستخدام دون اتصال.",
+    "install_note": "💡 ثبّت التطبيق للوصول دون اتصال والتشغيل السريع",
+    "app_installed": "التطبيق مثبت بالفعل",
+    "change_photo": "اضغط لتغيير الصورة",
 
     // ========================================
     // الإشعارات - Notifications

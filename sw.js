@@ -1,31 +1,40 @@
 // ========================================
-// MY LIFE - SERVICE WORKER v1.10
-// يدعم العمل دون اتصال + إدارة كاش محسّنة
+// MY LIFE - SERVICE WORKER v16
+// يدعم العمل دون اتصال بشكل كامل
 // ========================================
 
-const CACHE_NAME = 'my-life-v10';
-const RUNTIME_CACHE = 'runtime-v3';
+const CACHE_NAME = 'my-life-v16';
+const RUNTIME_CACHE = 'runtime-v16';
 
 const ASSETS_TO_CACHE = [
   // ===== HTML =====
+  './',
   'index.html',
 
   // ===== CSS =====
+  'css/fonts.css',
+  'css/modal-base.css',
+  'css/toast.css',
   'css/style.css',
   'css/notes.css',
   'css/events.css',
   'css/program.css',
+  'css/drops.css',
 
   // ===== JS (Core) =====
+  'js/utils.js',
+  'js/toast.js',
+  'js/modal-helper.js',
   'js/main.js',
   'js/storage.js',
   'js/week.js',
   'js/day.js',
   'js/task.js',
-  'js/achievements.js', 
+  'js/achievements.js',
   'js/note.js',
   'js/events.js',
   'js/program.js',
+  'js/drops.js',
   'js/profile.js',
 
   // ===== JS (Secondary) =====
@@ -34,6 +43,19 @@ const ASSETS_TO_CACHE = [
   'js/translations.js',
   'js/update.js',
   'js/hour.js',
+
+  // ===== Fonts (محلية - للعمل بدون إنترنت) =====
+  'fonts/inter-v20-latin-regular.woff2',
+  'fonts/inter-v20-latin-500.woff2',
+  'fonts/inter-v20-latin-600.woff2',
+  'fonts/inter-v20-latin-700.woff2',
+  'fonts/quicksand-v37-latin-regular.woff2',
+  'fonts/quicksand-v37-latin-500.woff2',
+  'fonts/quicksand-v37-latin-600.woff2',
+  'fonts/quicksand-v37-latin-700.woff2',
+
+  // ===== Vendor (Lucide Icons محلي) =====
+  'vendor/lucide.min.js',
 
   // ===== Languages =====
   'lang/en.js',
@@ -48,33 +70,36 @@ const ASSETS_TO_CACHE = [
 ];
 
 // ========================================
-// INSTALL
+// INSTALL - تخزين كل الملفات
 // ========================================
 self.addEventListener('install', function(event) {
-  console.log('[SW] Installing v10...');
+  console.log('[SW] Installing v16...');
   
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(function(cache) {
-        console.log('[SW] Caching assets...');
-        return cache.addAll(ASSETS_TO_CACHE);
+        console.log('[SW] Caching all assets...');
+        // استخدام Promise.allSettled لتجنب فشل التثبيت إذا فشل ملف واحد
+        return Promise.allSettled(
+          ASSETS_TO_CACHE.map(function(url) {
+            return cache.add(url).catch(function(err) {
+              console.warn('[SW] Failed to cache:', url, err);
+            });
+          })
+        );
       })
       .then(function() {
         console.log('[SW] Installation complete!');
-        return self.skipWaiting();
-      })
-      .catch(function(error) {
-        console.error('[SW] Installation failed:', error);
         return self.skipWaiting();
       })
   );
 });
 
 // ========================================
-// ACTIVATE
+// ACTIVATE - حذف الكاش القديم
 // ========================================
 self.addEventListener('activate', function(event) {
-  console.log('[SW] Activating v10...');
+  console.log('[SW] Activating v16...');
   
   event.waitUntil(
     caches.keys()
@@ -96,66 +121,40 @@ self.addEventListener('activate', function(event) {
 });
 
 // ========================================
-// FETCH
+// FETCH - استراتيجية محسّنة للعمل بدون إنترنت
 // ========================================
 self.addEventListener('fetch', function(event) {
   const requestUrl = new URL(event.request.url);
   
-  // تجاهل طلبات التحليلات
-  if (requestUrl.pathname.includes('analytics') || 
-      requestUrl.pathname.includes('beacon') ||
-      requestUrl.pathname.includes('logging')) {
-    return;
-  }
+  // تجاهل الطلبات غير GET
+  if (event.request.method !== 'GET') return;
   
-  // ===== ملفات CDN (Network-First) =====
+  // تجاهل طلبات chrome-extension وغيرها
+  if (!requestUrl.protocol.startsWith('http')) return;
+  
+  // ===== ملفات CDN: Cache-First (احتياطي فقط) =====
   if (requestUrl.hostname.includes('unpkg.com') || 
       requestUrl.hostname.includes('fonts.googleapis.com') ||
       requestUrl.hostname.includes('fonts.gstatic.com') ||
       requestUrl.hostname.includes('cdn.jsdelivr.net')) {
     
     event.respondWith(
-      fetch(event.request)
-        .catch(function() {
-          return caches.match(event.request)
-            .then(function(cached) {
-              return cached || new Response('', { status: 200, statusText: 'OK' });
-            });
-        })
-    );
-    return;
-  }
-  
-  // ===== الملفات الثابتة (Cache-First مع تحديث خلفي) =====
-  if (isStaticAsset(requestUrl)) {
-    event.respondWith(
-      caches.open(CACHE_NAME)
+      caches.open(RUNTIME_CACHE)
         .then(function(cache) {
           return cache.match(event.request)
-            .then(function(cachedResponse) {
-              if (cachedResponse) {
-                fetch(event.request)
-                  .then(function(networkResponse) {
-                    if (networkResponse && networkResponse.status === 200) {
-                      cache.put(event.request, networkResponse.clone());
-                    }
-                  })
-                  .catch(function() {});
-                return cachedResponse;
+            .then(function(cached) {
+              if (cached) {
+                return cached;
               }
-              
               return fetch(event.request)
-                .then(function(networkResponse) {
-                  if (networkResponse && networkResponse.status === 200) {
-                    cache.put(event.request, networkResponse.clone());
+                .then(function(response) {
+                  if (response && response.status === 200) {
+                    cache.put(event.request, response.clone());
                   }
-                  return networkResponse;
+                  return response;
                 })
                 .catch(function() {
-                  return new Response('⚠️ You are offline. Please check your internet connection.', {
-                    status: 503,
-                    statusText: 'Service Unavailable'
-                  });
+                  return new Response('', { status: 503 });
                 });
             });
         })
@@ -163,78 +162,45 @@ self.addEventListener('fetch', function(event) {
     return;
   }
   
-  // ===== Offline Fallback لـ index.html =====
-  if (requestUrl.pathname.endsWith('/') || requestUrl.pathname.endsWith('/index.html')) {
-    event.respondWith(
-      fetch(event.request)
-        .then(function(networkResponse) {
-          if (networkResponse && networkResponse.status === 200) {
-            const clonedResponse = networkResponse.clone();
-            caches.open(CACHE_NAME)
-              .then(function(cache) {
-                cache.put(event.request, clonedResponse);
-              });
-          }
-          return networkResponse;
-        })
-        .catch(function() {
-          return caches.match('index.html')
-            .then(function(cachedResponse) {
-              if (cachedResponse) {
-                return cachedResponse;
-              }
-              return new Response('⚠️ You are offline. The app has not been cached yet.', {
-                status: 503,
-                statusText: 'Service Unavailable'
-              });
-            });
-        })
-    );
-    return;
-  }
-  
-  // ===== استراتيجية افتراضية =====
+  // ===== الملفات المحلية: Cache-First =====
   event.respondWith(
-    fetch(event.request)
-      .then(function(networkResponse) {
-        if (networkResponse && networkResponse.status === 200) {
-          const clonedResponse = networkResponse.clone();
-          caches.open(CACHE_NAME)
-            .then(function(cache) {
-              cache.put(event.request, clonedResponse);
-            });
-        }
-        return networkResponse;
-      })
-      .catch(function() {
-        return caches.match(event.request)
+    caches.open(CACHE_NAME)
+      .then(function(cache) {
+        return cache.match(event.request)
           .then(function(cachedResponse) {
             if (cachedResponse) {
+              // تحديث خلفي (Stale-While-Revalidate)
+              fetch(event.request)
+                .then(function(networkResponse) {
+                  if (networkResponse && networkResponse.status === 200) {
+                    cache.put(event.request, networkResponse.clone());
+                  }
+                })
+                .catch(function() { /* offline - تجاهل */ });
+              
               return cachedResponse;
             }
-            return new Response('⚠️ Offline - Content not available', {
-              status: 503,
-              statusText: 'Service Unavailable'
-            });
+            
+            // غير موجود في الكاش - جرب الشبكة
+            return fetch(event.request)
+              .then(function(networkResponse) {
+                if (networkResponse && networkResponse.status === 200) {
+                  const cloned = networkResponse.clone();
+                  cache.put(event.request, cloned);
+                }
+                return networkResponse;
+              })
+              .catch(function() {
+                // Offline fallback للصفحات
+                if (event.request.mode === 'navigate') {
+                  return caches.match('index.html');
+                }
+                return new Response('Offline', { status: 503 });
+              });
           });
       })
   );
 });
-
-// ========================================
-// Helper: Check Static Asset
-// ========================================
-function isStaticAsset(url) {
-  const staticExtensions = [
-    '.css', '.js', '.html', '.json',
-    '.png', '.jpg', '.jpeg', '.svg', '.gif',
-    '.ico', '.woff', '.woff2', '.ttf', '.otf'
-  ];
-  
-  return staticExtensions.some(function(ext) {
-    return url.pathname.endsWith(ext);
-  });
-}
 
 // ========================================
 // PUSH NOTIFICATIONS
@@ -291,6 +257,15 @@ self.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+  
+  // رسالة لمسح الكاش (للتحديثات)
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    caches.keys().then(function(names) {
+      names.forEach(function(name) {
+        caches.delete(name);
+      });
+    });
+  }
 });
 
-console.log('✅ Service Worker v1.10 loaded successfully!');
+console.log('✅ Service Worker v16 loaded successfully!');

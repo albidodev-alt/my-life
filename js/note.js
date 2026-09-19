@@ -6,20 +6,6 @@
 const NOTES_STORAGE_KEY = "myLifeHub_notes_v2";
 
 // ========================================
-// هيكل الملاحظة الواحدة
-// ========================================
-/*
-{
-  id: number,
-  title: string,
-  content: string,
-  pinned: boolean,
-  createdAt: string (ISO),
-  updatedAt: string (ISO)
-}
-*/
-
-// ========================================
 // دوال التخزين الأساسية
 // ========================================
 
@@ -44,7 +30,7 @@ function saveAllNotes(notes) {
 }
 
 // ========================================
-// العمليات الأساسية على الملاحظات
+// العمليات الأساسية
 // ========================================
 
 function addNote(title, content) {
@@ -105,7 +91,6 @@ function togglePinNote(noteId) {
 
   note.pinned = !note.pinned;
 
-  // ترتيب الملاحظات: المثبتة أولاً ثم الأحدث
   notes.sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
@@ -161,7 +146,7 @@ function escapeHtml(text) {
 }
 
 // ========================================
-// عرض صفحة الملاحظات الرئيسية (مع الترجمة)
+// عرض صفحة الملاحظات
 // ========================================
 
 function renderNotesPageV2() {
@@ -170,7 +155,6 @@ function renderNotesPageV2() {
 
   app.innerHTML = `
     <div id="notes-app-container">
-      <!-- Header Section -->
       <div class="notes-header-section">
         <div class="notes-title-area">
           <div style="display: flex; align-items: center; gap: 12px;">
@@ -185,7 +169,6 @@ function renderNotesPageV2() {
         </button>
       </div>
 
-      <!-- Search Bar -->
       <div class="notes-search-container">
         <div class="notes-search-wrapper">
           <span class="notes-search-icon" data-lucide="search" style="width: 18px; height: 18px;"></span>
@@ -202,7 +185,6 @@ function renderNotesPageV2() {
         </div>
       </div>
 
-      <!-- Notes Grid -->
       <div class="notes-grid" id="notes-grid"></div>
     </div>
   `;
@@ -223,7 +205,6 @@ function renderNotesPageV2() {
 
   renderNotesList("");
 
-  // ✅ إعادة تهيئة أيقونات Lucide
   setTimeout(function() {
     if (typeof initLucideIcons === 'function') {
       initLucideIcons();
@@ -232,7 +213,7 @@ function renderNotesPageV2() {
 }
 
 // ========================================
-// عرض قائمة الملاحظات (مع الترجمة)
+// عرض قائمة الملاحظات
 // ========================================
 
 function renderNotesList(searchTerm = "") {
@@ -284,7 +265,6 @@ function renderNotesList(searchTerm = "") {
   grid.innerHTML = "";
   grid.appendChild(fragment);
 
-  // ✅ إعادة تهيئة أيقونات Lucide
   setTimeout(function() {
     if (typeof initLucideIcons === 'function') {
       initLucideIcons();
@@ -293,7 +273,7 @@ function renderNotesList(searchTerm = "") {
 }
 
 // ========================================
-// إنشاء بطاقة ملاحظة واحدة (مع الترجمة)
+// إنشاء بطاقة ملاحظة
 // ========================================
 
 function createNoteCard(note) {
@@ -356,12 +336,17 @@ function createNoteCard(note) {
   deleteBtn.title = tr('delete', 'Delete note');
   deleteBtn.setAttribute("aria-label", "Delete note");
 
+  // ✨ استخدام deleteModal الجديد
   deleteBtn.addEventListener("click", function(e) {
     e.stopPropagation();
-    if (confirm(tr('delete_note_confirm', 'Delete "') + note.title + '"?')) {
-      deleteNote(note.id);
-      renderNotesList(document.getElementById("notes-search-input")?.value || "");
-    }
+    deleteModal({
+      itemName: note.title,
+      itemType: 'note',
+      onConfirm: () => {
+        deleteNote(note.id);
+        renderNotesList(document.getElementById("notes-search-input")?.value || "");
+      }
+    });
   });
 
   actions.appendChild(pinBtn);
@@ -404,102 +389,60 @@ function createNoteCard(note) {
 }
 
 // ========================================
-// نافذة إضافة/تعديل ملاحظة (مع الترجمة)
+// نافذة إضافة/تعديل ملاحظة
 // ========================================
 
 function openNoteModal(editNote = null) {
   const isEditing = editNote !== null;
-  const overlay = document.createElement("div");
-  overlay.className = "notes-modal-overlay";
-  overlay.id = "notes-modal-overlay";
 
-  const modal = document.createElement("div");
-  modal.className = "notes-modal";
-  modal.id = "notes-modal";
+  const modal = createModal({
+    id: 'note-modal',
+    title: isEditing 
+      ? '<span data-lucide="pencil"></span> ' + tr('edit_note', 'Edit Note')
+      : '<span data-lucide="plus"></span> ' + tr('new_note', 'New Note'),
+    size: 'medium'
+  });
 
-  const title = document.createElement("h3");
-  title.className = "notes-modal-title";
-  title.innerHTML = isEditing 
-    ? '<span data-lucide="pencil" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></span>' + tr('edit_note', 'Edit Note')
-    : '<span data-lucide="plus" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></span>' + tr('new_note', 'New Note');
+  // حقل العنوان
+  const titleField = createModalField({
+    id: 'notes-modal-title-input',
+    label: tr('title', 'Title'),
+    type: 'text',
+    value: isEditing ? editNote.title : '',
+    placeholder: tr('enter_note_title', 'Enter note title...'),
+    maxLength: 120
+  });
 
-  const titleLabel = document.createElement("label");
-  titleLabel.className = "notes-modal-label";
-  titleLabel.textContent = tr('title', 'Title');
-  titleLabel.setAttribute("for", "notes-modal-title-input");
+  // حقل المحتوى
+  const contentField = createModalField({
+    id: 'notes-modal-content-input',
+    label: tr('content', 'Content'),
+    type: 'textarea',
+    rows: 6,
+    value: isEditing ? editNote.content : '',
+    placeholder: tr('write_note_here', 'Write your note here...'),
+    maxLength: 5000
+  });
 
-  const titleInput = document.createElement("input");
-  titleInput.type = "text";
-  titleInput.id = "notes-modal-title-input";
-  titleInput.className = "notes-modal-input";
-  titleInput.placeholder = tr('enter_note_title', 'Enter note title...');
-  titleInput.maxLength = 120;
-  titleInput.value = isEditing ? editNote.title : "";
+  modal.body.appendChild(titleField.field);
+  modal.body.appendChild(contentField.field);
 
-  const contentLabel = document.createElement("label");
-  contentLabel.className = "notes-modal-label";
-  contentLabel.textContent = tr('content', 'Content');
-  contentLabel.setAttribute("for", "notes-modal-content-input");
-
-  const contentInput = document.createElement("textarea");
-  contentInput.id = "notes-modal-content-input";
-  contentInput.className = "notes-modal-textarea";
-  contentInput.placeholder = tr('write_note_here', 'Write your note here...');
-  contentInput.rows = 6;
-  contentInput.maxLength = 5000;
-  contentInput.value = isEditing ? editNote.content : "";
-
-  const actionsDiv = document.createElement("div");
-  actionsDiv.className = "notes-modal-actions";
-
-  const saveBtn = document.createElement("button");
-  saveBtn.className = "notes-modal-save-btn";
-  saveBtn.innerHTML = isEditing 
-    ? '<span data-lucide="check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>' + tr('update_note', 'Update Note')
-    : '<span data-lucide="plus" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>' + tr('add_note_btn', 'Add Note');
-
-  const cancelBtn = document.createElement("button");
-  cancelBtn.className = "notes-modal-cancel-btn";
-  cancelBtn.innerHTML = '<span data-lucide="x" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>' + tr('cancel', 'Cancel');
-
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "notes-modal-close-btn";
-  closeBtn.innerHTML = '<span data-lucide="x" style="width: 20px; height: 20px;"></span>';
-  closeBtn.setAttribute("aria-label", "Close modal");
-
-  modal.appendChild(closeBtn);
-  modal.appendChild(title);
-  modal.appendChild(titleLabel);
-  modal.appendChild(titleInput);
-  modal.appendChild(contentLabel);
-  modal.appendChild(contentInput);
-
-  actionsDiv.appendChild(cancelBtn);
-  actionsDiv.appendChild(saveBtn);
-  modal.appendChild(actionsDiv);
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-
-  function closeModal() {
-    overlay.remove();
-  }
-
+  // حفظ
   function handleSave() {
-    const newTitle = titleInput.value.trim();
-    const newContent = contentInput.value.trim();
+    const newTitle = titleField.input.value.trim();
+    const newContent = contentField.input.value.trim();
 
     if (!newTitle) {
-      titleInput.classList.add("notes-modal-input-error");
-      titleInput.focus();
-      setTimeout(() => titleInput.classList.remove("notes-modal-input-error"), 500);
+      titleField.input.classList.add("modal-base-input-error");
+      titleField.input.focus();
+      setTimeout(() => titleField.input.classList.remove("modal-base-input-error"), 500);
       return;
     }
 
     if (!newContent) {
-      contentInput.classList.add("notes-modal-input-error");
-      contentInput.focus();
-      setTimeout(() => contentInput.classList.remove("notes-modal-input-error"), 500);
+      contentField.input.classList.add("modal-base-input-error");
+      contentField.input.focus();
+      setTimeout(() => contentField.input.classList.remove("modal-base-input-error"), 500);
       return;
     }
 
@@ -512,49 +455,51 @@ function openNoteModal(editNote = null) {
     }
 
     if (success) {
-      closeModal();
+      modal.close();
       renderNotesList(document.getElementById("notes-search-input")?.value || "");
     }
   }
 
-  saveBtn.addEventListener("click", handleSave);
+  // الأزرار
+  const actions = createModalActions([
+    {
+      label: tr('cancel', 'Cancel'),
+      type: 'secondary',
+      onClick: () => modal.close()
+    },
+    {
+      label: isEditing 
+        ? '<span data-lucide="check"></span> ' + tr('update_note', 'Update')
+        : '<span data-lucide="plus"></span> ' + tr('add_note_btn', 'Add Note'),
+      type: 'primary',
+      onClick: handleSave
+    }
+  ]);
 
-  cancelBtn.addEventListener("click", closeModal);
+  modal.body.appendChild(actions);
 
-  closeBtn.addEventListener("click", closeModal);
-
-  overlay.addEventListener("click", function(e) {
-    if (e.target === overlay) closeModal();
-  });
-
-  titleInput.addEventListener("keydown", function(e) {
+  // Enter في العنوان
+  titleField.input.addEventListener("keydown", function(e) {
     if (e.key === "Enter") {
       e.preventDefault();
-      contentInput.focus();
+      contentField.input.focus();
     }
   });
 
-  contentInput.addEventListener("keydown", function(e) {
+  // Ctrl+Enter للحفظ
+  contentField.input.addEventListener("keydown", function(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
       handleSave();
     }
   });
 
-  document.addEventListener("keydown", function(e) {
-    if (e.key === "Escape" && document.getElementById("notes-modal-overlay")) {
-      closeModal();
-    }
-  });
-
-  setTimeout(() => {
-    titleInput.focus();
-    if (typeof initLucideIcons === 'function') initLucideIcons();
-  }, 100);
+  // Focus على العنوان
+  setTimeout(() => titleField.input.focus(), 100);
 }
 
 // ========================================
-// تصدير الدوال للاستخدام من ملفات أخرى
+// تصدير الدوال
 // ========================================
 
 window.renderNotesPageV2 = renderNotesPageV2;

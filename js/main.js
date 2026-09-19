@@ -1,113 +1,183 @@
 // ========================================
-// MY LIFE HUB - MAIN
+// MY LIFE HUB - MAIN (Optimized v2.1)
 // ========================================
 
 let mainAbortController = null;
 let currentPage = null;
 
-document.addEventListener("DOMContentLoaded", function () {
+// ========================================
+// ✅ Lucide Icons - Debounced + RAF (تحسين الأداء)
+// ========================================
+let lucideTimer = null;
+let lucideRafId = null;
+let lucidePending = false;
+let lucideInitialized = false;
 
-  // ===== تهيئة نظام الترجمة =====
-  if (typeof initTranslations === 'function') {
-    initTranslations().then(function() {
-      console.log('✅ Translations ready');
+/**
+ * ✅ Debounced Lucide مع requestAnimationFrame
+ * - يجمع الطلبات المتكررة في تنفيذ واحد
+ * - يستخدم RAF للتزامن مع دورة رسم المتصفح
+ * - لا تغيير بصري - فقط أسرع
+ */
+function debouncedLucide(delay = 50) {
+  if (lucideTimer) clearTimeout(lucideTimer);
+  if (lucideRafId) cancelAnimationFrame(lucideRafId);
+  lucidePending = true;
+
+  lucideTimer = setTimeout(() => {
+    lucideTimer = null;
+    lucideRafId = requestAnimationFrame(() => {
+      lucideRafId = null;
+      if (!lucidePending) return;
+      lucidePending = false;
+
+      if (typeof lucide !== "undefined" && lucide.createIcons) {
+        try {
+          lucide.createIcons();
+          lucideInitialized = true;
+        } catch (e) {
+          console.warn("Lucide render error:", e);
+        }
+      }
+    });
+  }, delay);
+}
+
+// توافق مع الكود القديم
+function initLucideIcons() {
+  debouncedLucide(50);
+}
+
+window.debouncedLucide = debouncedLucide;
+window.initLucideIcons = initLucideIcons;
+
+// ========================================
+// ✅ Performance Marks (قياس الأداء - اختياري)
+// لا يؤثر على السلوك، فقط للتصحيح
+// ========================================
+function perfMark(name) {
+  if (typeof performance !== "undefined" && performance.mark) {
+    try { performance.mark(name); } catch (e) {}
+  }
+}
+
+function perfMeasure(name, startMark, endMark) {
+  if (typeof performance !== "undefined" && performance.measure) {
+    try { performance.measure(name, startMark, endMark); } catch (e) {}
+  }
+}
+
+// ========================================
+// Error Boundary - حماية من الأخطاء
+// ========================================
+function safeRender(renderFn, fallbackMessage = "Something went wrong") {
+  try {
+    renderFn();
+  } catch (error) {
+    console.error("❌ Render error:", error);
+    const app = document.getElementById("app");
+    if (app) {
+      app.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;color:var(--text-muted);">
+          <div style="font-size:64px;margin-bottom:16px;">⚠️</div>
+          <h2 style="color:var(--text-primary);margin-bottom:8px;">${fallbackMessage}</h2>
+          <p style="font-size:14px;margin-bottom:24px;">${error.message || "Unknown error"}</p>
+          <button onclick="location.reload()" style="padding:12px 24px;background:var(--primary-gradient);color:white;border:none;border-radius:10px;cursor:pointer;font-family:var(--font-handwritten);font-size:16px;font-weight:600;">
+            🔄 Reload Page
+          </button>
+        </div>
+      `;
+    }
+  }
+}
+window.safeRender = safeRender;
+
+// ========================================
+// ✅ Page Initializers Map (كود أنظف)
+// ========================================
+const pageInitializers = {
+  routine: () => {
+    if (typeof renderWeek === "function") renderWeek();
+  },
+  task: () => {
+    if (typeof renderTasks === "function") renderTasks();
+  },
+  completed: () => {
+    if (typeof window.renderCompleted === "function") {
+      window.renderCompleted();
+    } else if (typeof renderCompleted === "function") {
+      renderCompleted();
+    } else {
+      renderCompletedFallback();
+    }
+  },
+  notes: () => renderNotesPage(),
+  events: () => {
+    if (typeof renderEventsPage === "function") renderEventsPage();
+  },
+  program: () => {
+    if (typeof window.renderProgramPage === "function") {
+      window.renderProgramPage();
+    } else if (typeof renderProgramPage === "function") {
+      renderProgramPage();
+    } else {
+      renderProgramFallback();
+    }
+  }
+};
+
+// ========================================
+// DOMContentLoaded
+// ========================================
+document.addEventListener("DOMContentLoaded", function () {
+  perfMark("app-start");
+
+  if (typeof initTranslations === "function") {
+    initTranslations().then(function () {
+      console.log("✅ Translations ready");
     });
   }
 
   updateUserHeader();
-
   setupNavigation();
   setupProfileButton();
   setupSidebarToggle();
   setupBottomNav();
 
-  // ===== زر Notes FAB =====
   const notesFabBtn = document.getElementById("notes-fab-btn");
   if (notesFabBtn) {
-    notesFabBtn.addEventListener("click", function() {
+    notesFabBtn.addEventListener("click", function () {
       navigateTo("notes");
     });
   }
 
-  // ===== ✅ تهيئة زر الإشعارات =====
   if (typeof setupNotificationButton === "function") {
     setupNotificationButton();
   }
 
-  // ===== ✅ تحديث الإشعارات =====
   if (typeof refreshNotifications === "function") {
     refreshNotifications();
-    
-    // تحديث عند ظهور الصفحة فقط
-    document.addEventListener('visibilitychange', function() {
-      if (!document.hidden) {
-        refreshNotifications();
-      }
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) refreshNotifications();
     });
-    
-    // تحديث كل 15 دقيقة فقط
     setInterval(refreshNotifications, 15 * 60 * 1000);
   }
 
-  // ===== ✅ تهيئة PWA =====
   initPWA();
-
   navigateTo("routine");
-
   initLucideIcons();
+
+  perfMark("app-ready");
+  perfMeasure("app-init", "app-start", "app-ready");
 });
 
 // ========================================
-// INITIALIZE LUCDIE ICONS
+// navigation - مع safeRender (بدون تغيير في السلوك)
 // ========================================
-
-function initLucideIcons() {
-  if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
-    lucide.createIcons();
-    console.log("✅ Lucide icons initialized!");
-  } else {
-    console.warn("⚠️ Lucide library not loaded, retrying...");
-    setTimeout(function() {
-      if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
-        lucide.createIcons();
-        console.log("✅ Lucide icons initialized (delayed)!");
-      } else {
-        console.error("❌ Lucide library failed to load.");
-      }
-    }, 500);
-  }
-}
-
-window.initLucideIcons = initLucideIcons;
-
-
-function setupNavigation() {
-  const navButtons = document.querySelectorAll(".nav-btn");
-  navButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      const target = button.dataset.target;
-      navigateTo(target);
-    });
-  });
-}
-
-
-function setupBottomNav() {
-  const bottomNavButtons = document.querySelectorAll(".bottom-nav-btn");
-  bottomNavButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      const target = button.dataset.target;
-      navigateTo(target);
-    });
-  });
-}
-
-
 function navigateTo(page) {
   const app = document.getElementById("app");
   if (!app) return;
 
-  // ✅ إزالة شرط pageCache - يعيد بناء الصفحة دائماً
   if (mainAbortController) {
     mainAbortController.abort();
     mainAbortController = null;
@@ -115,135 +185,71 @@ function navigateTo(page) {
 
   mainAbortController = new AbortController();
 
-  // تحديث الأزرار النشطة
-  const navButtons = document.querySelectorAll(".nav-btn");
-  navButtons.forEach(function (button) {
-    button.classList.toggle(
-      "active",
-      button.dataset.target === page
-    );
+  document.querySelectorAll(".nav-btn").forEach(function (button) {
+    button.classList.toggle("active", button.dataset.target === page);
   });
 
-  const bottomNavButtons = document.querySelectorAll(".bottom-nav-btn");
-  bottomNavButtons.forEach(function (button) {
-    button.classList.toggle(
-      "active",
-      button.dataset.target === page
-    );
+  document.querySelectorAll(".bottom-nav-btn").forEach(function (button) {
+    button.classList.toggle("active", button.dataset.target === page);
   });
 
-  // تحديث أسماء الأزرار المترجمة
   updateNavTranslations();
-
   currentPage = page;
 
-  // بناء الصفحة الجديدة
-  switch (page) {
-    case "routine":
-      if (typeof renderWeek === "function") {
-        renderWeek();
-      }
-      break;
+  perfMark(`page-${page}-start`);
 
-    case "task":
-      if (typeof renderTasks === "function") {
-        renderTasks();
-      }
-      break;
+  // ✅ استخدام Map للتنفيذ
+  const initializer = pageInitializers[page];
 
-    case "completed":
-      if (typeof window.renderCompleted === "function") {
-        window.renderCompleted();
-      } else if (typeof renderCompleted === "function") {
-        renderCompleted();
-      } else {
-        renderCompletedFallback();
-      }
-      break;
-
-    case "notes":
-      renderNotesPage();
-      break;
-
-    case "events":
-      if (typeof renderEventsPage === "function") {
-        renderEventsPage();
-      }
-      break;
-
-    case "program":
-      if (typeof window.renderProgramPage === "function") {
-        window.renderProgramPage();
-      } else if (typeof renderProgramPage === "function") {
-        renderProgramPage();
-      } else {
-        app.innerHTML = `
-          <div style="padding: 40px; text-align: center; color: var(--text-muted);">
-            <h3>⚠️ Program module not loaded</h3>
-            <p>Please check that program.js is loaded correctly.</p>
-            <button onclick="location.reload()" style="padding: 10px 24px; margin-top: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Reload</button>
-          </div>
-        `;
-      }
-      break;
-
-    default:
+  safeRender(() => {
+    if (initializer) {
+      initializer();
+    } else {
       renderNotFoundPage();
-  }
+    }
+  });
 
-  setTimeout(function() {
-    initLucideIcons();
-  }, 50);
+  perfMark(`page-${page}-end`);
+  perfMeasure(`page-${page}`, `page-${page}-start`, `page-${page}-end`);
+
+  debouncedLucide(50);
 }
 
 // ========================================
-// ✅ دالة Fallback للإنجازات
+// Setup Functions
 // ========================================
-
-function renderCompletedFallback() {
-  const app = document.getElementById("app");
-  if (!app) return;
-  
-  app.innerHTML = `
-    <h2>✅ Completed Tasks</h2>
-    <div style="padding: 40px; text-align: center; color: var(--text-muted);">
-      <p style="font-size: 18px; margin-bottom: 16px;">
-        ⚠️ The Achievements module couldn't be loaded.
-      </p>
-      <p style="font-size: 14px; margin-bottom: 24px;">
-        Please refresh the page to try again.
-      </p>
-      <button onclick="location.reload()" style="padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-family: var(--font-handwritten); font-size: 16px; font-weight: 600;">
-        🔄 Refresh Page
-      </button>
-    </div>
-  `;
+function setupNavigation() {
+  document.querySelectorAll(".nav-btn").forEach(function (button) {
+    button.addEventListener("click", function () {
+      navigateTo(button.dataset.target);
+    });
+  });
 }
 
-window.renderCompletedFallback = renderCompletedFallback;
-
-// ========================================
-// تحديث ترجمة أزرار التنقل
-// ========================================
+function setupBottomNav() {
+  document.querySelectorAll(".bottom-nav-btn").forEach(function (button) {
+    button.addEventListener("click", function () {
+      navigateTo(button.dataset.target);
+    });
+  });
+}
 
 function updateNavTranslations() {
-  if (typeof t !== 'function') return;
+  if (typeof t !== "function") return;
 
-  const navTargets = ['routine', 'task', 'completed', 'notes', 'events', 'program'];
-  const navBtns = document.querySelectorAll(".nav-btn");
-  navBtns.forEach(function(btn, index) {
+  const navTargets = ["routine", "task", "completed", "notes", "events", "program"];
+  document.querySelectorAll(".nav-btn").forEach(function (btn, index) {
     if (index < navTargets.length) {
       const target = navTargets[index];
       btn.textContent = t(target, target.charAt(0).toUpperCase() + target.slice(1));
     }
   });
 
-  const bottomTargets = ['routine', 'task', 'events', 'program'];
-  const bottomBtns = document.querySelectorAll(".bottom-nav-btn");
-  bottomBtns.forEach(function(btn, index) {
+  const bottomTargets = ["routine", "task", "events", "program"];
+  document.querySelectorAll(".bottom-nav-btn").forEach(function (btn, index) {
     if (index < bottomTargets.length) {
       const target = bottomTargets[index];
-      const label = btn.querySelector('.bn-label');
+      const label = btn.querySelector(".bn-label");
       if (label) {
         label.textContent = t(target, target.charAt(0).toUpperCase() + target.slice(1));
       }
@@ -251,11 +257,66 @@ function updateNavTranslations() {
   });
 }
 
+function setupProfileButton() {
+  const profileButton = document.getElementById("user-profile-btn");
+  if (!profileButton) return;
+
+  profileButton.addEventListener("click", function () {
+    document.querySelectorAll(".nav-btn, .bottom-nav-btn").forEach(function (button) {
+      button.classList.remove("active");
+    });
+    if (typeof renderProfile === "function") renderProfile();
+  });
+}
+
+function setupSidebarToggle() {
+  const toggleBtn = document.getElementById("menu-toggle");
+  const sidebar = document.getElementById("sidebar");
+  if (!toggleBtn || !sidebar) return;
+
+  const isClosed = localStorage.getItem("sidebarClosed") === "true";
+  if (isClosed) {
+    sidebar.classList.add("closed");
+    toggleBtn.classList.add("active");
+  }
+
+  toggleBtn.addEventListener("click", function () {
+    sidebar.classList.toggle("closed");
+    this.classList.toggle("active");
+    localStorage.setItem("sidebarClosed", sidebar.classList.contains("closed"));
+  });
+}
+
+// ========================================
+// Render Fallbacks
+// ========================================
+function renderCompletedFallback() {
+  const app = document.getElementById("app");
+  if (!app) return;
+  app.innerHTML = `
+    <h2>✅ Completed Tasks</h2>
+    <div style="padding:40px;text-align:center;color:var(--text-muted);">
+      <p style="font-size:18px;margin-bottom:16px;">⚠️ The Achievements module couldn't be loaded.</p>
+      <button onclick="location.reload()" style="padding:12px 24px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer;font-family:var(--font-handwritten);font-size:16px;font-weight:600;">🔄 Refresh Page</button>
+    </div>
+  `;
+}
+
+function renderProgramFallback() {
+  const app = document.getElementById("app");
+  if (!app) return;
+  app.innerHTML = `
+    <div style="padding:40px;text-align:center;color:var(--text-muted);">
+      <h3>⚠️ Program module not loaded</h3>
+      <p>Please check that program.js is loaded correctly.</p>
+      <button onclick="location.reload()" style="padding:10px 24px;margin-top:16px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer;">Reload</button>
+    </div>
+  `;
+}
 
 function renderNotesPage() {
   const app = document.getElementById("app");
   if (!app) return;
-
   app.replaceChildren();
 
   if (typeof renderNotesPageV2 === "function") {
@@ -267,35 +328,29 @@ function renderNotesPage() {
   section.className = "page-section";
 
   const h2 = document.createElement("h2");
-  h2.textContent = typeof t === 'function' ? t('notes', '📝 Notes') : "📝 Notes";
+  h2.textContent = typeof t === "function" ? t("notes", "📝 Notes") : "📝 Notes";
   section.appendChild(h2);
 
   const p = document.createElement("p");
   p.className = "page-description";
-  p.textContent = typeof t === 'function' ? t('notes', 'Write down anything you want to remember.') : "Write down anything you want to remember.";
+  p.textContent = typeof t === "function" ? t("notes", "Write down anything you want to remember.") : "Write down anything you want to remember.";
   section.appendChild(p);
 
   const notesDiv = document.createElement("div");
   notesDiv.id = "notes-panel-content";
   section.appendChild(notesDiv);
-
   app.appendChild(section);
 
-  if (typeof renderNotesPanel === "function") {
-    renderNotesPanel();
-  }
+  if (typeof renderNotesPanel === "function") renderNotesPanel();
 }
-
 
 function renderNotFoundPage() {
   const app = document.getElementById("app");
   if (!app) return;
-
   app.replaceChildren();
 
   const section = document.createElement("section");
   section.className = "page-section";
-
   const h2 = document.createElement("h2");
   h2.textContent = "Page not found";
   section.appendChild(h2);
@@ -304,322 +359,185 @@ function renderNotFoundPage() {
   p.className = "empty-message";
   p.textContent = "The requested page does not exist.";
   section.appendChild(p);
-
   app.appendChild(section);
 }
 
-
-function setupProfileButton() {
-  const profileButton = document.getElementById("user-profile-btn");
-  if (!profileButton) return;
-
-  profileButton.addEventListener("click", function () {
-    document.querySelectorAll(".nav-btn").forEach(function (button) {
-      button.classList.remove("active");
-    });
-    document.querySelectorAll(".bottom-nav-btn").forEach(function (button) {
-      button.classList.remove("active");
-    });
-
-    if (typeof renderProfile === "function") {
-      renderProfile();
-    }
-  });
-}
-
-
-function setupSidebarToggle() {
-  const toggleBtn = document.getElementById("menu-toggle");
-  const sidebar = document.getElementById("sidebar");
-
-  if (!toggleBtn || !sidebar) return;
-
-  const isClosed = localStorage.getItem("sidebarClosed") === "true";
-  if (isClosed) {
-    sidebar.classList.add("closed");
-    toggleBtn.classList.add("active");
-  }
-
-  toggleBtn.addEventListener("click", function() {
-    sidebar.classList.toggle("closed");
-    this.classList.toggle("active");
-    
-    const isNowClosed = sidebar.classList.contains("closed");
-    localStorage.setItem("sidebarClosed", isNowClosed);
-  });
-}
-
-
+// ========================================
+// User Header
+// ========================================
 function updateUserHeader() {
-  if (typeof getProfileData !== "function") {
-    return;
-  }
+  if (typeof getProfileData !== "function") return;
 
   const profile = getProfileData();
-
   const avatarImg = document.getElementById("user-avatar-icon");
   const nameSpan = document.getElementById("user-name-icon");
 
-  if (nameSpan) {
-    nameSpan.textContent = profile.name || "User 1";
-  }
-
+  if (nameSpan) nameSpan.textContent = profile.name || "User 1";
   if (avatarImg) {
-    if (profile.avatar) {
-      avatarImg.src = profile.avatar;
-    } else {
-      avatarImg.src = createDefaultAvatar(profile.name || "User 1");
-    }
+    avatarImg.src = profile.avatar || createDefaultAvatar(profile.name || "User 1");
   }
 }
 
-
 function createDefaultAvatar(name) {
-  const firstLetter = name.trim().charAt(0).toUpperCase() || "U";
-
-  const svg = `
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="40"
-      height="40"
-      viewBox="0 0 40 40"
-    >
-      <rect
-        width="40"
-        height="40"
-        rx="20"
-        fill="#4f8edb"
-      />
-      <text
-        x="20"
-        y="26"
-        text-anchor="middle"
-        font-size="18"
-        font-family="Arial"
-        fill="white"
-      >
-        ${firstLetter}
-      </text>
-    </svg>
-  `;
-
+  const firstLetter = (name || "U").trim().charAt(0).toUpperCase() || "U";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><rect width="40" height="40" rx="20" fill="#4f8edb"/><text x="20" y="26" text-anchor="middle" font-size="18" font-family="Arial" fill="white">${firstLetter}</text></svg>`;
   return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
 }
 
-
-window.navigateTo = navigateTo;
-window.renderNotesPage = renderNotesPage;
-window.updateUserHeader = updateUserHeader;
-window.createDefaultAvatar = createDefaultAvatar;
-window.initLucideIcons = initLucideIcons;
-window.updateNavTranslations = updateNavTranslations;
-
-
-function cleanupElement(element) {
-  if (!element) return;
-  const clone = element.cloneNode(true);
-  element.parentNode?.replaceChild(clone, element);
-  return clone;
-}
-
-function clearAllTimers() {
-  const maxIntervalId = setInterval(function() {}, 0);
-  for (let i = 0; i < maxIntervalId; i++) {
-    clearInterval(i);
-    clearTimeout(i);
-  }
-}
-
-function cleanupGlobalListeners(controller) {
-  if (controller) {
-    controller.abort();
-  }
-}
-
-
 // ========================================
-// ===== PWA SUPPORT =====
+// PWA SUPPORT
 // ========================================
-
 let deferredPrompt = null;
 
 function initPWA() {
-  // ===== مراقبة حدث beforeinstallprompt =====
-  window.addEventListener('beforeinstallprompt', function(e) {
+  window.addEventListener("beforeinstallprompt", function (e) {
     e.preventDefault();
     deferredPrompt = e;
-    console.log('📌 App install prompt available');
-    
-    // إظهار زر التثبيت في البروفايل فقط
+    console.log("📌 App install prompt available");
     showInstallButtons(true);
   });
 
-  // ===== مراقبة حدث appinstalled =====
-  window.addEventListener('appinstalled', function() {
-    console.log('✅ App installed successfully!');
+  window.addEventListener("appinstalled", function () {
+    console.log("✅ App installed successfully!");
     deferredPrompt = null;
     showInstallButtons(false);
   });
 
-  // ===== تسجيل Service Worker =====
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-      .then(function(registration) {
-        console.log('✅ ServiceWorker registered successfully');
-        
-        // التحقق من وجود تحديث
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js")
+      .then(function (registration) {
+        console.log("✅ ServiceWorker registered successfully");
         if (registration.waiting) {
-          setTimeout(function() {
-            if (typeof showUpdateNotification === 'function') {
+          setTimeout(function () {
+            if (typeof showUpdateNotification === "function") {
               showUpdateNotification();
             }
           }, 2000);
         }
       })
-      .catch(function(error) {
-        console.warn('⚠️ ServiceWorker registration failed:', error);
+      .catch(function (error) {
+        console.warn("⚠️ ServiceWorker registration failed:", error);
       });
   }
 
-  // ===== إضافة زر التثبيت في البروفايل فقط =====
   addProfileInstallButton();
 }
 
-// ===== إظهار/إخفاء أزرار التثبيت =====
 function showInstallButtons(show) {
-  // زر البروفايل فقط
-  const profileBtn = document.getElementById('profile-install-btn');
-  if (profileBtn) {
-    profileBtn.style.display = show ? 'flex' : 'none';
-  }
+  const profileBtn = document.getElementById("profile-install-btn");
+  if (profileBtn) profileBtn.style.display = show ? "flex" : "none";
 }
 
-// ===== إضافة زر التثبيت في البروفايل =====
 function addProfileInstallButton() {
-  // ننتظر حتى يتم تحميل البروفايل
-  const observer = new MutationObserver(function(mutations) {
-    const profileSection = document.getElementById('settings-section');
-    if (profileSection) {
-      // التحقق من وجود الزر بالفعل
-      if (document.getElementById('profile-install-btn')) return;
-      
-      const installBtn = document.createElement('button');
-      installBtn.id = 'profile-install-btn';
-      installBtn.style.cssText = `
-        width: 100%;
-        padding: 12px 20px;
-        background: var(--primary-gradient);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-family: var(--font-handwritten);
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        margin-top: 12px;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-      `;
-      installBtn.innerHTML = '📲 Install App';
-      
-      installBtn.addEventListener('mouseenter', function() {
-        this.style.transform = 'translateY(-2px)';
-        this.style.boxShadow = 'var(--shadow-md)';
-      });
-      installBtn.addEventListener('mouseleave', function() {
-        this.style.transform = 'translateY(0)';
-        this.style.boxShadow = 'none';
-      });
-      
-      installBtn.addEventListener('click', function() {
-        handleInstallClick();
-      });
-      
-      // إضافة الزر بعد قسم الإعدادات
+  const observer = new MutationObserver(function () {
+    const profileSection = document.getElementById("settings-section");
+    if (profileSection && !document.getElementById("profile-install-btn")) {
+      const installBtn = document.createElement("button");
+      installBtn.id = "profile-install-btn";
+      installBtn.style.cssText = "width:100%;padding:12px 20px;background:var(--primary-gradient);color:white;border:none;border-radius:10px;font-family:var(--font-handwritten);font-size:16px;font-weight:600;cursor:pointer;transition:all 0.2s ease;margin-top:12px;display:none;align-items:center;justify-content:center;gap:10px;";
+      installBtn.innerHTML = "📲 Install App";
+      installBtn.addEventListener("click", handleInstallClick);
       profileSection.parentNode.insertBefore(installBtn, profileSection.nextSibling);
-      
-      // إذا كان التطبيق غير مثبت، نعرض الزر
-      if (!window.matchMedia('(display-mode: standalone)').matches && deferredPrompt) {
-        installBtn.style.display = 'flex';
+
+      if (!window.matchMedia("(display-mode: standalone)").matches && deferredPrompt) {
+        installBtn.style.display = "flex";
       }
     }
   });
-  
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
-// ===== معالجة زر التثبيت =====
 function handleInstallClick() {
   if (deferredPrompt) {
     deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(function(choice) {
-      if (choice.outcome === 'accepted') {
-        console.log('✅ User installed the app');
+    deferredPrompt.userChoice.then(function (choice) {
+      if (choice.outcome === "accepted") {
         showInstallButtons(false);
-      } else {
-        console.log('❌ User dismissed the install prompt');
       }
       deferredPrompt = null;
     });
   } else {
-    // إذا لم يكن هناك deferredPrompt، نعرض رسالة
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
     if (isStandalone) {
-      alert('✅ App is already installed!');
+      infoModal({
+        title: typeof t === "function" ? t("app_installed", "App Already Installed") : "App Already Installed",
+        message: "The app is already installed on your device.",
+        icon: "check-circle",
+        iconType: "success",
+        confirmLabel: typeof t === "function" ? t("close", "OK") : "OK"
+      });
     } else {
-      alert('📲 To install this app:\n\n' +
-            '• On Chrome: Tap the menu (⋮) → "Install App"\n' +
-            '• On Safari: Tap Share → "Add to Home Screen"\n' +
-            '• On Firefox: Tap the menu → "Install"');
+      infoModal({
+        title: typeof t === "function" ? t("install_app", "Install App") : "Install App",
+        message: "To install this app:\n\n• On Chrome: Tap the menu (⋮) → \"Install App\"\n• On Safari: Tap Share → \"Add to Home Screen\"\n• On Firefox: Tap the menu → \"Install\"",
+        icon: "download",
+        iconType: "primary",
+        confirmLabel: typeof t === "function" ? t("close", "Got it") : "Got it"
+      });
     }
   }
 }
 
 // ========================================
-// ===== دالة مساعدة لفتح Achievements =====
+// openAchievements (للتوافق)
 // ========================================
-
-window.openAchievements = function() {
+window.openAchievements = function () {
   console.log("📌 Opening Achievements via window.openAchievements");
-  
-  // محاولة استخدام renderCompleted مباشرة
+
   if (typeof window.renderCompleted === "function") {
-    document.querySelectorAll(".nav-btn, .bottom-nav-btn").forEach(function(btn) {
+    document.querySelectorAll(".nav-btn, .bottom-nav-btn").forEach(function (btn) {
       btn.classList.remove("active");
     });
     window.renderCompleted();
     return true;
   }
-  
-  // محاولة استخدام renderCompleted مباشرة (بدون window)
+
   if (typeof renderCompleted === "function") {
-    document.querySelectorAll(".nav-btn, .bottom-nav-btn").forEach(function(btn) {
+    document.querySelectorAll(".nav-btn, .bottom-nav-btn").forEach(function (btn) {
       btn.classList.remove("active");
     });
     renderCompleted();
     return true;
   }
-  
-  // محاولة استخدام navigateTo
+
   if (typeof navigateTo === "function") {
     navigateTo("completed");
     return true;
   }
-  
+
   console.error("❌ Cannot open Achievements");
   return false;
 };
 
 // ========================================
-// تصدير الدوال للاستخدام من ملفات أخرى
+// ✅ Performance API (اختياري - للتصحيح فقط)
+// يمكن للمستخدم كتابة getPerfMetrics() في Console
 // ========================================
+window.getPerfMetrics = function () {
+  if (typeof performance === "undefined") return null;
 
+  const nav = performance.getEntriesByType("navigation")[0];
+  if (!nav) return null;
+
+  return {
+    dnsLookup: Math.round(nav.domainLookupEnd - nav.domainLookupStart) + "ms",
+    tcpConnect: Math.round(nav.connectEnd - nav.connectStart) + "ms",
+    ttfb: Math.round(nav.responseStart - nav.requestStart) + "ms",
+    domLoad: Math.round(nav.domContentLoadedEventEnd - nav.startTime) + "ms",
+    fullLoad: Math.round(nav.loadEventEnd - nav.startTime) + "ms",
+  };
+};
+
+// ========================================
+// التصدير
+// ========================================
+window.navigateTo = navigateTo;
+window.renderNotesPage = renderNotesPage;
+window.updateUserHeader = updateUserHeader;
+window.createDefaultAvatar = createDefaultAvatar;
+window.updateNavTranslations = updateNavTranslations;
 window.initPWA = initPWA;
 window.showInstallButtons = showInstallButtons;
 window.handleInstallClick = handleInstallClick;
-window.deferredPrompt = deferredPrompt;
 
-console.log("📌 Main.js loaded successfully");
+console.log("📌 Main.js loaded successfully (optimized v2.1)");

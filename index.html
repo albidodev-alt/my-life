@@ -34,14 +34,26 @@
     }
   </script>
 
+  <!-- ✅ Preload الخطوط الحرجة (تحميل أسرع - لا تأثير بصري) -->
+  <link rel="preload" href="fonts/inter-v20-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/inter-v20-latin-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/quicksand-v37-latin-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/quicksand-v37-latin-700.woff2" as="font" type="font/woff2" crossorigin>
+
+  <!-- ✅ Fonts FIRST (محلية - للعمل بدون إنترنت) -->
+  <link rel="stylesheet" href="css/fonts.css">
+
   <!-- Main website styles -->
+  <link rel="stylesheet" href="css/modal-base.css">
+  <link rel="stylesheet" href="css/toast.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/notes.css">
   <link rel="stylesheet" href="css/events.css">
   <link rel="stylesheet" href="css/program.css">
+  <link rel="stylesheet" href="css/drops.css">
 
-  <!-- Lucide Icons (CDN) -->
-  <script src="https://unpkg.com/lucide@latest" defer></script>
+  <!-- ✅ Lucide Icons (Local - للعمل بدون إنترنت) -->
+  <script src="vendor/lucide.min.js" defer></script>
 </head>
 
 <body>
@@ -182,6 +194,9 @@
   <!-- ================= JAVASCRIPT ================= -->
 
   <!-- ===== الملفات الأساسية (تُحمّل أولاً) ===== -->
+  <script src="js/utils.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/modal-helper.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/week.js"></script>
   <script src="js/day.js"></script>
@@ -190,6 +205,7 @@
   <script src="js/note.js"></script>
   <script src="js/events.js"></script>
   <script src="js/program.js"></script>
+  <script src="js/drops.js"></script>
   <script src="js/profile.js"></script>
 
   <!-- ===== الملفات الثانوية (تحميل كسول) ===== -->

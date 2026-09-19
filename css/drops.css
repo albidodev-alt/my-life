@@ -1,0 +1,529 @@
+/* ========================================
+   MY LIFE HUB - DROPS COLLECTION STYLES
+   صفحة مجموعتي - الأسماك
+   ======================================== */
+
+#drops-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* ========================================
+   HEADER
+   ======================================== */
+
+.drops-header {
+  margin-bottom: 24px;
+}
+
+.drops-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-handwritten);
+  font-size: 32px;
+  font-weight: 700;
+}
+
+/* ========================================
+   COUNTER CARD
+   ======================================== */
+
+.drops-counter-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 24px;
+  background: linear-gradient(135deg, rgba(79, 142, 219, 0.08), rgba(109, 168, 232, 0.12));
+  border: 1.5px solid rgba(79, 142, 219, 0.25);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 32px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.drops-counter-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.drops-counter-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--primary);
+  stroke-width: 2;
+  animation: dropsBounce 2.5s ease-in-out infinite;
+}
+
+@keyframes dropsBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.05); }
+}
+
+.drops-counter-number {
+  font-family: var(--font-handwritten);
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.drops-counter-label {
+  font-family: var(--font-handwritten);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ========================================
+   SECTIONS
+   ======================================== */
+
+.drops-section {
+  margin-bottom: 32px;
+}
+
+.drops-section-title {
+  display: flex;
+  align-items: center;
+  margin: 0 0 16px 0;
+  font-family: var(--font-handwritten);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ========================================
+   ✅ SECTION HEADER + COUNTER BADGE (جديد)
+   ======================================== */
+
+.drops-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.drops-section-header .drops-section-title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ===== شارة القطرات ===== */
+.drops-counter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px 6px 10px;
+  background: linear-gradient(135deg, rgba(79, 142, 219, 0.12), rgba(109, 168, 232, 0.20));
+  border: 1.5px solid rgba(79, 142, 219, 0.35);
+  border-radius: 30px;
+  box-shadow: 0 2px 8px rgba(79, 142, 219, 0.10);
+  transition: all 0.25s ease;
+  cursor: default;
+  flex-shrink: 0;
+}
+
+.drops-counter-badge:hover {
+  background: linear-gradient(135deg, rgba(79, 142, 219, 0.20), rgba(109, 168, 232, 0.30));
+  border-color: rgba(79, 142, 219, 0.55);
+  box-shadow: 0 4px 14px rgba(79, 142, 219, 0.18);
+  transform: translateY(-1px);
+}
+
+/* ===== أيقونة القطرة ===== */
+.drops-counter-badge-icon {
+  width: 18px;
+  height: 18px;
+  color: #4f8edb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  animation: dropsBadgeBounce 2.5s ease-in-out infinite;
+}
+
+.drops-counter-badge-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: rgba(79, 142, 219, 0.25);
+  filter: drop-shadow(0 0 3px rgba(79, 142, 219, 0.4));
+}
+
+@keyframes dropsBadgeBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-2px) scale(1.08); }
+}
+
+/* ===== رقم القطرات ===== */
+.drops-counter-badge-number {
+  font-family: var(--font-handwritten);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  line-height: 1;
+  min-width: 20px;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+/* ===== كلمة Drops ===== */
+.drops-counter-badge-label {
+  font-family: var(--font-handwritten);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+/* ========================================
+   ITEMS ROW
+   ======================================== */
+
+.drops-items-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.drops-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  min-width: 100px;
+  position: relative;
+}
+
+.drops-item:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+.drops-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  transition: transform 0.2s ease;
+}
+
+.drops-item:hover .drops-item-icon {
+  transform: scale(1.1);
+}
+
+/* ===== دعم Iconify ===== */
+iconify-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.drops-item-name {
+  font-family: var(--font-handwritten);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.drops-item-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ========================================
+   LOCKED ITEMS
+   ======================================== */
+
+.drops-item-locked {
+  cursor: not-allowed;
+}
+
+.drops-item-icon-locked {
+  filter: grayscale(100%);
+  opacity: 0.35;
+  color: var(--text-muted) !important;
+}
+
+.drops-item-locked:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border-light);
+}
+
+.drops-item-locked:hover .drops-item-icon {
+  transform: none;
+}
+
+.drops-item-locked::after {
+  content: "🔒";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+.drops-item-name-locked {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.drops-item-count-locked {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+/* ========================================
+   UNLOCKED ITEMS
+   ======================================== */
+
+.drops-item-unlocked::before {
+  content: "✓";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  background: var(--success);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(76, 175, 132, 0.3);
+}
+
+/* ========================================
+   NEXT LEVEL
+   ======================================== */
+
+.drops-next-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 24px;
+  background: var(--bg-card);
+  border: 1.5px dashed var(--border-color);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.drops-next-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  opacity: 0.7;
+}
+
+.drops-next-name {
+  font-family: var(--font-handwritten);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.drops-progress-bar {
+  width: 100%;
+  max-width: 400px;
+  height: 10px;
+  background: var(--border-light);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.drops-progress-fill {
+  height: 100%;
+  background: var(--primary-gradient);
+  border-radius: 10px;
+  transition: width 0.6s ease;
+}
+
+.drops-progress-text {
+  font-family: var(--font-handwritten);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* ========================================
+   MAX LEVEL
+   ======================================== */
+
+.drops-max-level {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 24px;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(245, 166, 35, 0.08), rgba(245, 166, 35, 0.03));
+  border: 1.5px solid rgba(245, 166, 35, 0.3);
+  border-radius: 14px;
+}
+
+.drops-max-level h3 {
+  margin: 0;
+  font-family: var(--font-handwritten);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.drops-max-level p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ========================================
+   DARK MODE
+   ======================================== */
+
+body.dark-mode .drops-counter-card {
+  background: linear-gradient(135deg, rgba(79, 142, 219, 0.15), rgba(109, 168, 232, 0.08));
+  border-color: rgba(79, 142, 219, 0.4);
+}
+
+body.dark-mode .drops-items-row {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+body.dark-mode .drops-item {
+  background: var(--bg-surface);
+  border-color: var(--border-color);
+}
+
+body.dark-mode .drops-next-card {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+/* ===== Dark Mode - Counter Badge ===== */
+body.dark-mode .drops-counter-badge {
+  background: linear-gradient(135deg, rgba(79, 142, 219, 0.20), rgba(109, 168, 232, 0.10));
+  border-color: rgba(79, 142, 219, 0.50);
+}
+
+body.dark-mode .drops-counter-badge:hover {
+  background: linear-gradient(135deg, rgba(79, 142, 219, 0.30), rgba(109, 168, 232, 0.20));
+}
+
+body.dark-mode .drops-counter-badge-number {
+  color: #93c5fd;
+}
+
+body.dark-mode .drops-counter-badge-label {
+  color: var(--text-light);
+}
+
+body.dark-mode .drops-counter-badge-icon {
+  color: #93c5fd;
+}
+
+body.dark-mode .drops-counter-badge-icon svg {
+  fill: rgba(147, 197, 253, 0.25);
+  filter: drop-shadow(0 0 3px rgba(147, 197, 253, 0.4));
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+  #drops-container { max-width: 100%; }
+  .drops-title { font-size: 26px; }
+  .drops-counter-card { padding: 24px 16px; }
+  .drops-counter-number { font-size: 36px; }
+  .drops-counter-icon { width: 40px; height: 40px; }
+
+  .drops-items-row { gap: 12px; padding: 16px; }
+  .drops-item { min-width: 90px; padding: 10px; }
+  .drops-item-icon { width: 48px; height: 48px; }
+  .drops-item-name { font-size: 12px; }
+  .drops-next-icon { width: 64px; height: 64px; }
+}
+
+@media (max-width: 480px) {
+  .drops-title { font-size: 22px; }
+  .drops-counter-number { font-size: 32px; }
+
+  .drops-items-row { gap: 10px; padding: 12px; }
+  .drops-item { min-width: 80px; padding: 8px; }
+  .drops-item-icon { width: 40px; height: 40px; }
+  .drops-item-name { font-size: 11px; }
+  .drops-item-count { font-size: 10px; }
+
+  .drops-item-unlocked::before { width: 14px; height: 14px; font-size: 9px; }
+  .drops-item-locked::after { font-size: 14px; }
+
+  .drops-next-icon { width: 56px; height: 56px; }
+
+  /* ===== Counter Badge - Mobile ===== */
+  .drops-counter-badge {
+    padding: 5px 12px 5px 8px;
+    gap: 4px;
+  }
+  .drops-counter-badge-icon,
+  .drops-counter-badge-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  .drops-counter-badge-number {
+    font-size: 17px;
+  }
+  .drops-counter-badge-label {
+    font-size: 11px;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+
+.drops-item:focus-visible,
+#drops-back-btn:focus-visible {
+  outline: 3px solid rgba(79, 142, 219, 0.3);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drops-counter-icon { animation: none; }
+  .drops-item:hover { transform: none; }
+  .drops-item:hover .drops-item-icon { transform: none; }
+  .drops-counter-badge-icon { animation: none; }
+}

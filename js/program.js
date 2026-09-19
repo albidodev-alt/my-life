@@ -255,7 +255,7 @@ function getProgramStats(program) {
 }
 
 // ========================================
-// عرض الصفحة الرئيسية (مع الترجمة الكاملة)
+// عرض الصفحة الرئيسية
 // ========================================
 
 function renderProgramPage() {
@@ -307,7 +307,6 @@ function renderProgramPage() {
     });
     fragment.appendChild(grid);
   } else {
-    // ===== ✅ استبدال الإيموجي بأيقونة Lucide =====
     const emptyHTML = `
       <div class="program-empty-state">
         <div class="program-empty-icon">
@@ -339,7 +338,6 @@ function renderProgramPage() {
     fragment.appendChild(subgrid);
   }
 
-  // إزالة العناصر القديمة
   document.getElementById("program-grid")?.remove();
   container.querySelector(".program-empty-state")?.remove();
   container.querySelector(".program-section-title")?.remove();
@@ -358,13 +356,21 @@ function renderProgramPage() {
     });
   });
 
+  // ✨ استخدام deleteModal
   document.querySelectorAll(".program-card-delete-btn").forEach(btn => {
     btn.addEventListener("click", function() {
       const id = parseFloat(this.dataset.programId);
-      if (confirm(tr('delete_program_confirm', 'Delete this program permanently?'))) {
-        deleteProgram(id);
-        renderProgramPage();
-      }
+      const program = getProgram(id);
+      if (!program) return;
+
+      deleteModal({
+        itemName: program.name,
+        itemType: 'program',
+        onConfirm: () => {
+          deleteProgram(id);
+          renderProgramPage();
+        }
+      });
     });
   });
 
@@ -374,7 +380,6 @@ function renderProgramPage() {
     });
   });
 
-  // ✅ إعادة تهيئة أيقونات Lucide
   setTimeout(() => { 
     if (typeof initLucideIcons === 'function') {
       initLucideIcons();
@@ -383,7 +388,7 @@ function renderProgramPage() {
 }
 
 // ========================================
-// إنشاء بطاقات البرامج (مع الترجمة)
+// إنشاء بطاقات البرامج
 // ========================================
 
 function createProgramCardHTML(program) {
@@ -452,131 +457,143 @@ function createCompletedCardHTML(program) {
 }
 
 // ========================================
-// Program Builder (مع الترجمة)
+// Program Builder
 // ========================================
 
 function openProgramBuilder() {
-  const overlay = document.createElement("div");
-  overlay.className = "notes-modal-overlay";
-  overlay.id = "program-builder-overlay";
-
-  const modal = document.createElement("div");
-  modal.className = "notes-modal";
-  modal.id = "program-builder-modal";
-
-  modal.innerHTML = `
-    <button class="notes-modal-close-btn" id="program-builder-close">
-      <span data-lucide="x" style="width: 20px; height: 20px;"></span>
-    </button>
-    <h3 class="notes-modal-title">
-      <span data-lucide="graduation-cap" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></span>
-      ${tr('create_learning_program', 'Create Learning Program')}
-    </h3>
-
-    <div class="program-builder-step">
-      <label class="notes-modal-label">${tr('program_name', 'Program Name')} *</label>
-      <input type="text" class="notes-modal-input" id="program-builder-name" placeholder="${tr('program_name_placeholder', 'e.g. Read a Book')}" />
-
-      <label class="notes-modal-label">${tr('description', 'Description')}</label>
-      <textarea class="notes-modal-textarea" id="program-builder-desc" rows="3" placeholder="${tr('describe_program', 'Describe your program...')}"></textarea>
-      
-      <label class="notes-modal-label">${tr('goal', 'Goal')}</label>
-      <input type="text" class="notes-modal-input" id="program-builder-goal" placeholder="${tr('goal_placeholder', 'e.g. Understand the fundamentals...')}" />
-
-      <label class="notes-modal-label">${tr('resources_optional', 'Resources (optional)')}</label>
-      <div id="program-builder-resources">
-        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-          <input type="text" class="notes-modal-input" id="program-builder-resource-name" placeholder="${tr('resource_name', 'Resource name...')}" style="flex: 1; margin-bottom: 0;" />
-          <input type="text" class="notes-modal-input" id="program-builder-resource-url" placeholder="${tr('url_optional', 'URL (optional)')}" style="flex: 1.5; margin-bottom: 0;" />
-          <button class="notes-modal-cancel-btn" id="program-builder-add-resource" style="padding: 12px 16px; flex: 0.5;">
-            <span data-lucide="plus" style="width: 16px; height: 16px; vertical-align: middle;"></span>
-            ${tr('add', 'Add')}
-          </button>
-        </div>
-        <div id="program-builder-resources-list" style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;"></div>
-      </div>
-    </div>
-
-    <div class="notes-modal-actions">
-      <button class="notes-modal-cancel-btn" id="program-builder-cancel">
-        <span data-lucide="x" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
-        ${tr('cancel', 'Cancel')}
-      </button>
-      <button class="notes-modal-save-btn" id="program-builder-create">
-        <span data-lucide="check" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
-        ${tr('create_program', 'Create Program →')}
-      </button>
-    </div>
-  `;
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-
   let tempResources = [];
 
+  const modal = createModal({
+    id: 'program-builder-modal',
+    title: '<span data-lucide="graduation-cap"></span> ' + tr('create_learning_program', 'Create Learning Program'),
+    size: 'medium'
+  });
+
+  const nameField = createModalField({
+    id: 'program-builder-name',
+    label: tr('program_name', 'Program Name') + ' *',
+    type: 'text',
+    placeholder: tr('program_name_placeholder', 'e.g. Read a Book'),
+    required: true
+  });
+  modal.body.appendChild(nameField.field);
+
+  const descField = createModalField({
+    id: 'program-builder-desc',
+    label: tr('description', 'Description'),
+    type: 'textarea',
+    rows: 3,
+    placeholder: tr('describe_program', 'Describe your program...')
+  });
+  modal.body.appendChild(descField.field);
+
+  const goalField = createModalField({
+    id: 'program-builder-goal',
+    label: tr('goal', 'Goal'),
+    type: 'text',
+    placeholder: tr('goal_placeholder', 'e.g. Understand the fundamentals...')
+  });
+  modal.body.appendChild(goalField.field);
+
+  const resourcesLabel = document.createElement("label");
+  resourcesLabel.className = "modal-base-label";
+  resourcesLabel.textContent = tr('resources_optional', 'Resources (optional)');
+  modal.body.appendChild(resourcesLabel);
+
+  const resourceRow = document.createElement("div");
+  resourceRow.style.cssText = "display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;";
+
+  const resourceNameInput = document.createElement("input");
+  resourceNameInput.type = "text";
+  resourceNameInput.className = "modal-base-input";
+  resourceNameInput.placeholder = tr('resource_name', 'Resource name...');
+  resourceNameInput.style.cssText = "flex: 1; min-width: 120px;";
+
+  const resourceUrlInput = document.createElement("input");
+  resourceUrlInput.type = "text";
+  resourceUrlInput.className = "modal-base-input";
+  resourceUrlInput.placeholder = tr('url_optional', 'URL (optional)');
+  resourceUrlInput.style.cssText = "flex: 1.5; min-width: 150px;";
+
+  const addResourceBtn = document.createElement("button");
+  addResourceBtn.type = "button";
+  addResourceBtn.className = "modal-base-btn modal-base-btn-secondary";
+  addResourceBtn.style.cssText = "padding: 12px 16px; flex: 0 0 auto;";
+  addResourceBtn.innerHTML = '<span data-lucide="plus" style="width: 16px; height: 16px;"></span> ' + tr('add', 'Add');
+
+  resourceRow.appendChild(resourceNameInput);
+  resourceRow.appendChild(resourceUrlInput);
+  resourceRow.appendChild(addResourceBtn);
+  modal.body.appendChild(resourceRow);
+
+  const resourcesList = document.createElement("div");
+  resourcesList.style.cssText = "display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px;";
+  modal.body.appendChild(resourcesList);
+
   function renderTempResources() {
-    const list = document.getElementById("program-builder-resources-list");
-    if (!list) return;
-    list.innerHTML = "";
+    resourcesList.innerHTML = "";
     tempResources.forEach((r, i) => {
       const div = document.createElement("div");
-      div.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 4px; font-size: 13px;";
+      div.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 6px; font-size: 13px;";
       const text = document.createElement("span");
       text.textContent = r.name + (r.url ? " 🔗" : "");
       const btn = document.createElement("button");
+      btn.type = "button";
       btn.innerHTML = '<span data-lucide="x" style="width: 14px; height: 14px;"></span>';
-      btn.style.cssText = "background: none; border: none; color: var(--danger); cursor: pointer; font-size: 14px;";
-      btn.dataset.index = i;
+      btn.style.cssText = "background: none; border: none; color: var(--danger); cursor: pointer; padding: 0 4px;";
       btn.onclick = () => { tempResources.splice(i, 1); renderTempResources(); };
       div.appendChild(text);
       div.appendChild(btn);
-      list.appendChild(div);
+      resourcesList.appendChild(div);
     });
+    setTimeout(() => {
+      if (typeof initLucideIcons === 'function') initLucideIcons();
+    }, 30);
   }
 
-  document.getElementById("program-builder-add-resource").onclick = () => {
-    const name = document.getElementById("program-builder-resource-name").value.trim();
-    const url = document.getElementById("program-builder-resource-url").value.trim();
+  addResourceBtn.onclick = () => {
+    const name = resourceNameInput.value.trim();
+    const url = resourceUrlInput.value.trim();
     if (name) {
       tempResources.push({ name, url });
-      document.getElementById("program-builder-resource-name").value = "";
-      document.getElementById("program-builder-resource-url").value = "";
+      resourceNameInput.value = "";
+      resourceUrlInput.value = "";
       renderTempResources();
     }
   };
 
-  const closeModal = () => overlay.remove();
+  const actions = createModalActions([
+    {
+      label: tr('cancel', 'Cancel'),
+      type: 'secondary',
+      onClick: () => modal.close()
+    },
+    {
+      label: '<span data-lucide="check"></span> ' + tr('create_program', 'Create Program'),
+      type: 'primary',
+      onClick: () => {
+        const name = nameField.input.value.trim();
+        const desc = descField.input.value.trim();
+        const goal = goalField.input.value.trim();
 
-  document.getElementById("program-builder-close").onclick = closeModal;
-  document.getElementById("program-builder-cancel").onclick = closeModal;
-  overlay.onclick = e => { if (e.target === overlay) closeModal(); };
+        if (!name) {
+          nameField.input.classList.add("modal-base-input-error");
+          nameField.input.focus();
+          setTimeout(() => nameField.input.classList.remove("modal-base-input-error"), 500);
+          return;
+        }
 
-  document.getElementById("program-builder-create").onclick = () => {
-    const name = document.getElementById("program-builder-name").value.trim();
-    const desc = document.getElementById("program-builder-desc").value.trim();
-    const goal = document.getElementById("program-builder-goal").value.trim();
-
-    if (!name) {
-      document.getElementById("program-builder-name").classList.add("notes-modal-input-error");
-      setTimeout(() => document.getElementById("program-builder-name").classList.remove("notes-modal-input-error"), 500);
-      return;
+        const program = createProgram(name, desc, goal, tempResources);
+        modal.close();
+        openProgramDetail(program.id);
+      }
     }
-
-    const program = createProgram(name, desc, goal, tempResources);
-    closeModal();
-    openProgramDetail(program.id);
-  };
-
-  // ✅ إعادة تهيئة أيقونات Lucide
-  setTimeout(() => { 
-    if (typeof initLucideIcons === 'function') {
-      initLucideIcons();
-    }
-  }, 50);
+  ]);
+  modal.body.appendChild(actions);
 }
 
 // ========================================
-// Program Detail (مع الترجمة)
+// Program Detail
 // ========================================
 
 let currentProgramId = null;
@@ -665,11 +682,17 @@ function renderProgramDetail(program) {
   setTimeout(() => { if (typeof initLucideIcons === 'function') initLucideIcons(); }, 50);
 
   document.getElementById("program-detail-back").onclick = () => renderProgramPage();
+
+  // ✨ استخدام deleteModal
   document.getElementById("program-detail-delete").onclick = () => {
-    if (confirm(tr('delete_program_confirm', 'Delete "' + program.name + '" permanently?'))) {
-      deleteProgram(program.id);
-      renderProgramPage();
-    }
+    deleteModal({
+      itemName: program.name,
+      itemType: 'program',
+      onConfirm: () => {
+        deleteProgram(program.id);
+        renderProgramPage();
+      }
+    });
   };
 
   document.querySelectorAll(".program-detail-tab").forEach(tab => {
@@ -689,7 +712,7 @@ function renderProgramDetail(program) {
 }
 
 // ========================================
-// Overview Tab (مع الترجمة)
+// Overview Tab
 // ========================================
 
 function renderOverview(container, program) {
@@ -792,7 +815,7 @@ function renderOverview(container, program) {
 }
 
 // ========================================
-// Steps Tab (مع الترجمة)
+// Steps Tab
 // ========================================
 
 function renderSteps(container, program) {
@@ -891,47 +914,73 @@ function renderSteps(container, program) {
   container.innerHTML = "";
   container.appendChild(fragment);
 
-  // الأحداث
+  // ✅ استخدام promptModal
   document.getElementById("program-add-step").onclick = () => {
-    const name = prompt(tr('enter_step_name', 'Enter step name:'));
-    if (name && name.trim()) {
-      const result = addStep(program.id, name.trim());
-      if (result) {
-        const updated = getProgram(program.id);
-        if (updated) renderProgramDetail(updated);
+    promptModal({
+      title: tr('add_step', 'Add Step'),
+      message: tr('enter_step_name', 'Enter a descriptive name for this step'),
+      label: tr('step_name', 'Step Name'),
+      placeholder: tr('step_name_placeholder', 'e.g. Read Chapter 1'),
+      validate: (v) => v.length > 0 && v.length <= 100,
+      errorMessage: tr('invalid_step_name', 'Step name must be 1-100 characters'),
+      confirmLabel: tr('add', 'Add'),
+      cancelLabel: tr('cancel', 'Cancel'),
+      onConfirm: (name) => {
+        const result = addStep(program.id, name);
+        if (result) {
+          const updated = getProgram(program.id);
+          if (updated) renderProgramDetail(updated);
+        }
       }
-    }
+    });
   };
 
+  // ✅ استخدام promptModal
   document.querySelectorAll(".program-edit-step-btn").forEach(btn => {
     btn.onclick = function(e) {
       e.stopPropagation();
       const stepId = parseFloat(this.dataset.stepId);
-      const newName = prompt(tr('edit_step_name', 'Edit step name:'));
-      if (newName && newName.trim()) {
-        const p = getProgram(program.id);
-        if (p) {
-          const step = p.steps.find(s => s.id === stepId);
-          if (step) {
-            step.name = newName.trim();
-            p.updatedAt = new Date().toISOString();
-            updateProgram(p);
-            renderProgramDetail(p);
-          }
+      const p = getProgram(program.id);
+      if (!p) return;
+      const step = p.steps.find(s => s.id === stepId);
+      if (!step) return;
+
+      promptModal({
+        title: tr('edit_step', 'Edit Step'),
+        message: tr('edit_step_name', 'Edit the step name'),
+        label: tr('step_name', 'Step Name'),
+        defaultValue: step.name,
+        validate: (v) => v.length > 0 && v.length <= 100,
+        errorMessage: tr('invalid_step_name', 'Step name must be 1-100 characters'),
+        confirmLabel: tr('update', 'Update'),
+        cancelLabel: tr('cancel', 'Cancel'),
+        onConfirm: (newName) => {
+          step.name = newName;
+          p.updatedAt = new Date().toISOString();
+          updateProgram(p);
+          renderProgramDetail(p);
         }
-      }
+      });
     };
   });
 
+  // ✨ استخدام deleteModal لحذف الخطوة
   document.querySelectorAll(".program-delete-step-btn").forEach(btn => {
     btn.onclick = function(e) {
       e.stopPropagation();
       const stepId = parseFloat(this.dataset.stepId);
-      if (confirm(tr('delete_step_confirm', 'Delete this step?'))) {
-        deleteStep(program.id, stepId);
-        const updated = getProgram(program.id);
-        if (updated) renderProgramDetail(updated);
-      }
+      const step = program.steps.find(s => s.id === stepId);
+      if (!step) return;
+
+      deleteModal({
+        itemName: step.name,
+        itemType: 'program',
+        onConfirm: () => {
+          deleteStep(program.id, stepId);
+          const updated = getProgram(program.id);
+          if (updated) renderProgramDetail(updated);
+        }
+      });
     };
   });
 
@@ -939,7 +988,7 @@ function renderSteps(container, program) {
 }
 
 // ========================================
-// Resources Tab (مع الترجمة)
+// Resources Tab
 // ========================================
 
 function renderResources(container, program) {
@@ -994,20 +1043,28 @@ function renderResources(container, program) {
     }
   };
 
+  // ✨ استخدام deleteModal لحذف المورد
   container.querySelectorAll("[data-action='delete-resource']").forEach(btn => {
     btn.onclick = function() {
       const resourceId = parseFloat(this.dataset.resourceId);
-      if (confirm(tr('delete_resource_confirm', 'Delete this resource?'))) {
-        deleteResource(program.id, resourceId);
-        const updated = getProgram(program.id);
-        if (updated) renderProgramDetail(updated);
-      }
+      const res = program.resources.find(r => r.id === resourceId);
+      if (!res) return;
+
+      deleteModal({
+        itemName: res.name,
+        itemType: 'program',
+        onConfirm: () => {
+          deleteResource(program.id, resourceId);
+          const updated = getProgram(program.id);
+          if (updated) renderProgramDetail(updated);
+        }
+      });
     };
   });
 }
 
 // ========================================
-// Sessions Tab (مع الترجمة)
+// Sessions Tab
 // ========================================
 
 function renderSessions(container, program) {
@@ -1140,7 +1197,7 @@ function setupStepDragAndDrop(programId) {
 }
 
 // ========================================
-// Start Session with Timer (مع الترجمة)
+// Start Session with Timer
 // ========================================
 
 function startSession(programId) {
@@ -1148,16 +1205,34 @@ function startSession(programId) {
   if (!program) return;
 
   if (program.status === "completed") {
-    alert("🎉 " + tr('all_steps_completed', 'All steps are completed! This program is finished.'));
+    infoModal({
+      title: tr('program_completed', 'Program Completed'),
+      message: '🎉 ' + tr('all_steps_completed', 'All steps are completed! This program is finished.'),
+      icon: 'check-circle',
+      iconType: 'success',
+      confirmLabel: tr('close', 'OK')
+    });
     return;
   }
 
   const nextStep = getNextStep(program);
   if (!nextStep) {
     if (!program.steps || program.steps.length === 0) {
-      alert(tr('add_steps_first', 'You need to add steps first! Go to the Steps tab.'));
+      infoModal({
+        title: tr('no_steps', 'No Steps'),
+        message: tr('add_steps_first', 'You need to add steps first! Go to the Steps tab.'),
+        icon: 'alert-triangle',
+        iconType: 'warning',
+        confirmLabel: tr('close', 'OK')
+      });
     } else {
-      alert("🎉 " + tr('all_steps_completed', 'All steps are completed!'));
+      infoModal({
+        title: tr('program_completed', 'Program Completed'),
+        message: '🎉 ' + tr('all_steps_completed', 'All steps are completed!'),
+        icon: 'check-circle',
+        iconType: 'success',
+        confirmLabel: tr('close', 'OK')
+      });
     }
     return;
   }
@@ -1166,99 +1241,121 @@ function startSession(programId) {
 }
 
 function openSessionModal(programId, stepId, stepName) {
-  const overlay = document.createElement("div");
-  overlay.className = "notes-modal-overlay";
-  overlay.id = "session-modal-overlay";
-
-  const modal = document.createElement("div");
-  modal.className = "notes-modal";
-  modal.id = "session-modal";
-
   let timerSeconds = 0;
   let timerInterval = null;
   let isTimerRunning = false;
-
-  const html = `
-    <button class="notes-modal-close-btn" id="session-modal-close">
-      <span data-lucide="x" style="width: 20px; height: 20px;"></span>
-    </button>
-    <h3 class="notes-modal-title">
-      <span data-lucide="clock" style="width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; color: var(--primary);"></span>
-      ${tr('session', 'Session')}
-    </h3>
-    <p style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">
-      <span data-lucide="book-open" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></span>
-      ${escapeHtml(stepName)}
-    </p>
-    
-    <div style="text-align: center; margin: 16px 0;">
-      <div style="font-size: 48px; font-weight: 700; font-family: monospace; color: var(--primary);" id="session-timer-display">00:00</div>
-      <div style="display: flex; gap: 8px; justify-content: center; margin-top: 8px;">
-        <button class="notes-modal-cancel-btn" id="session-timer-start" style="padding: 6px 20px; font-size: 14px;">
-          <span data-lucide="play" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-          ${tr('start', 'Start')}
-        </button>
-        <button class="notes-modal-cancel-btn" id="session-timer-pause" style="padding: 6px 20px; font-size: 14px; display: none;">
-          <span data-lucide="pause" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-          ${tr('pause', 'Pause')}
-        </button>
-        <button class="notes-modal-cancel-btn" id="session-timer-reset" style="padding: 6px 20px; font-size: 14px;">
-          <span data-lucide="rotate-ccw" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-          ${tr('reset', 'Reset')}
-        </button>
-      </div>
-    </div>
-
-    <hr style="border: none; border-top: 1px solid var(--border-light); margin: 12px 0;" />
-
-    <div class="program-session-complete-form">
-      <label>
-        <span data-lucide="bar-chart" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-        ${tr('how_was_step', 'How was this step?')}
-      </label>
-      <div class="difficulty-grid">
-        <button class="difficulty-btn active" data-difficulty="Medium">${tr('medium', 'Medium')}</button>
-        <button class="difficulty-btn" data-difficulty="Hard">${tr('hard', 'Hard')}</button>
-        <button class="difficulty-btn" data-difficulty="Easy">${tr('easy', 'Easy')}</button>
-      </div>
-
-      <label>
-        <span data-lucide="lightbulb" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623;"></span>
-        ${tr('what_did_you_learn', 'What did you learn?')}
-      </label>
-      <input type="text" id="session-learning" placeholder="${tr('learning_placeholder', 'e.g. I understood the concept...')}" />
-
-      <label>
-        <span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623;"></span>
-        ${tr('rating', 'Rating')} (1-5)
-      </label>
-      <div id="rating-stars">
-        ${[1,2,3,4,5].map(i => `<button class="difficulty-btn" data-rating="${i}">${i <= 3 ? '★' : '☆'}</button>`).join('')}
-      </div>
-
-      <button class="notes-modal-save-btn" id="session-complete-btn" style="margin-top: 12px;">
-        <span data-lucide="check-circle" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;"></span>
-        ${tr('complete_step', 'Complete Step')}
-      </button>
-    </div>
-  `;
-
-  modal.innerHTML = html;
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-
   let selectedDifficulty = "Medium";
   let selectedRating = 3;
 
-  const closeModal = () => {
-    if (timerInterval) clearInterval(timerInterval);
-    overlay.remove();
-  };
+  const modal = createModal({
+    id: 'session-modal',
+    title: '<span data-lucide="clock"></span> ' + tr('session', 'Session'),
+    size: 'medium',
+    onClose: () => {
+      if (timerInterval) clearInterval(timerInterval);
+    }
+  });
 
-  document.getElementById("session-modal-close").onclick = closeModal;
-  overlay.onclick = e => { if (e.target === overlay) closeModal(); };
+  const stepTitle = document.createElement("p");
+  stepTitle.style.cssText = "font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; text-align: center;";
+  stepTitle.innerHTML = '<span data-lucide="book-open" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></span> ' + escapeHtml(stepName);
+  modal.body.appendChild(stepTitle);
 
-  // Timer
+  const timerBox = document.createElement("div");
+  timerBox.style.cssText = "text-align: center; margin: 16px 0;";
+  timerBox.innerHTML = `
+    <div style="font-size: 48px; font-weight: 700; font-family: monospace; color: var(--primary);" id="session-timer-display">00:00</div>
+    <div style="display: flex; gap: 8px; justify-content: center; margin-top: 8px; flex-wrap: wrap;">
+      <button type="button" class="modal-base-btn modal-base-btn-primary" id="session-timer-start" style="padding: 8px 20px; font-size: 14px; flex: 0 0 auto;">
+        <span data-lucide="play" style="width: 14px; height: 14px;"></span>
+        ${tr('start', 'Start')}
+      </button>
+      <button type="button" class="modal-base-btn modal-base-btn-secondary" id="session-timer-pause" style="padding: 8px 20px; font-size: 14px; flex: 0 0 auto; display: none;">
+        <span data-lucide="pause" style="width: 14px; height: 14px;"></span>
+        ${tr('pause', 'Pause')}
+      </button>
+      <button type="button" class="modal-base-btn modal-base-btn-secondary" id="session-timer-reset" style="padding: 8px 20px; font-size: 14px; flex: 0 0 auto;">
+        <span data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></span>
+        ${tr('reset', 'Reset')}
+      </button>
+    </div>
+  `;
+  modal.body.appendChild(timerBox);
+
+  const hr = document.createElement("hr");
+  hr.style.cssText = "border: none; border-top: 1px solid var(--border-light); margin: 16px 0;";
+  modal.body.appendChild(hr);
+
+  const diffLabel = document.createElement("label");
+  diffLabel.className = "modal-base-label";
+  diffLabel.innerHTML = '<span data-lucide="bar-chart" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('how_was_step', 'How was this step?');
+  modal.body.appendChild(diffLabel);
+
+  const diffGrid = document.createElement("div");
+  diffGrid.style.cssText = "display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;";
+
+  const diffOptions = [
+    { value: "Medium", label: tr('medium', 'Medium') },
+    { value: "Hard", label: tr('hard', 'Hard') },
+    { value: "Easy", label: tr('easy', 'Easy') }
+  ];
+
+  diffOptions.forEach(function(opt) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "modal-base-btn " + (opt.value === selectedDifficulty ? "modal-base-btn-primary" : "modal-base-btn-secondary");
+    btn.style.cssText = "padding: 10px; font-size: 14px;";
+    btn.textContent = opt.label;
+    btn.addEventListener("click", function() {
+      selectedDifficulty = opt.value;
+      diffGrid.querySelectorAll("button").forEach(b => {
+        b.className = "modal-base-btn modal-base-btn-secondary";
+        b.style.cssText = "padding: 10px; font-size: 14px;";
+      });
+      btn.className = "modal-base-btn modal-base-btn-primary";
+      btn.style.cssText = "padding: 10px; font-size: 14px;";
+    });
+    diffGrid.appendChild(btn);
+  });
+  modal.body.appendChild(diffGrid);
+
+  const learnField = createModalField({
+    id: 'session-learning',
+    label: tr('what_did_you_learn', 'What did you learn?'),
+    type: 'text',
+    placeholder: tr('learning_placeholder', 'e.g. I understood the concept...')
+  });
+  modal.body.appendChild(learnField.field);
+
+  const ratingLabel = document.createElement("label");
+  ratingLabel.className = "modal-base-label";
+  ratingLabel.innerHTML = '<span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623;"></span> ' + tr('rating', 'Rating') + ' (1-5)';
+  modal.body.appendChild(ratingLabel);
+
+  const ratingGrid = document.createElement("div");
+  ratingGrid.id = "rating-stars";
+  ratingGrid.style.cssText = "display: flex; gap: 8px; margin-bottom: 16px;";
+
+  [1,2,3,4,5].forEach(function(i) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "modal-base-btn modal-base-btn-secondary";
+    btn.style.cssText = "flex: 1; padding: 10px; font-size: 20px;";
+    btn.dataset.rating = i;
+    btn.textContent = i <= selectedRating ? "★" : "☆";
+    btn.style.color = i <= selectedRating ? "#f5a623" : "var(--text-muted)";
+    btn.addEventListener("click", function() {
+      selectedRating = i;
+      ratingGrid.querySelectorAll("button").forEach(b => {
+        const num = parseInt(b.dataset.rating);
+        b.textContent = num <= i ? "★" : "☆";
+        b.style.color = num <= i ? "#f5a623" : "var(--text-muted)";
+      });
+    });
+    ratingGrid.appendChild(btn);
+  });
+  modal.body.appendChild(ratingGrid);
+
   const updateDisplay = () => {
     const mins = Math.floor(timerSeconds / 60);
     const secs = timerSeconds % 60;
@@ -1270,14 +1367,14 @@ function openSessionModal(programId, stepId, stepName) {
     if (isTimerRunning) return;
     isTimerRunning = true;
     document.getElementById("session-timer-start").style.display = "none";
-    document.getElementById("session-timer-pause").style.display = "block";
+    document.getElementById("session-timer-pause").style.display = "inline-flex";
     timerInterval = setInterval(() => { timerSeconds++; updateDisplay(); }, 1000);
   };
 
   const pauseTimer = () => {
     if (!isTimerRunning) return;
     isTimerRunning = false;
-    document.getElementById("session-timer-start").style.display = "block";
+    document.getElementById("session-timer-start").style.display = "inline-flex";
     document.getElementById("session-timer-pause").style.display = "none";
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   };
@@ -1286,69 +1383,47 @@ function openSessionModal(programId, stepId, stepName) {
     pauseTimer();
     timerSeconds = 0;
     updateDisplay();
-    document.getElementById("session-timer-start").style.display = "block";
-    document.getElementById("session-timer-pause").style.display = "none";
   };
 
   document.getElementById("session-timer-start").onclick = startTimer;
   document.getElementById("session-timer-pause").onclick = pauseTimer;
   document.getElementById("session-timer-reset").onclick = resetTimer;
 
-  // Difficulty
-  document.querySelectorAll(".difficulty-btn[data-difficulty]").forEach(btn => {
-    btn.onclick = function() {
-      document.querySelectorAll(".difficulty-btn[data-difficulty]").forEach(b => b.classList.remove("active"));
-      this.classList.add("active");
-      selectedDifficulty = this.dataset.difficulty;
-    };
-  });
+  const actions = createModalActions([
+    {
+      label: tr('cancel', 'Cancel'),
+      type: 'secondary',
+      onClick: () => {
+        if (timerInterval) clearInterval(timerInterval);
+        modal.close();
+      }
+    },
+    {
+      label: '<span data-lucide="check-circle"></span> ' + tr('complete_step', 'Complete Step'),
+      type: 'primary',
+      onClick: () => {
+        pauseTimer();
+        const learning = learnField.input.value.trim() || tr('completed_successfully', 'Completed successfully!');
+        const duration = Math.ceil(timerSeconds / 60);
 
-  // Rating
-  document.querySelectorAll("[data-rating]").forEach(btn => {
-    btn.onclick = function() {
-      const rating = parseInt(this.dataset.rating);
-      selectedRating = rating;
-      document.querySelectorAll("[data-rating]").forEach(b => {
-        const num = parseInt(b.dataset.rating);
-        b.textContent = num <= rating ? "★" : "☆";
-        b.classList.toggle("active", num <= rating);
-        b.style.color = num <= rating ? "#f5a623" : "var(--text-muted)";
-      });
-    };
-  });
-
-  // Complete
-  document.getElementById("session-complete-btn").onclick = () => {
-    pauseTimer();
-    const learning = document.getElementById("session-learning").value.trim() || tr('completed_successfully', 'Completed successfully!');
-    const duration = Math.ceil(timerSeconds / 60);
-
-    if (confirm(tr('complete_step_confirm', 'Complete this step? You spent ') + duration + ' ' + tr('minutes', 'minutes.') + (duration > 1 ? '' : ''))) {
-      completeStep(programId, stepId, duration, selectedDifficulty, learning, selectedRating);
-      closeModal();
-      openProgramDetail(programId);
+        // ✅ استخدام confirmModal
+        confirmModal({
+          title: tr('complete_step', 'Complete Step'),
+          message: `${tr('complete_step_confirm', 'Complete this step? You spent')} <strong>${duration} ${tr('minutes', 'minutes')}</strong>.`,
+          confirmLabel: tr('confirm', 'Confirm'),
+          cancelLabel: tr('cancel', 'Cancel'),
+          type: 'primary',
+          icon: 'check-circle',
+          onConfirm: () => {
+            completeStep(programId, stepId, duration, selectedDifficulty, learning, selectedRating);
+            modal.close();
+            openProgramDetail(programId);
+          }
+        });
+      }
     }
-  };
-
-  // Keyboard shortcuts
-  document.addEventListener("keydown", function(e) {
-    if (e.key === " " && document.getElementById("session-modal-overlay")) {
-      e.preventDefault();
-      isTimerRunning ? pauseTimer() : startTimer();
-    }
-    if (e.key === "Escape" && document.getElementById("session-modal-overlay")) closeModal();
-  });
-
-  document.getElementById("session-learning")?.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") document.getElementById("session-complete-btn").click();
-  });
-
-  // ✅ إعادة تهيئة أيقونات Lucide
-  setTimeout(() => { 
-    if (typeof initLucideIcons === 'function') {
-      initLucideIcons();
-    }
-  }, 50);
+  ]);
+  modal.body.appendChild(actions);
 }
 
 // ========================================
