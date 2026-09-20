@@ -1,5 +1,6 @@
 // ========================================
-// MY LIFE HUB - DAY VIEW (Fixed Modals)
+// MY LIFE HUB - DAY VIEW v2.2
+// (Fixed: Removed formatHourRange conflict)
 // ========================================
 
 const activitySuggestions = [
@@ -18,16 +19,23 @@ const activitySuggestions = [
 ];
 
 // ========================================
-// دوال مساعدة
+// ✅ دوال مساعدة (مع كاش)
 // ========================================
 
-function formatHourRange(h) {
-  if (typeof getHourSystem === 'function' && getHourSystem() === '24h') {
-    return String(h).padStart(2, '0') + ':00 - ' + String(h + 1).padStart(2, '0') + ':00';
+function _getDayLanguage() {
+  if (typeof window.getCachedLanguage === 'function') {
+    const cached = window.getCachedLanguage();
+    if (cached) return cached;
   }
-  const f = h => ((h % 12) || 12) + ':00 ' + (h >= 12 ? 'PM' : 'AM');
-  return f(h) + ' - ' + f(h + 1);
+  try {
+    return localStorage.getItem('language') || 'en';
+  } catch (e) {
+    return 'en';
+  }
 }
+
+// ✅ ملاحظة: formatHourRange موجودة في hour.js
+// لا نعرّفها هنا لتجنب التعارض
 
 function getHourColor() { return '#dbeafe'; }
 
@@ -59,18 +67,31 @@ function getCurrentDisplayedActivity(hourData) {
 }
 
 // ========================================
-// تنسيق الوقت
+// تنسيق الوقت (خاص بـ day.js فقط)
 // ========================================
 
 function formatTime12(hour, minute = 0) {
   if (typeof getHourSystem === 'function' && getHourSystem() === '24h') {
     return String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
   }
-  const isArabic = localStorage.getItem('language') === 'ar';
+  const isArabic = _getDayLanguage() === 'ar';
   const h12 = hour % 12 || 12;
   const m = minute.toString().padStart(2, '0');
   const ampm = isArabic ? (hour >= 12 ? 'مساءً' : 'صباحاً') : (hour >= 12 ? 'PM' : 'AM');
   return h12 + ':' + m + ' ' + ampm;
+}
+
+// ✅ Helper: استخدام formatHourRange من hour.js
+function _getFormattedHourRange(hour) {
+  if (typeof window.formatHourRange === 'function') {
+    return window.formatHourRange(hour);
+  }
+  // Fallback
+  if (typeof getHourSystem === 'function' && getHourSystem() === '24h') {
+    return String(hour).padStart(2, '0') + ':00 - ' + String(hour + 1).padStart(2, '0') + ':00';
+  }
+  const f = h => ((h % 12) || 12) + ':00 ' + (h >= 12 ? 'PM' : 'AM');
+  return f(hour) + ' - ' + f(hour + 1);
 }
 
 // ========================================
@@ -111,7 +132,7 @@ function formatSleepDisplay(label, time, label2, time2) {
 }
 
 // ========================================
-// مودال النوم (باستخدام createModal)
+// مودال النوم
 // ========================================
 
 function openSleepModal(dayName) {
@@ -127,7 +148,6 @@ function openSleepModal(dayName) {
     size: 'small'
   });
 
-  // رسالة توضيحية
   const subtitle = document.createElement('p');
   subtitle.className = 'modal-base-message';
   subtitle.style.marginBottom = '16px';
@@ -206,7 +226,6 @@ function openSleepModal(dayName) {
   wakeRow.appendChild(wakeMinuteSelect);
   modal.body.appendChild(wakeRow);
 
-  // ===== الأزرار =====
   const actions = createModalActions([
     {
       label: t('cancel', 'Cancel'),
@@ -239,7 +258,10 @@ function openSleepModal(dayName) {
 
 function openDay(dayName) {
   const app = document.getElementById('app');
-  app.innerHTML = '';
+  if (!app) return;
+
+  app.replaceChildren();
+
   const data = getDayData(dayName);
   const isToday = dayName === ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
   const currentHour = isToday ? new Date().getHours() : -1;
@@ -258,11 +280,13 @@ function openDay(dayName) {
   grid.id = 'hours-grid';
   grid.dataset.dayName = dayName;
 
+  const gridFragment = document.createDocumentFragment();
+
   for (let i = 0; i < 24; i++) {
     const box = document.createElement('div');
     box.className = 'hour-box' + (isToday && i === currentHour ? ' current-hour' : '');
     box.dataset.hour = i;
-    box.dataset.label = formatHourRange(i);
+    box.dataset.label = _getFormattedHourRange(i);
     
     const hourData = data.hours[i];
     const displayedActivity = getCurrentDisplayedActivity(hourData);
@@ -275,7 +299,7 @@ function openDay(dayName) {
 
     const label = document.createElement('span');
     label.className = 'hour-label';
-    label.textContent = formatHourRange(i);
+    label.textContent = _getFormattedHourRange(i);
     label.style.color = 'rgba(30,41,59,0.5)';
     box.appendChild(label);
 
@@ -297,29 +321,13 @@ function openDay(dayName) {
     if (displayedActivity) {
       const icon = document.createElement('span');
       icon.setAttribute('data-lucide', getActivityIcon(displayedActivity));
-      icon.style.cssText = `
-        width: 16px;
-        height: 16px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      `;
+      icon.style.cssText = 'width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;';
       act.appendChild(icon);
       
       const txt = document.createElement('span');
       const translatedText = typeof t === 'function' ? t(displayedActivity, displayedActivity) : displayedActivity;
       txt.textContent = translatedText;
-      
-      txt.style.cssText = `
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
-        min-width: 0;
-        display: block;
-      `;
-      
+      txt.style.cssText = 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;min-width:0;display:block;';
       act.appendChild(txt);
     }
     box.appendChild(act);
@@ -334,8 +342,10 @@ function openDay(dayName) {
       box.appendChild(swapIcon);
     }
 
-    grid.appendChild(box);
+    gridFragment.appendChild(box);
   }
+
+  grid.appendChild(gridFragment);
 
   grid.onclick = e => {
     const swapIcon = e.target.closest('.hour-swap-icon');
@@ -498,7 +508,7 @@ function openDay(dayName) {
     const dur = calcSleep(sH, sM, wH, wM);
     const q = getSleepQuality(dur.hours);
     const qLabel = typeof t === 'function' && t(q.label) ? t(q.label) : q.label.charAt(0).toUpperCase() + q.label.slice(1);
-    const isArabic = localStorage.getItem('language') === 'ar';
+    const isArabic = _getDayLanguage() === 'ar';
     const durStr = isArabic 
       ? `${dur.hours} ساعة${dur.hours > 1 ? 'ات' : ''}${dur.minutes > 0 ? ' و ' + dur.minutes + ' دقيقة' : ''}`
       : `${dur.hours}h${dur.minutes > 0 ? ' ' + dur.minutes + 'm' : ''}`;
@@ -526,7 +536,9 @@ function openDay(dayName) {
   card.append(row, durRow);
   app.appendChild(card);
 
-  setTimeout(() => { if (typeof initLucideIcons === 'function') initLucideIcons(); }, 50);
+  requestAnimationFrame(() => {
+    if (typeof initLucideIcons === 'function') initLucideIcons();
+  });
 }
 
 // ========================================
@@ -551,7 +563,7 @@ function swapActivity(dayName, hourIndex) {
   
   const act = box.querySelector('.hour-activity');
   if (act) {
-    act.innerHTML = '';
+    act.replaceChildren();
     
     const icon = document.createElement('span');
     icon.setAttribute('data-lucide', getActivityIcon(newActivity));
@@ -565,15 +577,15 @@ function swapActivity(dayName, hourIndex) {
     act.appendChild(txt);
   }
   
-  setTimeout(() => {
+  requestAnimationFrame(() => {
     if (typeof lucide !== 'undefined' && lucide.createIcons) {
       lucide.createIcons();
     }
-  }, 10);
+  });
 }
 
 // ========================================
-// مودال النشاط (باستخدام createModal)
+// مودال النشاط
 // ========================================
 
 function openHourModal(dayName, hourIndex, label, currentActivity) {
@@ -800,7 +812,7 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
 }
 
 // ========================================
-// نافذة اختيار النشاط البديل (باستخدام createModal)
+// نافذة اختيار النشاط البديل
 // ========================================
 
 function openAlternativeModal(dayName, hourIndex) {
@@ -828,7 +840,6 @@ function openAlternativeModal(dayName, hourIndex) {
   `;
   modal.body.appendChild(primaryInfo);
 
-  // ===== رسالة توضيحية =====
   const hint = document.createElement('p');
   hint.className = 'modal-base-message';
   hint.style.marginBottom = '12px';
@@ -885,7 +896,12 @@ function openAlternativeModal(dayName, hourIndex) {
       type: 'secondary',
       onClick: () => {
         modal.close();
-        setTimeout(() => openHourModal(dayName, hourIndex, formatHourRange(hourIndex), primaryActivity), 250);
+        setTimeout(() => openHourModal(
+          dayName, 
+          hourIndex, 
+          _getFormattedHourRange(hourIndex), 
+          primaryActivity
+        ), 250);
       }
     },
     {
@@ -924,17 +940,6 @@ function openAlternativeModal(dayName, hourIndex) {
 }
 
 // ========================================
-// دالة مساعدة للتهريب الآمن
-// ========================================
-
-function escapeHtmlAlt(text) {
-  if (!text) return "";
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-// ========================================
 // دوال التصدير
 // ========================================
 
@@ -957,4 +962,4 @@ window.saveHourActivity = saveHourActivity;
 window.closeModal = closeModal;
 window.openSleepModal = openSleepModal;
 
-console.log('✅ Day.js loaded successfully!');
+console.log('✅ Day.js v2.2 loaded successfully! (formatHourRange conflict fixed)');

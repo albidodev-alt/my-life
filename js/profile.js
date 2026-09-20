@@ -1,10 +1,10 @@
 // ========================================
-// MY LIFE HUB - PROFILE (Optimized v2.0)
-// (Image Compression + Quota Handling + Safe Save)
+// MY LIFE HUB - PROFILE v2.4
+// (Cached Language/HourSystem + Notification Cache Invalidation)
 // ========================================
 
 // ========================================
-// ✅ ضغط الصورة (مهم جداً لتوفير مساحة localStorage)
+// ✅ ضغط الصورة
 // ========================================
 function resizeImage(file, maxSize = 400, quality = 0.85) {
   return new Promise((resolve, reject) => {
@@ -41,7 +41,7 @@ function resizeImage(file, maxSize = 400, quality = 0.85) {
 }
 
 // ========================================
-// ✅ حفظ آمن مع معالجة QuotaExceededError
+// ✅ حفظ آمن
 // ========================================
 function safeSetItem(key, value) {
   try {
@@ -50,18 +50,10 @@ function safeSetItem(key, value) {
   } catch (err) {
     if (err.name === 'QuotaExceededError' || err.code === 22) {
       console.warn('⚠️ localStorage quota exceeded for key:', key);
-      return {
-        success: false,
-        error: 'quota',
-        message: 'Storage is full. Please free up space.'
-      };
+      return { success: false, error: 'quota', message: 'Storage is full. Please free up space.' };
     }
     console.error('Error saving to localStorage:', err);
-    return {
-      success: false,
-      error: 'unknown',
-      message: err.message || 'Unknown error'
-    };
+    return { success: false, error: 'unknown', message: err.message || 'Unknown error' };
   }
 }
 
@@ -70,17 +62,247 @@ function safeSetItem(key, value) {
 // ========================================
 function isValidImageFile(file) {
   const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-  const maxSize = 10 * 1024 * 1024; // 10 MB
+  const maxSize = 10 * 1024 * 1024;
 
   if (!validTypes.includes(file.type)) {
     return { valid: false, error: 'Please select a valid image (JPG, PNG, WebP, GIF)' };
   }
-
   if (file.size > maxSize) {
     return { valid: false, error: 'Image is too large (max 10 MB)' };
   }
-
   return { valid: true };
+}
+
+// ========================================
+// ✅ Debounce helper
+// ========================================
+function _profileDebounce(fn, delay = 400) {
+  if (typeof debounce === 'function') return debounce(fn, delay);
+  let timer = null;
+  return function (...args) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+// ========================================
+// ✅ أسماء اللغات وأنظمة الساعات (مع كاش)
+// ========================================
+function getLanguageDisplayName(code) {
+  const names = {
+    en: 'English',
+    ar: 'العربية',
+    fr: 'Français'
+  };
+  return names[code] || code;
+}
+
+function _getCurrentLanguage() {
+  if (typeof window.getCachedLanguage === 'function') {
+    const cached = window.getCachedLanguage();
+    if (cached) return cached;
+  }
+  try {
+    return localStorage.getItem('language') || 'en';
+  } catch (e) {
+    return 'en';
+  }
+}
+
+function _getCurrentHourSystem() {
+  if (typeof window.getCachedHourSystem === 'function') {
+    const cached = window.getCachedHourSystem();
+    if (cached) return cached;
+  }
+  try {
+    return localStorage.getItem('hourSystem') || '12h';
+  } catch (e) {
+    return '12h';
+  }
+}
+
+function getHourSystemDisplayName(system) {
+  const lang = _getCurrentLanguage();
+  if (system === '24h') {
+    if (lang === 'ar') return '24 ساعة';
+    if (lang === 'fr') return '24 heures';
+    return '24-Hour';
+  }
+  if (lang === 'ar') return '12 ساعة (AM/PM)';
+  if (lang === 'fr') return '12 heures (AM/PM)';
+  return '12-Hour (AM/PM)';
+}
+
+// ========================================
+// ✅ نافذة تغيير اللغة
+// ========================================
+function openLanguageModal() {
+  const currentLang = _getCurrentLanguage();
+
+  const modal = createModal({
+    id: 'language-modal',
+    title: '<span data-lucide="languages"></span> ' + (typeof t === 'function' ? t('language', 'Language') : 'Language'),
+    size: 'small'
+  });
+
+  const list = document.createElement('div');
+  list.className = 'setting-choice-list';
+
+  const languages = ['en', 'ar', 'fr'];
+
+  languages.forEach(code => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'setting-choice-item' + (code === currentLang ? ' selected' : '');
+
+    const icon = document.createElement('span');
+    icon.className = 'setting-choice-icon';
+    icon.innerHTML = '<span data-lucide="languages"></span>';
+
+    const label = document.createElement('span');
+    label.className = 'setting-choice-label';
+    label.textContent = getLanguageDisplayName(code);
+
+    const check = document.createElement('span');
+    check.className = 'setting-choice-check';
+    check.innerHTML = '<span data-lucide="check"></span>';
+
+    item.appendChild(icon);
+    item.appendChild(label);
+    item.appendChild(check);
+
+    item.addEventListener('click', function() {
+      modal.close();
+
+      if (code === currentLang) return;
+
+      setTimeout(() => {
+        if (typeof changeLanguage === 'function') {
+          changeLanguage(code);
+          if (typeof showToast === 'function') {
+            showToast('🌐 ' + getLanguageDisplayName(code), 'success');
+          }
+        } else {
+          localStorage.setItem('language', code);
+          // ✅ تحديث الكاش
+          if (typeof window.updateCachedLanguage === 'function') {
+            window.updateCachedLanguage(code);
+          }
+          location.reload();
+        }
+      }, 250);
+    });
+
+    list.appendChild(item);
+  });
+
+  modal.body.appendChild(list);
+
+  const actions = createModalActions([
+    {
+      label: typeof t === 'function' ? t('cancel', 'Cancel') : 'Cancel',
+      type: 'secondary',
+      onClick: () => modal.close()
+    }
+  ]);
+  modal.body.appendChild(actions);
+
+  if (typeof debouncedLucide === 'function') debouncedLucide(50);
+}
+
+// ========================================
+// ✅ نافذة تغيير نظام الساعات
+// ========================================
+function openHourSystemModal() {
+  const currentSystem = _getCurrentHourSystem();
+
+  const modal = createModal({
+    id: 'hour-system-modal',
+    title: '<span data-lucide="clock"></span> ' + (typeof t === 'function' ? t('hour_system', 'Hour Format') : 'Hour Format'),
+    size: 'small'
+  });
+
+  const list = document.createElement('div');
+  list.className = 'setting-choice-list';
+
+  const systems = ['12h', '24h'];
+
+  systems.forEach(system => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'setting-choice-item' + (system === currentSystem ? ' selected' : '');
+
+    const icon = document.createElement('span');
+    icon.className = 'setting-choice-icon';
+    icon.innerHTML = '<span data-lucide="clock"></span>';
+
+    const label = document.createElement('span');
+    label.className = 'setting-choice-label';
+    label.textContent = getHourSystemDisplayName(system);
+
+    const check = document.createElement('span');
+    check.className = 'setting-choice-check';
+    check.innerHTML = '<span data-lucide="check"></span>';
+
+    item.appendChild(icon);
+    item.appendChild(label);
+    item.appendChild(check);
+
+    item.addEventListener('click', function() {
+      modal.close();
+
+      if (system === currentSystem) return;
+
+      setTimeout(() => {
+        if (typeof setHourSystem === 'function') {
+          setHourSystem(system);
+        } else {
+          localStorage.setItem('hourSystem', system);
+          // ✅ تحديث الكاش
+          if (typeof window.updateCachedHourSystem === 'function') {
+            window.updateCachedHourSystem(system);
+          }
+        }
+
+        updateProfileSettingRows();
+
+        if (typeof showToast === 'function') {
+          showToast('🕐 ' + getHourSystemDisplayName(system), 'success');
+        }
+      }, 250);
+    });
+
+    list.appendChild(item);
+  });
+
+  modal.body.appendChild(list);
+
+  const actions = createModalActions([
+    {
+      label: typeof t === 'function' ? t('cancel', 'Cancel') : 'Cancel',
+      type: 'secondary',
+      onClick: () => modal.close()
+    }
+  ]);
+  modal.body.appendChild(actions);
+
+  if (typeof debouncedLucide === 'function') debouncedLucide(50);
+}
+
+// ========================================
+// ✅ تحديث صفوف الإعدادات
+// ========================================
+function updateProfileSettingRows() {
+  const langValue = document.getElementById('language-row-value');
+  const hourValue = document.getElementById('hour-system-row-value');
+
+  if (langValue) {
+    langValue.textContent = getLanguageDisplayName(_getCurrentLanguage());
+  }
+
+  if (hourValue) {
+    hourValue.textContent = getHourSystemDisplayName(_getCurrentHourSystem());
+  }
 }
 
 // ========================================
@@ -90,13 +312,11 @@ function renderProfile() {
   const app = document.getElementById("app");
   if (!app) return;
 
-  // ===== جلب البيانات =====
   const profile = getProfileData();
   const stats = getProfileStats();
-  const currentHourSystem = typeof getHourSystem === 'function' ? getHourSystem() : '12h';
-  const savedLanguage = localStorage.getItem("language") || "en";
+  const currentHourSystem = _getCurrentHourSystem();
+  const savedLanguage = _getCurrentLanguage();
 
-  // ===== بناء HTML كامل مرة واحدة =====
   app.innerHTML = `
     <button id="back-btn" class="profile-back-btn">
       ← ${typeof t === 'function' ? t('back', 'Back') : 'Back'}
@@ -125,14 +345,12 @@ function renderProfile() {
         ${escapeHtmlProfile(profile.bio || 'Building my life one day at a time.')}
       </div>
 
-      <!-- ===== شريط القطرات (قابل للضغط) ===== -->
-      <div class="completed-counter-bar" id="drops-clickable" style="cursor: pointer;" title="${typeof t === 'function' ? t('drops_view', 'View collection') : 'View collection'}">
+      <div class="completed-counter-bar" id="drops-clickable" style="cursor: pointer;">
         <span class="completed-counter-drop" data-lucide="droplet"></span>
         <span class="completed-counter-number">${stats.completedTasks}</span>
         <span class="completed-counter-label">${typeof t === 'function' ? t('drops', 'Drops') : 'Drops'}</span>
       </div>
 
-      <!-- ===== الإحصائيات ===== -->
       <div class="profile-stats-grid">
         <div class="profile-stat-box">
           <span data-lucide="list-checks" class="profile-stat-icon"></span>
@@ -203,28 +421,23 @@ function renderProfile() {
       <h4 class="profile-subsection-title">${typeof t === 'function' ? t('display', 'Display') : 'Display'}</h4>
 
       <!-- ===== اللغة ===== -->
-      <div class="profile-setting-row">
+      <div class="profile-setting-row clickable" id="language-row" role="button" tabindex="0">
         <span class="profile-setting-label">
           <span data-lucide="globe" class="profile-setting-icon"></span>
           ${typeof t === 'function' ? t('language', 'Language') : 'Language'}
         </span>
-        <select id="language-select" class="profile-setting-select">
-          <option value="en" ${savedLanguage === 'en' ? 'selected' : ''}>English</option>
-          <option value="ar" ${savedLanguage === 'ar' ? 'selected' : ''}>العربية</option>
-          <option value="fr" ${savedLanguage === 'fr' ? 'selected' : ''}>Français</option>
-        </select>
+        <span class="setting-row-value" id="language-row-value">${getLanguageDisplayName(savedLanguage)}</span>
+        <span class="setting-row-arrow" data-lucide="chevron-right"></span>
       </div>
 
       <!-- ===== نظام الساعات ===== -->
-      <div class="profile-setting-row">
+      <div class="profile-setting-row clickable" id="hour-system-row" role="button" tabindex="0">
         <span class="profile-setting-label">
           <span data-lucide="clock" class="profile-setting-icon"></span>
           ${typeof t === 'function' ? t('hour_system', 'Hour System') : 'Hour System'}
         </span>
-        <select id="hour-system-select" class="profile-setting-select">
-          <option value="12h" ${currentHourSystem === '12h' ? 'selected' : ''}>12 ${typeof t === 'function' ? t('hours', 'hours') : 'hours'} (AM/PM)</option>
-          <option value="24h" ${currentHourSystem === '24h' ? 'selected' : ''}>24 ${typeof t === 'function' ? t('hours', 'hours') : 'hours'}</option>
-        </select>
+        <span class="setting-row-value" id="hour-system-row-value">${getHourSystemDisplayName(currentHourSystem)}</span>
+        <span class="setting-row-arrow" data-lucide="chevron-right"></span>
       </div>
 
       <!-- ===== البيانات ===== -->
@@ -307,8 +520,36 @@ function renderProfile() {
     }
   });
 
+  // 3. صف اللغة
+  const languageRow = document.getElementById('language-row');
+  if (languageRow) {
+    languageRow.addEventListener('click', function() {
+      openLanguageModal();
+    });
+    languageRow.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openLanguageModal();
+      }
+    });
+  }
+
+  // 4. صف نظام الساعات
+  const hourSystemRow = document.getElementById('hour-system-row');
+  if (hourSystemRow) {
+    hourSystemRow.addEventListener('click', function() {
+      openHourSystemModal();
+    });
+    hourSystemRow.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openHourSystemModal();
+      }
+    });
+  }
+
   // ========================================
-  // 3. صورة البروفايل (مع ضغط تلقائي)
+  // 5. صورة البروفايل
   // ========================================
   const avatarImg = document.getElementById('profile-avatar-img');
   const fileInput = document.getElementById('avatar-file-input');
@@ -319,7 +560,6 @@ function renderProfile() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // ✅ التحقق من صحة الملف
     const validation = isValidImageFile(file);
     if (!validation.valid) {
       if (typeof showToast === 'function') {
@@ -329,16 +569,13 @@ function renderProfile() {
       return;
     }
 
-    // ✅ إظهار مؤشر التحميل
     if (typeof showToast === 'function') {
       showToast('⏳ ' + (typeof t === 'function' ? t('loading', 'Processing image...') : 'Processing image...'), 'info', 2000);
     }
 
     try {
-      // ✅ ضغط الصورة قبل الحفظ
       const compressedImage = await resizeImage(file, 400, 0.85);
 
-      // ✅ حفظ آمن
       const currentProfile = getProfileData();
       currentProfile.avatar = compressedImage;
 
@@ -352,7 +589,6 @@ function renderProfile() {
         return;
       }
 
-      // ✅ تحديث الصورة المعروضة
       avatarImg.src = compressedImage;
       updateUserHeader();
 
@@ -370,7 +606,7 @@ function renderProfile() {
   });
 
   // ========================================
-  // 4. حقل الاسم
+  // 6. حقل الاسم
   // ========================================
   const nameInput = document.getElementById('profile-name-input');
   const nameCounter = document.getElementById('name-counter');
@@ -379,18 +615,18 @@ function renderProfile() {
     if (this.value.length > 20) this.value = this.value.substring(0, 20);
     if (nameCounter) {
       nameCounter.textContent = this.value.length + ' / 20';
-      nameCounter.style.color = this.value.length >= 20 ? '#ef4444' : 
+      nameCounter.style.color = this.value.length >= 20 ? '#ef4444' :
                                 this.value.length >= 17 ? '#f59e0b' : 'var(--text-muted)';
     }
   });
 
-  nameInput?.addEventListener('change', function() {
-    const newName = this.value.trim() || 'User 1';
+  const saveNameDebounced = _profileDebounce(function() {
+    const newName = nameInput.value.trim() || 'User 1';
     const currentProfile = getProfileData();
+    if (currentProfile.name === newName) return;
     currentProfile.name = newName;
 
     const result = safeSetItem(PROFILE_KEY, JSON.stringify(currentProfile));
-
     if (!result.success) {
       if (typeof showToast === 'function') {
         showToast('❌ ' + (typeof t === 'function' ? t('save_failed', 'Failed to save') : 'Failed to save'), 'error');
@@ -404,10 +640,29 @@ function renderProfile() {
       nameDisplay.title = newName;
     }
     updateUserHeader();
+  }, 500);
+
+  nameInput?.addEventListener('input', saveNameDebounced);
+
+  nameInput?.addEventListener('blur', function() {
+    const newName = this.value.trim() || 'User 1';
+    const currentProfile = getProfileData();
+    if (currentProfile.name === newName) return;
+    currentProfile.name = newName;
+
+    const result = safeSetItem(PROFILE_KEY, JSON.stringify(currentProfile));
+    if (!result.success) return;
+
+    const nameDisplay = document.getElementById('profile-name-display');
+    if (nameDisplay) {
+      nameDisplay.textContent = newName;
+      nameDisplay.title = newName;
+    }
+    updateUserHeader();
   });
 
   // ========================================
-  // 5. حقل البايو
+  // 7. حقل البايو
   // ========================================
   const bioInput = document.getElementById('profile-bio-input');
   const bioCounter = document.getElementById('bio-counter');
@@ -416,18 +671,18 @@ function renderProfile() {
     if (this.value.length > 100) this.value = this.value.substring(0, 100);
     if (bioCounter) {
       bioCounter.textContent = this.value.length + ' / 100';
-      bioCounter.style.color = this.value.length >= 100 ? '#ef4444' : 
+      bioCounter.style.color = this.value.length >= 100 ? '#ef4444' :
                                this.value.length >= 85 ? '#f59e0b' : 'var(--text-muted)';
     }
   });
 
-  bioInput?.addEventListener('change', function() {
-    const newBio = this.value.trim();
+  const saveBioDebounced = _profileDebounce(function() {
+    const newBio = bioInput.value.trim();
     const currentProfile = getProfileData();
+    if (currentProfile.bio === newBio) return;
     currentProfile.bio = newBio;
 
     const result = safeSetItem(PROFILE_KEY, JSON.stringify(currentProfile));
-
     if (!result.success) {
       if (typeof showToast === 'function') {
         showToast('❌ ' + (typeof t === 'function' ? t('save_failed', 'Failed to save') : 'Failed to save'), 'error');
@@ -440,74 +695,65 @@ function renderProfile() {
       bioDisplay.textContent = newBio || 'Building my life one day at a time.';
       bioDisplay.title = newBio || '';
     }
-  });
+  }, 500);
 
-  // ========================================
-  // 6. اللغة
-  // ========================================
-  document.getElementById('language-select')?.addEventListener('change', function() {
-    if (typeof changeLanguage === 'function') {
-      changeLanguage(this.value);
-    } else {
-      localStorage.setItem('language', this.value);
-      location.reload();
+  bioInput?.addEventListener('input', saveBioDebounced);
+
+  bioInput?.addEventListener('blur', function() {
+    const newBio = this.value.trim();
+    const currentProfile = getProfileData();
+    if (currentProfile.bio === newBio) return;
+    currentProfile.bio = newBio;
+
+    const result = safeSetItem(PROFILE_KEY, JSON.stringify(currentProfile));
+    if (!result.success) return;
+
+    const bioDisplay = document.getElementById('profile-bio-display');
+    if (bioDisplay) {
+      bioDisplay.textContent = newBio || 'Building my life one day at a time.';
+      bioDisplay.title = newBio || '';
     }
   });
 
   // ========================================
-  // 7. نظام الساعات
-  // ========================================
-  document.getElementById('hour-system-select')?.addEventListener('change', function() {
-    const selectedSystem = this.value;
-    
-    if (typeof setHourSystem === 'function') {
-      setHourSystem(selectedSystem);
-      
-      const systemName = selectedSystem === '24h' ? '24h' : '12h (AM/PM)';
-      if (typeof showToast === 'function') {
-        showToast(`🕐 ${typeof t === 'function' ? t('hour_system', 'Hour System') : 'Hour System'}: ${systemName}`, 'success');
-      }
-    } else {
-      localStorage.setItem('hourSystem', selectedSystem);
-    }
-  });
-
-  // ========================================
-  // 8. مسح البيانات
+  // 8. مسح البيانات (مع إبطال الكاشات)
   // ========================================
   document.getElementById('clear-data-btn')?.addEventListener('click', function() {
     deleteModal({
       itemName: '',
       itemType: 'all',
       onConfirm: () => {
-        deleteModal({
-          itemName: '',
-          itemType: 'all',
-          onConfirm: () => {
-            const keys = [
-              "myLifeHub_routine",
-              "myLifeHub_tasks",
-              "myLifeHub_notes_v2",
-              "myLifeHub_events",
-              "myLifeHub_programs",
-              "myLifeHub_profile",
-              "myLifeHub_notifications",
-              "myLifeHub_backup_metadata"
-            ];
+        const keys = [
+          "myLifeHub_routine",
+          "myLifeHub_tasks",
+          "myLifeHub_notes_v2",
+          "myLifeHub_events",
+          "myLifeHub_programs",
+          "myLifeHub_profile",
+          "myLifeHub_notifications",
+          "myLifeHub_achievement_stats",
+          "myLifeHub_backup_metadata"
+        ];
 
-            keys.forEach(key => localStorage.removeItem(key));
+        keys.forEach(key => localStorage.removeItem(key));
 
-            // ✅ إبطال الكاش
-            if (typeof routineCache !== 'undefined') routineCache = null;
-            if (typeof tasksCache !== 'undefined') tasksCache = null;
+        // ✅ إبطال كل الكاشات
+        if (typeof invalidateAllCaches === 'function') {
+          invalidateAllCaches();
+        }
+        if (typeof clearAchievementStats === 'function') {
+          clearAchievementStats();
+        }
+        // ✅ إبطال كاش الإشعارات
+        if (typeof invalidateNotificationsCache === 'function') {
+          invalidateNotificationsCache();
+        }
 
-            if (typeof showToast === 'function') {
-              showToast('🗑️ ' + (typeof t === 'function' ? t('data_cleared', 'All data cleared') : 'All data cleared'), 'error');
-            }
+        if (typeof showToast === 'function') {
+          showToast('🗑️ ' + (typeof t === 'function' ? t('data_cleared', 'All data cleared') : 'All data cleared'), 'error');
+        }
 
-            setTimeout(() => location.reload(), 1500);
-          }
-        });
+        setTimeout(() => location.reload(), 1500);
       }
     });
   });
@@ -698,5 +944,10 @@ window.saveProfileData = saveProfileData;
 window.resizeImage = resizeImage;
 window.safeSetItem = safeSetItem;
 window.isValidImageFile = isValidImageFile;
+window.openLanguageModal = openLanguageModal;
+window.openHourSystemModal = openHourSystemModal;
+window.updateProfileSettingRows = updateProfileSettingRows;
+window.getLanguageDisplayName = getLanguageDisplayName;
+window.getHourSystemDisplayName = getHourSystemDisplayName;
 
-console.log("✅ Profile.js v2.0 (optimized) loaded successfully!");
+console.log("✅ Profile.js v2.4 loaded successfully!");

@@ -1,6 +1,6 @@
 // ========================================
-// MY LIFE HUB - MAIN v3.0
-// (Keyboard Detection + Visibility-Aware Timers + Clean Init)
+// MY LIFE HUB - MAIN v3.2
+// (Fixed debouncedLucide + Cached Language/HourSystem + Clean Init)
 // ========================================
 
 let mainAbortController = null;
@@ -8,37 +8,82 @@ let currentPage = null;
 let notificationInterval = null;
 
 // ========================================
-// ✅ Lucide Icons - Debounced + RAF
+// ✅ Cached Settings (تحسين الأداء)
+// ========================================
+let cachedLanguage = (typeof localStorage !== 'undefined')
+  ? (localStorage.getItem('language') || 'en')
+  : 'en';
+
+let cachedHourSystem = (typeof localStorage !== 'undefined')
+  ? (localStorage.getItem('hourSystem') || '12h')
+  : '12h';
+
+function getCachedLanguage() {
+  return cachedLanguage;
+}
+
+function getCachedHourSystem() {
+  return cachedHourSystem;
+}
+
+function updateCachedLanguage(lang) {
+  cachedLanguage = lang || 'en';
+}
+
+function updateCachedHourSystem(system) {
+  cachedHourSystem = system || '12h';
+}
+
+// تصدير للاستخدام من ملفات أخرى
+window.getCachedLanguage = getCachedLanguage;
+window.getCachedHourSystem = getCachedHourSystem;
+window.updateCachedLanguage = updateCachedLanguage;
+window.updateCachedHourSystem = updateCachedHourSystem;
+
+// ✅ الاستماع لتغييرات localStorage من تبويبات أخرى
+window.addEventListener('storage', function (e) {
+  if (e.key === 'language' && e.newValue) {
+    cachedLanguage = e.newValue;
+    console.log('🔄 Language updated from another tab:', cachedLanguage);
+  }
+  if (e.key === 'hourSystem' && e.newValue) {
+    cachedHourSystem = e.newValue;
+    console.log('🔄 HourSystem updated from another tab:', cachedHourSystem);
+  }
+});
+
+// ========================================
+// ✅ Lucide Icons - Debounced + Optimized
 // ========================================
 let lucideTimer = null;
-let lucideRafId = null;
 let lucidePending = false;
 let lucideInitialized = false;
 
 /**
- * ✅ Debounced Lucide مع requestAnimationFrame
+ * ✅ Debounced Lucide - محسّن
+ * - لا يعيد الجدولة إذا كان هناك timer قائم
+ * - يستخدم setTimeout مباشرة (بدون RAF مزدوج)
  */
 function debouncedLucide(delay = 50) {
-  if (lucideTimer) clearTimeout(lucideTimer);
-  if (lucideRafId) cancelAnimationFrame(lucideRafId);
+  // ✅ إذا كان هناك timer قائم → لا تعيد الجدولة
+  if (lucideTimer) return;
+
   lucidePending = true;
 
   lucideTimer = setTimeout(() => {
     lucideTimer = null;
-    lucideRafId = requestAnimationFrame(() => {
-      lucideRafId = null;
-      if (!lucidePending) return;
-      lucidePending = false;
 
-      if (typeof lucide !== "undefined" && lucide.createIcons) {
-        try {
-          lucide.createIcons();
-          lucideInitialized = true;
-        } catch (e) {
-          console.warn("Lucide render error:", e);
-        }
+    if (!lucidePending) return;
+    lucidePending = false;
+
+    if (typeof lucide !== "undefined" && lucide.createIcons) {
+      try {
+        lucide.createIcons();
+        lucideInitialized = true;
+      } catch (e) {
+        console.warn("Lucide render error:", e);
       }
-    });
+    }
   }, delay);
 }
 
@@ -46,8 +91,29 @@ function initLucideIcons() {
   debouncedLucide(50);
 }
 
+/**
+ * ✅ إعادة تعيين Lucide فوراً (للحالات الحرجة)
+ */
+function forceLucideRender() {
+  if (lucideTimer) {
+    clearTimeout(lucideTimer);
+    lucideTimer = null;
+  }
+  lucidePending = false;
+
+  if (typeof lucide !== "undefined" && lucide.createIcons) {
+    try {
+      lucide.createIcons();
+      lucideInitialized = true;
+    } catch (e) {
+      console.warn("Lucide render error:", e);
+    }
+  }
+}
+
 window.debouncedLucide = debouncedLucide;
 window.initLucideIcons = initLucideIcons;
+window.forceLucideRender = forceLucideRender;
 
 // ========================================
 // ✅ Performance Marks
@@ -124,32 +190,37 @@ const pageInitializers = {
 };
 
 // ========================================
-// ✅ Keyboard Detection (Mobile)
+// ✅ Keyboard Detection (Mobile) - محسّن
 // ========================================
 function setupKeyboardDetection() {
   if (!window.visualViewport) return;
 
   const body = document.body;
   let initialHeight = window.visualViewport.height;
+  let rafId = null;
 
   function handleViewportResize() {
-    const currentHeight = window.visualViewport.height;
-    const isKeyboardOpen = currentHeight < initialHeight * 0.75;
+    // ✅ استخدام RAF لتقليل الاستدعاءات
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      rafId = null;
+      const currentHeight = window.visualViewport.height;
+      const isKeyboardOpen = currentHeight < initialHeight * 0.75;
 
-    if (isKeyboardOpen) {
-      body.classList.add('keyboard-open');
-    } else {
-      body.classList.remove('keyboard-open');
-    }
+      if (isKeyboardOpen) {
+        if (!body.classList.contains('keyboard-open')) {
+          body.classList.add('keyboard-open');
+        }
+      } else {
+        if (body.classList.contains('keyboard-open')) {
+          body.classList.remove('keyboard-open');
+        }
+      }
+    });
   }
 
-  window.visualViewport.addEventListener('resize', handleViewportChange);
+  window.visualViewport.addEventListener('resize', handleViewportResize);
 
-  function handleViewportChange() {
-    handleViewportResize();
-  }
-
-  // ✅ حدّث الارتفاع الأولي عند تغيير orientation
   window.addEventListener('orientationchange', function () {
     setTimeout(() => {
       initialHeight = window.visualViewport.height;
@@ -178,7 +249,6 @@ function stopNotificationTimer() {
 }
 
 function setupVisibilityAwareTimers() {
-  // ✅ أوقف المؤقتات عندما تكون الصفحة مخفية
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) {
       stopNotificationTimer();
@@ -190,7 +260,6 @@ function setupVisibilityAwareTimers() {
     }
   });
 
-  // ✅ ابدأ عند التحميل
   if (!document.hidden) {
     startNotificationTimer();
   }
@@ -202,6 +271,7 @@ function setupVisibilityAwareTimers() {
 document.addEventListener("DOMContentLoaded", function () {
   perfMark("app-start");
 
+  // ✅ تهيئة اللغة أولاً (مع كاش)
   if (typeof initTranslations === "function") {
     initTranslations().then(function () {
       console.log("✅ Translations ready");
@@ -213,7 +283,7 @@ document.addEventListener("DOMContentLoaded", function () {
   setupProfileButton();
   setupSidebarToggle();
   setupBottomNav();
-  setupKeyboardDetection(); // ✅ جديد
+  setupKeyboardDetection();
 
   const notesFabBtn = document.getElementById("notes-fab-btn");
   if (notesFabBtn) {
@@ -241,7 +311,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // ========================================
-// Navigation
+// Navigation - محسّن
 // ========================================
 function navigateTo(page) {
   const app = document.getElementById("app");
@@ -280,6 +350,7 @@ function navigateTo(page) {
   perfMark(`page-${page}-end`);
   perfMeasure(`page-${page}`, `page-${page}-start`, `page-${page}-end`);
 
+  // ✅ استدعاء Lucide بعد انتهاء الرسم
   debouncedLucide(50);
 }
 
@@ -476,7 +547,6 @@ function initPWA() {
       .then(function (registration) {
         console.log("✅ ServiceWorker registered successfully");
 
-        // ✅ التعامل مع التحديثات
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           console.log('📌 New ServiceWorker found');
@@ -491,7 +561,6 @@ function initPWA() {
           });
         });
 
-        // إذا كان هناك SW منتظر
         if (registration.waiting) {
           setTimeout(function () {
             if (typeof showUpdateNotification === "function") {
@@ -623,10 +692,28 @@ window.getAppState = function () {
     deferredPrompt: !!deferredPrompt,
     isStandalone: window.matchMedia("(display-mode: standalone)").matches,
     isOnline: navigator.onLine,
-    language: localStorage.getItem('language') || 'en',
-    hourSystem: localStorage.getItem('hourSystem') || '12h'
+    language: cachedLanguage,
+    hourSystem: cachedHourSystem
   };
 };
+
+// ========================================
+// ✅ تنظيف عند إغلاق الصفحة
+// ========================================
+window.addEventListener('beforeunload', function () {
+  if (notificationInterval) {
+    clearInterval(notificationInterval);
+    notificationInterval = null;
+  }
+  if (lucideTimer) {
+    clearTimeout(lucideTimer);
+    lucideTimer = null;
+  }
+  if (mainAbortController) {
+    mainAbortController.abort();
+    mainAbortController = null;
+  }
+});
 
 // ========================================
 // التصدير
@@ -640,6 +727,7 @@ window.initPWA = initPWA;
 window.showInstallButtons = showInstallButtons;
 window.handleInstallClick = handleInstallClick;
 
-console.log("📌 Main.js v3.0 loaded successfully!");
+console.log("📌 Main.js v3.2 loaded successfully!");
 console.log("   - Try: getAppState() to inspect app state");
 console.log("   - Try: getPerfMetrics() to see performance");
+console.log("   - Try: getCachedLanguage() / getCachedHourSystem()");

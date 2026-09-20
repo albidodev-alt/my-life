@@ -34,7 +34,7 @@
     }
   </script>
 
-  <!-- ✅ Preload الخطوط الحرجة (تحميل أسرع - لا تأثير بصري) -->
+  <!-- ✅ Preload الخطوط الحرجة -->
   <link rel="preload" href="fonts/inter-v20-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/inter-v20-latin-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/quicksand-v37-latin-600.woff2" as="font" type="font/woff2" crossorigin>
@@ -62,7 +62,6 @@
   <header id="main-header">
 
     <div class="header-left">
-      <!-- زر القائمة (يظهر فقط على Desktop) -->
       <button class="menu-toggle" id="menu-toggle" aria-label="Toggle sidebar">
         <span class="menu-icon"></span>
         <span class="menu-icon"></span>
@@ -97,51 +96,27 @@
     <!-- ================= SIDEBAR ================= -->
     <nav id="sidebar" aria-label="Main navigation">
 
-      <button
-        class="nav-btn active"
-        data-target="routine"
-        type="button"
-      >
+      <button class="nav-btn active" data-target="routine" type="button">
         Routine
       </button>
 
-      <button
-        class="nav-btn"
-        data-target="task"
-        type="button"
-      >
+      <button class="nav-btn" data-target="task" type="button">
         Tasks
       </button>
 
-      <button
-        class="nav-btn"
-        data-target="completed"
-        type="button"
-      >
+      <button class="nav-btn" data-target="completed" type="button">
         Completed
       </button>
 
-      <button
-        class="nav-btn"
-        data-target="notes"
-        type="button"
-      >
+      <button class="nav-btn" data-target="notes" type="button">
         Notes
       </button>
 
-      <button
-        class="nav-btn"
-        data-target="events"
-        type="button"
-      >
+      <button class="nav-btn" data-target="events" type="button">
         Events
       </button>
 
-      <button
-        class="nav-btn"
-        data-target="program"
-        type="button"
-      >
+      <button class="nav-btn" data-target="program" type="button">
         Program
       </button>
 
@@ -154,7 +129,7 @@
   </div>
 
 
-  <!-- ================= BOTTOM NAVIGATION (Mobile فقط) ================= -->
+  <!-- ================= BOTTOM NAVIGATION (Mobile) ================= -->
   <nav id="bottom-nav" aria-label="Mobile navigation">
 
     <button class="bottom-nav-btn active" data-target="routine" type="button">
@@ -180,7 +155,7 @@
   </nav>
 
 
-  <!-- ================= NOTES FLOATING BUTTON (Mobile فقط - الزاوية اليمنى) ================= -->
+  <!-- ================= NOTES FAB ================= -->
   <div id="notes-fab" aria-label="Open notes">
     <button class="fab-btn" id="notes-fab-btn" type="button" aria-label="Notes">
       <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -193,34 +168,42 @@
 
   <!-- ================= JAVASCRIPT ================= -->
 
-  <!-- ===== الملفات الأساسية (تُحمّل أولاً) ===== -->
-  <script src="js/utils.js"></script>
-  <script src="js/toast.js"></script>
-  <script src="js/modal-helper.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/week.js"></script>
-  <script src="js/day.js"></script>
-  <script src="js/task.js"></script>
-  <script src="js/achievements.js"></script>  
-  <script src="js/note.js"></script>
-  <script src="js/events.js"></script>
-  <script src="js/program.js"></script>
-  <script src="js/drops.js"></script>
-  <script src="js/backup.js"></script>  <!-- ✅ تم نقلها هنا لضمان تحميلها قبل profile.js -->
-  <script src="js/profile.js"></script>
-
-  <!-- ===== الملفات الثانوية (تحميل كسول) ===== -->
-  <script src="js/notification.js" defer></script>
-  <script src="js/update.js" defer></script>
-  <script src="js/hour.js" defer></script>
-
-  <!-- ===== الترجمات (تحميل كسول) ===== -->
+  <!-- ===== 1. الترجمات أولاً (ضرورية لـ t()) ===== -->
   <script src="lang/en.js" defer></script>
   <script src="lang/ar.js" defer></script>
   <script src="lang/fr.js" defer></script>
   <script src="js/translations.js" defer></script>
 
-  <!-- ===== الملف الرئيسي (تحميل كسول) ===== -->
+  <!-- ===== 2. الأدوات الأساسية ===== -->
+  <script src="js/utils.js" defer></script>
+  <script src="js/toast.js" defer></script>
+  <script src="js/modal-helper.js" defer></script>
+
+  <!-- ===== 3. التخزين (يجب أن يكون قبل كل شيء) ===== -->
+  <script src="js/storage.js" defer></script>
+
+  <!-- ===== 4. hour.js يجب أن يكون قبل day.js ===== -->
+  <script src="js/hour.js" defer></script>
+  <script src="js/week.js" defer></script>
+  <script src="js/day.js" defer></script>
+
+  <!-- ===== 5. الميزات ===== -->
+  <script src="js/task.js" defer></script>
+  <script src="js/achievements.js" defer></script>
+  <script src="js/note.js" defer></script>
+  <script src="js/events.js" defer></script>
+  <script src="js/program.js" defer></script>
+  <script src="js/drops.js" defer></script>
+
+  <!-- ===== 6. النسخ الاحتياطي والبروفايل ===== -->
+  <script src="js/backup.js" defer></script>
+  <script src="js/profile.js" defer></script>
+
+  <!-- ===== 7. الملفات الثانوية ===== -->
+  <script src="js/notification.js" defer></script>
+  <script src="js/update.js" defer></script>
+
+  <!-- ===== 8. الملف الرئيسي (الأخير دائماً) ===== -->
   <script src="js/main.js" defer></script>
 
 </body>

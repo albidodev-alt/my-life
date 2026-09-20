@@ -6,14 +6,16 @@
 const DROPS_LEVELS = [
   { id: 1,  required: 10,   icon: 'sprout',       nameKey: 'drops_item_1',  nameFallback: 'Sea Grass',  color: '#93c5fd' },
   { id: 2,  required: 25,   icon: 'shell',        nameKey: 'drops_item_2',  nameFallback: 'Shell',      color: '#7dd3fc' },
-  { id: 3,  required: 50,   icon: 'fish',         nameKey: 'drops_item_3',  nameFallback: 'Fish',       color: '#60a5fa' },
-  { id: 4,  required: 100,  icon: 'fish-symbol',  nameKey: 'drops_item_4',  nameFallback: 'Sardine',    color: '#4f8edb' },
-  { id: 5,  required: 200,  icon: 'shrimp',       nameKey: 'drops_item_5',  nameFallback: 'Shrimp',     color: '#3b82f6' },
-  { id: 6,  required: 350,  icon: 'waves',        nameKey: 'drops_item_6',  nameFallback: 'Waves',      color: '#2563eb' },
-  { id: 7,  required: 500,  icon: 'sailboat',     nameKey: 'drops_item_7',  nameFallback: 'Sailboat',   color: '#1d4ed8' },
-  { id: 8,  required: 750,  icon: 'ship',         nameKey: 'drops_item_8',  nameFallback: 'Ship',       color: '#1e40af' },
-  { id: 9,  required: 1000, icon: 'anchor',       nameKey: 'drops_item_9',  nameFallback: 'Anchor',     color: '#1e3a8a' },
-  { id: 10, required: 1500, icon: 'gem',          nameKey: 'drops_item_10', nameFallback: 'Sea Gem',    color: '#172554' }
+  { id: 3,  required: 50,   icon: 'star',         nameKey: 'drops_item_3',  nameFallback: 'Starfish',   color: '#38bdf8' },
+  { id: 4,  required: 80,   icon: 'turtle',       nameKey: 'drops_item_4',  nameFallback: 'Turtle',     color: '#22d3ee' },
+  { id: 5,  required: 120,  icon: 'fish',         nameKey: 'drops_item_5',  nameFallback: 'Fish',       color: '#60a5fa' },
+  { id: 6,  required: 180,  icon: 'fish-symbol',  nameKey: 'drops_item_6',  nameFallback: 'Sardine',    color: '#4f8edb' },
+  { id: 7,  required: 260,  icon: 'shrimp',       nameKey: 'drops_item_7',  nameFallback: 'Shrimp',     color: '#3b82f6' },
+  { id: 8,  required: 360,  icon: 'waves',        nameKey: 'drops_item_8',  nameFallback: 'Waves',      color: '#2563eb' },
+  { id: 9,  required: 500,  icon: 'sailboat',     nameKey: 'drops_item_9',  nameFallback: 'Sailboat',   color: '#1d4ed8' },
+  { id: 10, required: 700,  icon: 'ship',         nameKey: 'drops_item_10', nameFallback: 'Ship',       color: '#1e40af' },
+  { id: 11, required: 1000, icon: 'anchor',       nameKey: 'drops_item_11', nameFallback: 'Anchor',     color: '#1e3a8a' },
+  { id: 12, required: 1500, icon: 'gem',          nameKey: 'drops_item_12', nameFallback: 'Sea Gem',    color: '#172554' }
 ];
 
 // ========================================
@@ -82,7 +84,7 @@ function renderDropsPage() {
   // ===== عرض المستويات المفتوحة =====
   if (unlockedLevels.length === 0) {
     const emptyDiv = document.createElement('div');
-    emptyDiv.style.cssText = "grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--text-muted);";
+    emptyDiv.style.cssText = "flex-basis:100%;text-align:center;padding:40px 20px;color:var(--text-muted);";
     emptyDiv.innerHTML = `
       <span data-lucide="fish" style="width:48px;height:48px;opacity:0.3;display:block;margin:0 auto 12px;"></span>
       <p style="font-family:var(--font-handwritten);font-size:16px;">
@@ -90,7 +92,6 @@ function renderDropsPage() {
       </p>
     `;
     unlockedRow.appendChild(emptyDiv);
-    unlockedRow.style.display = "block";
   } else {
     unlockedLevels.forEach(level => {
       const item = document.createElement('div');

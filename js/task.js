@@ -1,26 +1,34 @@
 // ========================================
-// MY LIFE HUB - TASKS v2.0
-// (Debounced Search + Safe Save + Better UX)
+// MY LIFE HUB - TASKS v2.3
+// (replaceChildren + Debounced Search + Clean Lucide + Dynamic i18n)
 // ========================================
 
-const priorityOptions = [
-  { value: "high", label: "🔴 " + (typeof t === 'function' ? t('high', 'High') : "High") },
-  { value: "medium", label: "🟡 " + (typeof t === 'function' ? t('medium', 'Medium') : "Medium") },
-  { value: "low", label: "🟢 " + (typeof t === 'function' ? t('low', 'Low') : "Low") }
-];
+// ========================================
+// ✅ Priority & Difficulty Options (Dynamic)
+// ========================================
+
+function getPriorityOptions() {
+  return [
+    { value: "high",   label: "🔴 " + (typeof t === 'function' ? t('high', 'High') : "High") },
+    { value: "medium", label: "🟡 " + (typeof t === 'function' ? t('medium', 'Medium') : "Medium") },
+    { value: "low",    label: "🟢 " + (typeof t === 'function' ? t('low', 'Low') : "Low") }
+  ];
+}
+
+function getDifficultyOptions() {
+  return [
+    { value: "Easy",   label: "🟢 " + (typeof t === 'function' ? t('easy', 'Easy') : "Easy") },
+    { value: "Medium", label: "🟡 " + (typeof t === 'function' ? t('medium', 'Medium') : "Medium") },
+    { value: "Hard",   label: "🔴 " + (typeof t === 'function' ? t('hard', 'Hard') : "Hard") }
+  ];
+}
 
 const categoryOptions = [
   "University", "Programming", "Fitness", "Personal", "Work", "Home"
 ];
 
-const difficultyOptions = [
-  (typeof t === 'function' ? t('easy', 'Easy') : "Easy"),
-  (typeof t === 'function' ? t('medium', 'Medium') : "Medium"),
-  (typeof t === 'function' ? t('hard', 'Hard') : "Hard")
-];
-
 // ========================================
-// ✅ Debounce للبحث
+// ✅ Debounce للبحث (مع حماية من الضغط المتكرر)
 // ========================================
 const debouncedTaskSearch = (typeof debounce === 'function')
   ? debounce((filter, searchTerm) => {
@@ -38,12 +46,48 @@ function parseDate(dateStr) {
 }
 
 // ========================================
+// ✅ ترجمة الأولوية (Priority)
+// ========================================
+function translatePriority(priority) {
+  if (!priority) return "";
+  const key = priority.toLowerCase();
+  if (typeof t !== 'function') return priority;
+  const translated = t(key);
+  return translated === key ? priority : translated;
+}
+
+// ========================================
+// ✅ ترجمة الصعوبة (Difficulty)
+// ========================================
+function translateDifficulty(difficulty) {
+  if (!difficulty) return "";
+  const key = difficulty.toLowerCase();
+  if (typeof t !== 'function') return difficulty;
+  const translated = t(key);
+  return translated === key ? difficulty : translated;
+}
+
+// ========================================
+// ✅ Debounce للحقول القابلة للكتابة
+// ========================================
+function _taskDebounce(fn, delay = 400) {
+  if (typeof debounce === 'function') return debounce(fn, delay);
+  let timer = null;
+  return function (...args) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+// ========================================
 // عرض صفحة المهام
 // ========================================
 function renderTasks() {
   const app = document.getElementById("app");
   if (!app) return;
-  app.innerHTML = "";
+
+  // ✅ استخدام replaceChildren
+  app.replaceChildren();
 
   // ===== العنوان وزر الإضافة =====
   const headerDiv = document.createElement("div");
@@ -99,7 +143,6 @@ function renderTasks() {
     this.style.boxShadow = "none";
   });
 
-  // ✅ استخدام debounce للبحث
   searchInput.addEventListener("input", function () {
     const activeFilter = document.querySelector(".filter-btn.active")?.dataset.filter || "all";
     debouncedTaskSearch(activeFilter, this.value);
@@ -126,7 +169,7 @@ function renderTasks() {
   filterAll.dataset.filter = "all";
   filterDiv.appendChild(filterAll);
 
-  priorityOptions.forEach(function (opt) {
+  getPriorityOptions().forEach(function (opt) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.textContent = opt.label;
@@ -155,17 +198,22 @@ function renderTasks() {
 
   renderTaskList("all", "");
 
-  if (typeof debouncedLucide === 'function') debouncedLucide(50);
+  // ✅ Lucide يُدار من main.js بعد navigateTo
 }
 
 // ========================================
-// عرض قائمة المهام
+// عرض قائمة المهام (مع replaceChildren)
 // ========================================
 function renderTaskList(filter = "all", searchTerm = "") {
   const taskList = document.getElementById("task-list");
   if (!taskList) return;
 
-  let tasks = getAllTasks().filter(function (t) { return !t.completed; });
+  // ✅ استخدام getTasksCopy لضمان عدم التعديل على الكاش
+  const allTasks = (typeof getTasksCopy === 'function')
+    ? getTasksCopy()
+    : (typeof getAllTasks === 'function' ? getAllTasks() : []);
+
+  let tasks = allTasks.filter(function (t) { return !t.completed; });
 
   if (filter !== "all") {
     tasks = tasks.filter(function (t) { return t.priority === filter; });
@@ -182,9 +230,10 @@ function renderTaskList(filter = "all", searchTerm = "") {
 
   const priorityOrder = { high: 0, medium: 1, low: 2 };
   tasks.sort(function (a, b) {
-    return priorityOrder[a.priority] - priorityOrder[b.priority];
+    return (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3);
   });
 
+  // ✅ استخدام DocumentFragment
   const fragment = document.createDocumentFragment();
 
   if (tasks.length === 0) {
@@ -237,7 +286,15 @@ function renderTaskList(filter = "all", searchTerm = "") {
       textSpan.style.wordBreak = "break-word";
 
       const metaDiv = document.createElement("div");
-      metaDiv.style.cssText = "display:flex;gap:8px;font-size:12px;color:#6b7280;flex-wrap:wrap;";
+      metaDiv.style.cssText = "display:flex;gap:8px;font-size:12px;color:#6b7280;flex-wrap:wrap;align-items:center;";
+
+      // ===== الأولوية (مترجمة) =====
+      const prioritySpan = document.createElement("span");
+      prioritySpan.className = "task-category";
+      const priorityEmoji = task.priority === "high" ? "🔴" :
+                            task.priority === "low"  ? "🟢" : "🟡";
+      prioritySpan.textContent = priorityEmoji + " " + translatePriority(task.priority);
+      metaDiv.appendChild(prioritySpan);
 
       // ===== التصنيف =====
       const categorySpan = document.createElement("span");
@@ -245,7 +302,6 @@ function renderTaskList(filter = "all", searchTerm = "") {
       const categoryKey = task.category ? task.category.toLowerCase() : "";
       const translatedCategory = (typeof t === 'function' && t(categoryKey) !== categoryKey) ? t(categoryKey, task.category) : task.category;
       categorySpan.textContent = translatedCategory || task.category || "";
-
       metaDiv.appendChild(categorySpan);
 
       // ===== تاريخ الاستحقاق =====
@@ -325,9 +381,10 @@ function renderTaskList(filter = "all", searchTerm = "") {
     });
   }
 
-  taskList.innerHTML = "";
-  taskList.appendChild(fragment);
+  // ✅ استخدام replaceChildren بدل innerHTML = ""
+  taskList.replaceChildren(fragment);
 
+  // ✅ Lucide يُدار من main.js أو من الدوال المستدعية
   if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
@@ -361,7 +418,7 @@ function openAddTaskModal() {
   const priorityGrid = document.createElement("div");
   priorityGrid.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;";
 
-  priorityOptions.forEach(function (opt) {
+  getPriorityOptions().forEach(function (opt) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "modal-base-btn " + (opt.value === selectedPriority ? "modal-base-btn-primary" : "modal-base-btn-secondary");
@@ -480,7 +537,7 @@ function openEditTaskModal(task) {
   const priorityGrid = document.createElement("div");
   priorityGrid.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;";
 
-  priorityOptions.forEach(function (opt) {
+  getPriorityOptions().forEach(function (opt) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "modal-base-btn " + (opt.value === selectedPriority ? "modal-base-btn-primary" : "modal-base-btn-secondary");
@@ -595,13 +652,7 @@ function openCompleteTaskModal(task) {
   const difficultyGrid = document.createElement("div");
   difficultyGrid.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;";
 
-  const diffOptions = [
-    { value: "Easy", label: "🟢 " + (typeof t === 'function' ? t('easy', 'Easy') : "Easy") },
-    { value: "Medium", label: "🟡 " + (typeof t === 'function' ? t('medium', 'Medium') : "Medium") },
-    { value: "Hard", label: "🔴 " + (typeof t === 'function' ? t('hard', 'Hard') : "Hard") }
-  ];
-
-  diffOptions.forEach(function (level) {
+  getDifficultyOptions().forEach(function (level) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "modal-base-btn " + (level.value === selectedDifficulty ? "modal-base-btn-primary" : "modal-base-btn-secondary");
@@ -640,6 +691,9 @@ function openCompleteTaskModal(task) {
       label: '✅ ' + (typeof t === 'function' ? t('done', 'Done') : 'Done'),
       type: 'primary',
       onClick: () => {
+        // ✅ completeTask في storage.js تتكفل بـ:
+        // - زيادة الإحصائيات
+        // - التنظيف التلقائي (حذف الأقدم إذا تجاوز 20)
         const success = completeTask(task.id, selectedDifficulty, dateField.input.value);
 
         if (!success) {
@@ -663,38 +717,40 @@ function openCompleteTaskModal(task) {
 }
 
 // ========================================
-// ✅ دوال إضافية
+// ✅ دوال إضافية (تستخدم getTasksCopy)
 // ========================================
 
-/**
- * عدد المهام النشطة
- */
 function getActiveTasks() {
-  return getAllTasks().filter(t => !t.completed);
+  const tasks = (typeof getTasksCopy === 'function')
+    ? getTasksCopy()
+    : (typeof getAllTasks === 'function' ? getAllTasks() : []);
+  return tasks.filter(t => !t.completed);
 }
 
-/**
- * عدد المهام المتأخرة
- */
 function getOverdueTasks() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  return getAllTasks().filter(t => {
+  const tasks = (typeof getTasksCopy === 'function')
+    ? getTasksCopy()
+    : (typeof getAllTasks === 'function' ? getAllTasks() : []);
+
+  return tasks.filter(t => {
     if (t.completed || !t.dueDate) return false;
     const dueDate = parseDate(t.dueDate);
     return dueDate && dueDate < today;
   });
 }
 
-/**
- * عدد المهام المستحقة اليوم
- */
 function getTodayTasks() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  return getAllTasks().filter(t => {
+  const tasks = (typeof getTasksCopy === 'function')
+    ? getTasksCopy()
+    : (typeof getAllTasks === 'function' ? getAllTasks() : []);
+
+  return tasks.filter(t => {
     if (t.completed || !t.dueDate) return false;
     const dueDate = parseDate(t.dueDate);
     return dueDate && dueDate.getTime() === today.getTime();
@@ -710,4 +766,4 @@ window.getActiveTasks = getActiveTasks;
 window.getOverdueTasks = getOverdueTasks;
 window.getTodayTasks = getTodayTasks;
 
-console.log("✅ Tasks.js v2.0 loaded successfully!");
+console.log("✅ Tasks.js v2.3 loaded successfully!");

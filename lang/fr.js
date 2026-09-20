@@ -71,6 +71,15 @@ const translationsFR = {
     "got_it": "Compris",
     "warning": "Avertissement",
     "cannot_undo": "Cette action est irréversible !",
+    "loading": "Chargement...",
+    "save_failed": "Échec de l'enregistrement",
+    "storage_full": "Stockage plein. Veuillez libérer de l'espace.",
+    "select_json": "Veuillez sélectionner un fichier JSON",
+    "backup_unavailable": "Section de sauvegarde temporairement indisponible",
+
+    // ✅ Achievements جديد
+    "total_completed": "Total",
+    "recent_completions": "Réalisations récentes",
 
     // ========================================
     // الروتين - Routine
@@ -151,6 +160,8 @@ const translationsFR = {
     // ========================================
     "hour_system": "Système d'heures",
     "hours": "heures",
+    "hour_12": "12 heures (AM/PM)",
+    "hour_24": "24 heures",
 
     // ========================================
     // المهام - Tasks
@@ -161,6 +172,9 @@ const translationsFR = {
     "high": "Élevée",
     "medium": "Moyenne",
     "low": "Basse",
+    "priority_high": "Élevée",
+    "priority_medium": "Moyenne",
+    "priority_low": "Basse",
     "category": "Catégorie",
     "university": "Université",
     "programming": "Programmation",
@@ -173,8 +187,12 @@ const translationsFR = {
     "edit_task": "Modifier la tâche",
     "complete_task": "Terminer la tâche",
     "difficulty": "Difficulté",
+    "difficulty_easy": "Facile",
+    "difficulty_medium": "Moyen",
+    "difficulty_hard": "Difficile",
     "completion_date": "Date d'achèvement",
     "filter_by_priority": "Filtrer par priorité",
+    "sort_by_priority": "Trier par priorité",
     "overdue": "En retard",
     "search_tasks": "Rechercher des tâches...",
     "no_tasks_found": "Aucune tâche trouvée correspondant à votre recherche",
@@ -299,7 +317,6 @@ const translationsFR = {
     "next_step": "Prochaine étape",
     "no_steps": "Aucune étape",
     "easy": "Facile",
-    "medium": "Moyen",
     "hard": "Difficile",
     "version": "Version",
     "contains": "Contient",
@@ -311,14 +328,16 @@ const translationsFR = {
     "drops_current": "Gouttes actuelles",
     "drops_item_1": "Herbe Marine",
     "drops_item_2": "Coquillage",
-    "drops_item_3": "Poisson",
-    "drops_item_4": "Sardine",
-    "drops_item_5": "Crevette",
-    "drops_item_6": "Vagues",
-    "drops_item_7": "Voilier",
-    "drops_item_8": "Navire",
-    "drops_item_9": "Ancre",
-    "drops_item_10": "Perle de Mer",
+    "drops_item_3": "Étoile de Mer",
+    "drops_item_4": "Tortue",
+    "drops_item_5": "Poisson",
+    "drops_item_6": "Sardine",
+    "drops_item_7": "Crevette",
+    "drops_item_8": "Vagues",
+    "drops_item_9": "Voilier",
+    "drops_item_10": "Navire",
+    "drops_item_11": "Ancre",
+    "drops_item_12": "Perle de Mer",
     "drops_all_items": "Tous les Éléments",
     "drops_next": "Élément Suivant",
     "drops_remaining": "gouttes restantes",
@@ -337,7 +356,6 @@ const translationsFR = {
     "confirm_restore": "Confirmer la restauration",
     "yes_restore": "Oui, restaurer",
     "backup_restored": "Sauvegarde restaurée avec succès !",
-    "select_json": "Veuillez sélectionner un fichier JSON",
     "last_chance": "Dernière chance !",
     "yes_delete_all": "Oui, tout supprimer",
     "data_cleared": "Toutes les données ont été effacées",
@@ -353,6 +371,8 @@ const translationsFR = {
     "install_note": "💡 Installez pour un accès hors ligne et un lancement rapide",
     "app_installed": "Application déjà installée",
     "change_photo": "Cliquez pour changer la photo",
+    "photo_updated": "Photo mise à jour !",
+    "image_error": "Échec du traitement de l'image",
 
     // ========================================
     // الإشعارات - Notifications
@@ -375,7 +395,15 @@ const translationsFR = {
     "delete_all_confirm": "Supprimer toutes les notifications ?",
     "mark_read": "Marquer comme lu",
     "delete_notification_confirm": "Supprimer cette notification ?",
-    "no_notifications": "Aucune notification !"
+    "no_notifications": "Aucune notification !",
+
+    // ========================================
+    // التحديثات - Updates
+    // ========================================
+    "new_update_available": "🔄 Nouvelle mise à jour disponible !",
+    "update_now": "Mettre à jour",
+    "updating": "🔄 Mise à jour...",
+    "update_failed": "Échec de la mise à jour. Veuillez réessayer."
 };
 
 // تصدير للاستخدام

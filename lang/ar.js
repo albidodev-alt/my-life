@@ -71,6 +71,15 @@ const translationsAR = {
     "got_it": "فهمت",
     "warning": "تحذير",
     "cannot_undo": "لا يمكن التراجع عن هذا الإجراء!",
+    "loading": "جاري التحميل...",
+    "save_failed": "فشل الحفظ",
+    "storage_full": "التخزين ممتلئ. يرجى تحرير مساحة.",
+    "select_json": "الرجاء اختيار ملف JSON",
+    "backup_unavailable": "قسم النسخ الاحتياطي غير متاح مؤقتاً",
+
+    // ✅ Achievements جديد
+    "total_completed": "الإجمالي",
+    "recent_completions": "أحدث المهام المكتملة",
 
     // ========================================
     // الروتين - Routine
@@ -151,6 +160,8 @@ const translationsAR = {
     // ========================================
     "hour_system": "نظام الساعات",
     "hours": "ساعات",
+    "hour_12": "12 ساعة (AM/PM)",
+    "hour_24": "24 ساعة",
 
     // ========================================
     // المهام - Tasks
@@ -161,6 +172,9 @@ const translationsAR = {
     "high": "عالية",
     "medium": "متوسطة",
     "low": "منخفضة",
+    "priority_high": "عالية",
+    "priority_medium": "متوسطة",
+    "priority_low": "منخفضة",
     "category": "التصنيف",
     "university": "جامعة",
     "programming": "برمجة",
@@ -173,8 +187,12 @@ const translationsAR = {
     "edit_task": "تعديل المهمة",
     "complete_task": "إكمال المهمة",
     "difficulty": "الصعوبة",
+    "difficulty_easy": "سهل",
+    "difficulty_medium": "متوسط",
+    "difficulty_hard": "صعب",
     "completion_date": "تاريخ الإكمال",
     "filter_by_priority": "تصفية حسب الأولوية",
+    "sort_by_priority": "الترتيب حسب الأهمية",
     "overdue": "متأخر",
     "search_tasks": "ابحث في المهام...",
     "no_tasks_found": "لا توجد مهام مطابقة لبحثك",
@@ -299,7 +317,6 @@ const translationsAR = {
     "next_step": "الخطوة التالية",
     "no_steps": "لا توجد خطوات",
     "easy": "سهل",
-    "medium": "متوسط",
     "hard": "صعب",
     "version": "الإصدار",
     "contains": "يحتوي على",
@@ -311,14 +328,16 @@ const translationsAR = {
     "drops_current": "القطرات الحالية",
     "drops_item_1": "أعشاب بحرية",
     "drops_item_2": "صدفة",
-    "drops_item_3": "سمكة",
-    "drops_item_4": "سردين",
-    "drops_item_5": "جمبري",
-    "drops_item_6": "أمواج",
-    "drops_item_7": "قارب صغير",
-    "drops_item_8": "سفينة",
-    "drops_item_9": "مرساة",
-    "drops_item_10": "جوهرة البحر",
+    "drops_item_3": "نجمة البحر",
+    "drops_item_4": "سلحفاة",
+    "drops_item_5": "سمكة",
+    "drops_item_6": "سردين",
+    "drops_item_7": "جمبري",
+    "drops_item_8": "أمواج",
+    "drops_item_9": "قارب صغير",
+    "drops_item_10": "سفينة",
+    "drops_item_11": "مرساة",
+    "drops_item_12": "جوهرة البحر",
     "drops_all_items": "كل العناصر",
     "drops_next": "العنصر التالي",
     "drops_remaining": "قطرة متبقية",
@@ -337,7 +356,6 @@ const translationsAR = {
     "confirm_restore": "تأكيد الاستعادة",
     "yes_restore": "نعم، استعد",
     "backup_restored": "تم استعادة النسخة الاحتياطية بنجاح!",
-    "select_json": "الرجاء اختيار ملف JSON",
     "last_chance": "آخر فرصة!",
     "yes_delete_all": "نعم، احذف الكل",
     "data_cleared": "تم مسح جميع البيانات",
@@ -353,6 +371,8 @@ const translationsAR = {
     "install_note": "💡 ثبّت التطبيق للوصول دون اتصال والتشغيل السريع",
     "app_installed": "التطبيق مثبت بالفعل",
     "change_photo": "اضغط لتغيير الصورة",
+    "photo_updated": "تم تحديث الصورة!",
+    "image_error": "فشل معالجة الصورة",
 
     // ========================================
     // الإشعارات - Notifications
@@ -375,7 +395,15 @@ const translationsAR = {
     "delete_all_confirm": "حذف جميع الإشعارات؟",
     "mark_read": "تحديد كمقروء",
     "delete_notification_confirm": "حذف هذا الإشعار؟",
-    "no_notifications": "لا توجد إشعارات!"
+    "no_notifications": "لا توجد إشعارات!",
+
+    // ========================================
+    // التحديثات - Updates
+    // ========================================
+    "new_update_available": "🔄 تحديث جديد متوفر!",
+    "update_now": "حدّث الآن",
+    "updating": "🔄 جاري التحديث...",
+    "update_failed": "فشل التحديث. يرجى المحاولة مرة أخرى."
 };
 
 // تصدير للاستخدام

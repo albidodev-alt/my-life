@@ -1,6 +1,6 @@
 // ========================================
-// MY LIFE HUB - NOTES v2.1
-// (Debounced Search + Safe Save + Better UX)
+// MY LIFE HUB - NOTES v2.2
+// (replaceChildren + Debounced Search + Safe Save + Better UX)
 // ========================================
 
 const NOTES_STORAGE_KEY = "myLifeHub_notes_v2";
@@ -48,6 +48,21 @@ function getAllNotes() {
   }
 }
 
+/**
+ * ✅ نسخة من الملاحظات (للاستخدام عند التعديل)
+ */
+function getNotesCopy() {
+  if (typeof deepClone === 'function') {
+    return deepClone(getAllNotes());
+  }
+  try {
+    return JSON.parse(JSON.stringify(getAllNotes()));
+  } catch (e) {
+    console.warn('getNotesCopy failed:', e);
+    return getAllNotes();
+  }
+}
+
 function saveAllNotes(notes) {
   if (!Array.isArray(notes)) {
     console.error("saveAllNotes: notes must be an array");
@@ -70,7 +85,8 @@ function addNote(title, content) {
     return null;
   }
 
-  const notes = getAllNotes();
+  // ✅ نسخة من الكاش
+  const notes = getNotesCopy();
   const newNote = {
     id: (typeof generateId === "function") ? generateId() : Date.now() + Math.random(),
     title: trimmedTitle,
@@ -93,7 +109,8 @@ function updateNote(noteId, newTitle, newContent) {
     return false;
   }
 
-  const notes = getAllNotes();
+  // ✅ نسخة من الكاش
+  const notes = getNotesCopy();
   const noteIndex = notes.findIndex(n => n.id === noteId);
 
   if (noteIndex === -1) return false;
@@ -106,13 +123,15 @@ function updateNote(noteId, newTitle, newContent) {
 }
 
 function deleteNote(noteId) {
-  const notes = getAllNotes();
+  // ✅ نسخة من الكاش
+  const notes = getNotesCopy();
   const filteredNotes = notes.filter(n => n.id !== noteId);
   return saveAllNotes(filteredNotes);
 }
 
 function togglePinNote(noteId) {
-  const notes = getAllNotes();
+  // ✅ نسخة من الكاش
+  const notes = getNotesCopy();
   const note = notes.find(n => n.id === noteId);
 
   if (!note) return false;
@@ -178,7 +197,7 @@ function escapeHtml(text) {
 }
 
 // ========================================
-// ✅ Debounce (لتجنب إعادة الرسم المتكرر أثناء الكتابة)
+// ✅ Debounce للبحث
 // ========================================
 
 const debouncedSearchRender = (typeof debounce === 'function')
@@ -195,69 +214,112 @@ function renderNotesPageV2() {
   const app = document.getElementById("app");
   if (!app) return;
 
-  app.innerHTML = `
-    <div id="notes-app-container">
-      <div class="notes-header-section">
-        <div class="notes-title-area">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span data-lucide="notebook-pen" style="width: 32px; height: 32px; color: var(--primary);"></span>
-            <h2 class="notes-main-title" style="margin: 0;">${tr('notes', 'Notes')}</h2>
-          </div>
-          <p class="notes-main-subtitle">${tr('notes_subtitle', 'Capture your thoughts, ideas, and reminders')}</p>
-        </div>
-        <button class="notes-add-main-btn" id="notes-open-add-btn">
-          <span class="notes-add-icon" data-lucide="plus" style="width: 20px; height: 20px;"></span>
-          ${tr('add_note', 'New Note')}
-        </button>
-      </div>
+  // ✅ استخدام replaceChildren
+  app.replaceChildren();
 
-      <div class="notes-search-container">
-        <div class="notes-search-wrapper">
-          <span class="notes-search-icon" data-lucide="search" style="width: 18px; height: 18px;"></span>
-          <input 
-            type="text" 
-            class="notes-search-input" 
-            id="notes-search-input"
-            placeholder="${tr('search_notes', 'Search notes by title or content...')}"
-            aria-label="${tr('search_notes', 'Search notes')}"
-            autocomplete="off"
-          />
-        </div>
-        <div class="notes-stats">
-          <span id="notes-count">0 ${tr('notes', 'notes')}</span>
-        </div>
-      </div>
+  const container = document.createElement("div");
+  container.id = "notes-app-container";
 
-      <div class="notes-grid" id="notes-grid"></div>
-    </div>
+  // ===== Header Section =====
+  const headerSection = document.createElement("div");
+  headerSection.className = "notes-header-section";
+
+  const titleArea = document.createElement("div");
+  titleArea.className = "notes-title-area";
+
+  const titleRow = document.createElement("div");
+  titleRow.style.cssText = "display: flex; align-items: center; gap: 12px;";
+
+  const titleIcon = document.createElement("span");
+  titleIcon.setAttribute("data-lucide", "notebook-pen");
+  titleIcon.style.cssText = "width: 32px; height: 32px; color: var(--primary);";
+
+  const title = document.createElement("h2");
+  title.className = "notes-main-title";
+  title.style.margin = "0";
+  title.textContent = tr('notes', 'Notes');
+
+  titleRow.appendChild(titleIcon);
+  titleRow.appendChild(title);
+
+  const subtitle = document.createElement("p");
+  subtitle.className = "notes-main-subtitle";
+  subtitle.textContent = tr('notes_subtitle', 'Capture your thoughts, ideas, and reminders');
+
+  titleArea.appendChild(titleRow);
+  titleArea.appendChild(subtitle);
+
+  const addBtn = document.createElement("button");
+  addBtn.className = "notes-add-main-btn";
+  addBtn.id = "notes-open-add-btn";
+  addBtn.innerHTML = `
+    <span class="notes-add-icon" data-lucide="plus" style="width: 20px; height: 20px;"></span>
+    ${tr('add_note', 'New Note')}
   `;
 
-  const searchInput = document.getElementById("notes-search-input");
-  if (searchInput) {
-    // ✅ استخدام debounce لتحسين الأداء
-    searchInput.addEventListener("input", function() {
-      debouncedSearchRender(this.value);
-    });
-  }
+  headerSection.appendChild(titleArea);
+  headerSection.appendChild(addBtn);
+  container.appendChild(headerSection);
 
-  const addBtn = document.getElementById("notes-open-add-btn");
-  if (addBtn) {
-    addBtn.addEventListener("click", function() {
-      openNoteModal(null);
-    });
-  }
+  // ===== Search Container =====
+  const searchContainer = document.createElement("div");
+  searchContainer.className = "notes-search-container";
+
+  const searchWrapper = document.createElement("div");
+  searchWrapper.className = "notes-search-wrapper";
+
+  const searchIcon = document.createElement("span");
+  searchIcon.className = "notes-search-icon";
+  searchIcon.setAttribute("data-lucide", "search");
+  searchIcon.style.cssText = "width: 18px; height: 18px;";
+
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.className = "notes-search-input";
+  searchInput.id = "notes-search-input";
+  searchInput.placeholder = tr('search_notes', 'Search notes by title or content...');
+  searchInput.setAttribute("aria-label", tr('search_notes', 'Search notes'));
+  searchInput.autocomplete = "off";
+
+  searchWrapper.appendChild(searchIcon);
+  searchWrapper.appendChild(searchInput);
+
+  const stats = document.createElement("div");
+  stats.className = "notes-stats";
+
+  const countEl = document.createElement("span");
+  countEl.id = "notes-count";
+  countEl.textContent = `0 ${tr('notes', 'notes')}`;
+  stats.appendChild(countEl);
+
+  searchContainer.appendChild(searchWrapper);
+  searchContainer.appendChild(stats);
+  container.appendChild(searchContainer);
+
+  // ===== Notes Grid =====
+  const grid = document.createElement("div");
+  grid.className = "notes-grid";
+  grid.id = "notes-grid";
+  container.appendChild(grid);
+
+  app.appendChild(container);
+
+  // ===== ربط الأحداث =====
+  searchInput.addEventListener("input", function() {
+    debouncedSearchRender(this.value);
+  });
+
+  addBtn.addEventListener("click", function() {
+    openNoteModal(null);
+  });
 
   renderNotesList("");
 
-  setTimeout(function() {
-    if (typeof initLucideIcons === 'function') {
-      initLucideIcons();
-    }
-  }, 50);
+  // ✅ Lucide يُدار من main.js بعد navigateTo
 }
 
 // ========================================
-// عرض قائمة الملاحظات
+// عرض قائمة الملاحظات (مع replaceChildren)
 // ========================================
 
 function renderNotesList(searchTerm = "") {
@@ -265,6 +327,7 @@ function renderNotesList(searchTerm = "") {
   const countEl = document.getElementById("notes-count");
   if (!grid) return;
 
+  // ✅ قراءة من localStorage (بدون كاش - الملاحظات صغيرة)
   const allNotes = getAllNotes();
   const filteredNotes = searchNotes(allNotes, searchTerm);
 
@@ -273,6 +336,7 @@ function renderNotesList(searchTerm = "") {
     countEl.textContent = `${count} ${tr('notes', 'notes')}`;
   }
 
+  // ✅ استخدام DocumentFragment
   const fragment = document.createDocumentFragment();
 
   if (filteredNotes.length === 0) {
@@ -285,9 +349,11 @@ function renderNotesList(searchTerm = "") {
       ? '<span data-lucide="search-x" style="width: 32px; height: 32px; color: var(--primary);"></span>'
       : '<span data-lucide="notebook-pen" style="width: 32px; height: 32px; color: var(--primary);"></span>';
 
-    const title = document.createElement("h3");
-    title.className = "notes-empty-title";
-    title.textContent = searchTerm ? tr('no_notes_found', 'No notes found') : tr('notes_empty_title', 'Your notes will appear here');
+    const emptyTitle = document.createElement("h3");
+    emptyTitle.className = "notes-empty-title";
+    emptyTitle.textContent = searchTerm 
+      ? tr('no_notes_found', 'No notes found') 
+      : tr('notes_empty_title', 'Your notes will appear here');
 
     const desc = document.createElement("p");
     desc.className = "notes-empty-desc";
@@ -296,7 +362,7 @@ function renderNotesList(searchTerm = "") {
       : tr('create_first_note', "Click the 'New Note' button to create your first note");
 
     emptyState.appendChild(icon);
-    emptyState.appendChild(title);
+    emptyState.appendChild(emptyTitle);
     emptyState.appendChild(desc);
     fragment.appendChild(emptyState);
   } else {
@@ -306,12 +372,11 @@ function renderNotesList(searchTerm = "") {
     });
   }
 
-  grid.innerHTML = "";
-  grid.appendChild(fragment);
+  // ✅ استخدام replaceChildren
+  grid.replaceChildren(fragment);
 
-  if (typeof debouncedLucide === 'function') {
-    debouncedLucide(50);
-  }
+  // ✅ Lucide يُدار من main.js أو من الدوال المستدعية
+  if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
 // ========================================
@@ -585,6 +650,7 @@ function findNotes(query) {
 window.renderNotesPageV2 = renderNotesPageV2;
 window.renderNotesList = renderNotesList;
 window.getAllNotes = getAllNotes;
+window.getNotesCopy = getNotesCopy;
 window.addNote = addNote;
 window.updateNote = updateNote;
 window.deleteNote = deleteNote;
@@ -593,4 +659,4 @@ window.getNotesCount = getNotesCount;
 window.getPinnedNotesCount = getPinnedNotesCount;
 window.findNotes = findNotes;
 
-console.log("✅ Notes v2.1 loaded successfully!");
+console.log("✅ Notes v2.2 loaded successfully!");

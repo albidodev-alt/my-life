@@ -1,10 +1,10 @@
 // ========================================
-// MY LIFE - SERVICE WORKER v17.0
-// (Network-First HTML + Quota Handling + Better Offline)
+// MY LIFE - SERVICE WORKER v18.0
+// (Stale-While-Revalidate for HTML + Quota Handling + Better Offline)
 // ========================================
 
-const CACHE_NAME = 'my-life-v17';
-const RUNTIME_CACHE = 'runtime-v17';
+const CACHE_NAME = 'my-life-v18';
+const RUNTIME_CACHE = 'runtime-v18';
 
 // ========================================
 // ✅ قائمة الملفات المطلوب تخزينها مسبقاً
@@ -108,27 +108,38 @@ async function safeCachePut(cache, request, response) {
 }
 
 // ========================================
+// ✅ دالة تخزين آمنة غير متزامنة (لا تحجب الاستجابة)
+// ========================================
+function backgroundCachePut(cacheName, request, response) {
+  caches.open(cacheName).then(function (cache) {
+    safeCachePut(cache, request, response.clone());
+  }).catch(function (err) {
+    console.warn('[SW] Background cache error:', err);
+  });
+}
+
+// ========================================
 // INSTALL - تخزين كل الملفات
 // ========================================
 self.addEventListener('install', function (event) {
-  console.log('[SW v17] Installing...');
+  console.log('[SW v18] Installing...');
 
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(function (cache) {
-        console.log('[SW v17] Caching all assets...');
+        console.log('[SW v18] Caching all assets...');
 
         // استخدام Promise.allSettled لتفادي فشل التثبيت إذا فشل ملف
         return Promise.allSettled(
           ASSETS_TO_CACHE.map(function (url) {
             return cache.add(url).catch(function (err) {
-              console.warn('[SW v17] Failed to cache:', url, err);
+              console.warn('[SW v18] Failed to cache:', url, err);
             });
           })
         );
       })
       .then(function () {
-        console.log('[SW v17] Installation complete!');
+        console.log('[SW v18] Installation complete!');
         return self.skipWaiting();
       })
   );
@@ -138,7 +149,7 @@ self.addEventListener('install', function (event) {
 // ACTIVATE - حذف الكاش القديم
 // ========================================
 self.addEventListener('activate', function (event) {
-  console.log('[SW v17] Activating...');
+  console.log('[SW v18] Activating...');
 
   event.waitUntil(
     caches.keys()
@@ -146,14 +157,14 @@ self.addEventListener('activate', function (event) {
         return Promise.all(
           cacheNames.map(function (cacheName) {
             if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
-              console.log('[SW v17] Deleting old cache:', cacheName);
+              console.log('[SW v18] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
       })
       .then(function () {
-        console.log('[SW v17] Activation complete!');
+        console.log('[SW v18] Activation complete!');
         return self.clients.claim();
       })
   );
@@ -172,31 +183,29 @@ self.addEventListener('fetch', function (event) {
   if (!requestUrl.protocol.startsWith('http')) return;
 
   // ========================================
-  // ✅ 1. HTML: Network-First (يضمن آخر تحديث)
+  // ✅ 1. HTML: Stale-While-Revalidate (يُعرض من الكاش فوراً)
   // ========================================
   if (event.request.mode === 'navigate' ||
       (event.request.headers.get('accept') || '').includes('text/html')) {
 
     event.respondWith(
-      fetch(event.request)
-        .then(function (networkResponse) {
-          // ✅ خزّن النسخة الجديدة
-          if (networkResponse && networkResponse.status === 200) {
-            const cloned = networkResponse.clone();
-            caches.open(CACHE_NAME).then(function (cache) {
-              safeCachePut(cache, event.request, cloned);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(function () {
-          // ❌ فشل الاتصال → استخدم الكاش
-          console.log('[SW v17] Network failed, using cache for:', event.request.url);
-          return caches.match(event.request)
-            .then(function (cached) {
-              return cached || caches.match('index.html');
-            });
-        })
+      caches.match(event.request).then(function (cachedResponse) {
+        // ✅ بدء طلب الشبكة في الخلفية (لا ينتظر)
+        const fetchPromise = fetch(event.request)
+          .then(function (networkResponse) {
+            if (networkResponse && networkResponse.status === 200) {
+              backgroundCachePut(CACHE_NAME, event.request, networkResponse);
+            }
+            return networkResponse;
+          })
+          .catch(function () {
+            // ❌ فشل الاتصال → استخدم index.html كـ fallback
+            return caches.match('index.html');
+          });
+
+        // ✅ إذا كان موجوداً في الكاش → أرجعه فوراً
+        return cachedResponse || fetchPromise;
+      })
     );
     return;
   }
@@ -325,7 +334,7 @@ self.addEventListener('notificationclick', function (event) {
 });
 
 // ========================================
-// ✅ MESSAGE HANDLER (مع إضافة CACHE_STATS)
+// ✅ MESSAGE HANDLER
 // ========================================
 self.addEventListener('message', function (event) {
   // تخطي الانتظار للتحديث
@@ -368,4 +377,4 @@ self.addEventListener('message', function (event) {
   }
 });
 
-console.log('✅ Service Worker v17.0 loaded successfully!');
+console.log('✅ Service Worker v18.0 loaded successfully!');

@@ -1,6 +1,6 @@
 // ========================================
-// MY LIFE HUB - EVENTS (CALENDAR) v2.0
-// (Safe Save + Date Validation + Better UX)
+// MY LIFE HUB - EVENTS (CALENDAR) v2.2
+// (replaceChildren + Safe Save + Date Validation + Pin in Modal)
 // ========================================
 
 const EVENTS_STORAGE_KEY = "myLifeHub_events";
@@ -28,6 +28,21 @@ function safeSetEvents(key, value) {
     }
     console.error('Error saving events:', err);
     return { success: false, error: 'unknown' };
+  }
+}
+
+// ========================================
+// ✅ نسخة من الأحداث (للاستخدام عند التعديل)
+// ========================================
+function getEventsCopy() {
+  if (typeof deepClone === 'function') {
+    return deepClone(getAllEvents());
+  }
+  try {
+    return JSON.parse(JSON.stringify(getAllEvents()));
+  } catch (e) {
+    console.warn('getEventsCopy failed:', e);
+    return getAllEvents();
   }
 }
 
@@ -61,7 +76,7 @@ function saveAllEvents(events) {
     console.error("saveAllEvents: events must be an array");
     return false;
   }
-  
+
   const result = safeSetEvents(EVENTS_STORAGE_KEY, JSON.stringify(events));
   return result.success;
 }
@@ -70,7 +85,8 @@ function addEvent(title, date, description = "") {
   const trimmedTitle = (title || '').trim();
   if (!trimmedTitle || !date) return null;
 
-  const events = getAllEvents();
+  // ✅ نسخة من الكاش
+  const events = getEventsCopy();
   const newEvent = {
     id: (typeof generateId === "function") ? generateId() : Date.now() + Math.random(),
     title: trimmedTitle,
@@ -89,7 +105,8 @@ function updateEvent(eventId, title, date, description) {
   const trimmedTitle = (title || '').trim();
   if (!trimmedTitle || !date) return false;
 
-  const events = getAllEvents();
+  // ✅ نسخة من الكاش
+  const events = getEventsCopy();
   const index = events.findIndex(e => e.id === eventId);
   if (index === -1) return false;
 
@@ -100,13 +117,15 @@ function updateEvent(eventId, title, date, description) {
 }
 
 function deleteEvent(eventId) {
-  const events = getAllEvents();
+  // ✅ نسخة من الكاش
+  const events = getEventsCopy();
   const updatedEvents = events.filter(e => e.id !== eventId);
   return saveAllEvents(updatedEvents);
 }
 
 function togglePinEvent(eventId) {
-  const events = getAllEvents();
+  // ✅ نسخة من الكاش
+  const events = getEventsCopy();
   const event = events.find(e => e.id === eventId);
   if (!event) return false;
 
@@ -138,11 +157,11 @@ function getTimeRemaining(eventDate) {
 }
 
 function getEventsByMonth(events, year, month) {
-  const monthStr = String(month).padStart(2, '0');
   return events.filter(e => {
     if (!e.date) return false;
     const parts = e.date.split('-');
-    return parseInt(parts[0]) === year && parseInt(parts[1]) === month;
+    if (parts.length !== 3) return false;
+    return parseInt(parts[0], 10) === year && parseInt(parts[1], 10) === month;
   });
 }
 
@@ -151,6 +170,40 @@ function escapeHtmlEvt(text) {
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
+}
+
+// ========================================
+// ✅ الحصول على لون الوقت المتبقي
+// ========================================
+function getRemainingColor(eventDate) {
+  const target = parseEventDate(eventDate);
+  if (!target) return "#6b7280";
+
+  const now = new Date();
+  const diff = target - now;
+  const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+  if (diff < 0) return "#6b7280";       // رمادي - منتهي
+  if (daysLeft <= 3) return "#ef4444";  // أحمر - قريب
+  if (daysLeft <= 7) return "#f59e0b";  // برتقالي - هذا الأسبوع
+  return "#22c55e";                     // أخضر - بعيد
+}
+
+// ========================================
+// ✅ الحصول على أيقونة الوقت المتبقي
+// ========================================
+function getRemainingIcon(eventDate) {
+  const target = parseEventDate(eventDate);
+  if (!target) return "clock";
+
+  const now = new Date();
+  const diff = target - now;
+  const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+  if (diff < 0) return "clock";
+  if (daysLeft <= 3) return "alert-triangle";
+  if (daysLeft <= 7) return "alert-circle";
+  return "clock";
 }
 
 // ========================================
@@ -250,35 +303,60 @@ function openEventDetailsModal(events, dateStr) {
       margin-top: 6px;
       font-size: 13px;
       font-weight: 500;
+      color: ${getRemainingColor(event.date)};
     `;
 
     const remaining = getTimeRemaining(event.date);
-    const now = new Date();
-    const targetDate = parseEventDate(event.date);
-    const diff = targetDate ? (targetDate - now) : 0;
-    const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (diff < 0) {
-      remainingRow.innerHTML = '<span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('event_passed', 'Event passed') : "Event passed");
-      remainingRow.style.color = "#6b7280";
-    } else if (daysLeft <= 3) {
-      remainingRow.innerHTML = '<span data-lucide="alert-triangle" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
-      remainingRow.style.color = "#ef4444";
-    } else if (daysLeft <= 7) {
-      remainingRow.innerHTML = '<span data-lucide="alert-circle" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
-      remainingRow.style.color = "#f59e0b";
-    } else {
-      remainingRow.innerHTML = '<span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
-      remainingRow.style.color = "#22c55e";
-    }
+    const remainingIcon = getRemainingIcon(event.date);
+    remainingRow.innerHTML = `<span data-lucide="${remainingIcon}" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ` + remaining;
 
     const actionsRow = document.createElement("div");
     actionsRow.style.cssText = `
       display: flex;
       gap: 8px;
-      margin-top: 8px;
+      margin-top: 10px;
       flex-wrap: wrap;
     `;
+
+    // ===== ✅ زر التثبيت =====
+    const pinBtn = document.createElement("button");
+    pinBtn.type = "button";
+    if (event.pinned) {
+      pinBtn.innerHTML = '<span data-lucide="pin-off" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('unpin', 'Unpin') : "Unpin");
+    } else {
+      pinBtn.innerHTML = '<span data-lucide="pin" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + (typeof t === 'function' ? t('pin', 'Pin') : "Pin");
+    }
+    pinBtn.style.cssText = `
+      padding: 6px 12px;
+      border: 1px solid ${event.pinned ? 'var(--primary)' : 'var(--border-input)'};
+      border-radius: 6px;
+      background: ${event.pinned ? 'var(--primary-light)' : 'var(--bg-input)'};
+      color: ${event.pinned ? 'var(--primary-dark)' : 'var(--text-primary)'};
+      cursor: pointer;
+      font-family: var(--font-handwritten);
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+      min-height: 36px;
+    `;
+
+    pinBtn.addEventListener("mouseenter", function() {
+      this.style.backgroundColor = event.pinned ? "var(--primary)" : "var(--bg-hover)";
+      this.style.color = event.pinned ? "white" : "var(--text-primary)";
+      this.style.borderColor = "var(--primary)";
+    });
+    pinBtn.addEventListener("mouseleave", function() {
+      this.style.backgroundColor = event.pinned ? "var(--primary-light)" : "var(--bg-input)";
+      this.style.color = event.pinned ? "var(--primary-dark)" : "var(--text-primary)";
+      this.style.borderColor = event.pinned ? "var(--primary)" : "var(--border-input)";
+    });
+
+    pinBtn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      togglePinEvent(event.id);
+      modal.close();
+      setTimeout(() => openEventDetailsModal(getAllEvents().filter(ev => ev.date === dateStr), dateStr), 250);
+    });
 
     // ===== زر التعديل =====
     const editBtn = document.createElement("button");
@@ -351,6 +429,8 @@ function openEventDetailsModal(events, dateStr) {
       });
     });
 
+    // ✅ ترتيب الأزرار: Pin → Edit → Delete
+    actionsRow.appendChild(pinBtn);
     actionsRow.appendChild(editBtn);
     actionsRow.appendChild(deleteBtn);
 
@@ -371,6 +451,8 @@ function openEventDetailsModal(events, dateStr) {
     }
   ]);
   modal.body.appendChild(closeActions);
+
+  if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
 // ========================================
@@ -381,94 +463,153 @@ function renderEventsPage() {
   const app = document.getElementById("app");
   if (!app) return;
 
+  // ✅ استخدام replaceChildren
+  app.replaceChildren();
+
   const today = new Date();
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth() + 1;
 
-  app.innerHTML = `
-    <div id="events-container">
-      <div class="events-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <span data-lucide="calendar" style="width: 32px; height: 32px; color: var(--primary);"></span>
-          <h2 class="events-title" style="margin: 0;">${typeof t === 'function' ? t('events_title', 'Events') : 'Events'}</h2>
-        </div>
-        <button class="events-add-btn" id="events-add-btn" type="button">
-          <span class="events-add-icon" data-lucide="plus" style="width: 20px; height: 20px;"></span>
-          ${typeof t === 'function' ? t('add_event_btn', 'Add Event') : 'Add Event'}
-        </button>
-      </div>
+  // ===== Container =====
+  const container = document.createElement("div");
+  container.id = "events-container";
 
-      <div class="calendar-wrapper">
-        <div class="calendar-nav">
-          <button class="calendar-nav-btn" id="calendar-prev" type="button" aria-label="Previous month">
-            <span data-lucide="chevron-left" style="width: 24px; height: 24px;"></span>
-          </button>
-          <span class="calendar-month-year" id="calendar-label">January 2026</span>
-          <button class="calendar-nav-btn" id="calendar-next" type="button" aria-label="Next month">
-            <span data-lucide="chevron-right" style="width: 24px; height: 24px;"></span>
-          </button>
-        </div>
+  // ===== Header =====
+  const header = document.createElement("div");
+  header.className = "events-header";
 
-        <div class="calendar-grid">
-          <div class="calendar-weekdays">
-            <span>${typeof t === 'function' ? t('sunday', 'Sun') : 'Sun'}</span>
-            <span>${typeof t === 'function' ? t('monday', 'Mon') : 'Mon'}</span>
-            <span>${typeof t === 'function' ? t('tuesday', 'Tue') : 'Tue'}</span>
-            <span>${typeof t === 'function' ? t('wednesday', 'Wed') : 'Wed'}</span>
-            <span>${typeof t === 'function' ? t('thursday', 'Thu') : 'Thu'}</span>
-            <span>${typeof t === 'function' ? t('friday', 'Fri') : 'Fri'}</span>
-            <span>${typeof t === 'function' ? t('saturday', 'Sat') : 'Sat'}</span>
-          </div>
-          <div class="calendar-days" id="calendar-days"></div>
-        </div>
-      </div>
+  const headerTitleWrapper = document.createElement("div");
+  headerTitleWrapper.style.cssText = "display: flex; align-items: center; gap: 12px;";
 
-      <div class="events-list-section">
-        <div id="events-list"></div>
-      </div>
-    </div>
+  const headerIcon = document.createElement("span");
+  headerIcon.setAttribute("data-lucide", "calendar");
+  headerIcon.style.cssText = "width: 32px; height: 32px; color: var(--primary);";
+
+  const headerTitle = document.createElement("h2");
+  headerTitle.className = "events-title";
+  headerTitle.style.margin = "0";
+  headerTitle.textContent = typeof t === 'function' ? t('events_title', 'Events') : 'Events';
+
+  headerTitleWrapper.appendChild(headerIcon);
+  headerTitleWrapper.appendChild(headerTitle);
+
+  const addBtn = document.createElement("button");
+  addBtn.className = "events-add-btn";
+  addBtn.id = "events-add-btn";
+  addBtn.type = "button";
+  addBtn.innerHTML = `
+    <span class="events-add-icon" data-lucide="plus" style="width: 20px; height: 20px;"></span>
+    ${typeof t === 'function' ? t('add_event_btn', 'Add Event') : 'Add Event'}
   `;
 
-  setTimeout(function() {
-    if (typeof initLucideIcons === 'function') {
-      initLucideIcons();
-    }
-  }, 50);
+  header.appendChild(headerTitleWrapper);
+  header.appendChild(addBtn);
+  container.appendChild(header);
 
+  // ===== Calendar Wrapper =====
+  const calendarWrapper = document.createElement("div");
+  calendarWrapper.className = "calendar-wrapper";
+
+  const calendarNav = document.createElement("div");
+  calendarNav.className = "calendar-nav";
+
+  const prevBtn = document.createElement("button");
+  prevBtn.className = "calendar-nav-btn";
+  prevBtn.id = "calendar-prev";
+  prevBtn.type = "button";
+  prevBtn.setAttribute("aria-label", "Previous month");
+  prevBtn.innerHTML = '<span data-lucide="chevron-left" style="width: 24px; height: 24px;"></span>';
+
+  const monthLabel = document.createElement("span");
+  monthLabel.className = "calendar-month-year";
+  monthLabel.id = "calendar-label";
+  monthLabel.textContent = "January 2026";
+
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "calendar-nav-btn";
+  nextBtn.id = "calendar-next";
+  nextBtn.type = "button";
+  nextBtn.setAttribute("aria-label", "Next month");
+  nextBtn.innerHTML = '<span data-lucide="chevron-right" style="width: 24px; height: 24px;"></span>';
+
+  calendarNav.appendChild(prevBtn);
+  calendarNav.appendChild(monthLabel);
+  calendarNav.appendChild(nextBtn);
+  calendarWrapper.appendChild(calendarNav);
+
+  const calendarGrid = document.createElement("div");
+  calendarGrid.className = "calendar-grid";
+
+  const weekdaysRow = document.createElement("div");
+  weekdaysRow.className = "calendar-weekdays";
+  ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].forEach(day => {
+    const span = document.createElement("span");
+    span.textContent = typeof t === 'function' ? t(day, day.charAt(0).toUpperCase() + day.slice(1,3)) : day.charAt(0).toUpperCase() + day.slice(1,3);
+    weekdaysRow.appendChild(span);
+  });
+  calendarGrid.appendChild(weekdaysRow);
+
+  const daysContainer = document.createElement("div");
+  daysContainer.className = "calendar-days";
+  daysContainer.id = "calendar-days";
+  calendarGrid.appendChild(daysContainer);
+
+  calendarWrapper.appendChild(calendarGrid);
+  container.appendChild(calendarWrapper);
+
+  // ===== Events List Section =====
+  const eventsListSection = document.createElement("div");
+  eventsListSection.className = "events-list-section";
+
+  const eventsListContainer = document.createElement("div");
+  eventsListContainer.id = "events-list";
+  eventsListSection.appendChild(eventsListContainer);
+
+  container.appendChild(eventsListSection);
+
+  app.appendChild(container);
+
+  // ========================================
+  // ✅ State
+  // ========================================
   let currentYearState = currentYear;
   let currentMonthState = currentMonth;
 
+  // ========================================
+  // ✅ renderCalendar (مع replaceChildren)
+  // ========================================
   function renderCalendar(year, month) {
-    const daysContainer = document.getElementById("calendar-days");
+    const daysEl = document.getElementById("calendar-days");
     const label = document.getElementById("calendar-label");
-    if (!daysContainer) return;
+    if (!daysEl) return;
 
-    const monthNames = ["January", "February", "March", "April", "May", "June", 
+    const monthNames = ["January", "February", "March", "April", "May", "June",
                         "July", "August", "September", "October", "November", "December"];
     label.textContent = monthNames[month - 1] + " " + year;
 
     const firstDay = new Date(year, month - 1, 1).getDay();
     const daysInMonth = new Date(year, month, 0).getDate();
     const today = new Date();
-    const todayStr = today.getFullYear() + '-' + 
-                     String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+    const todayStr = today.getFullYear() + '-' +
+                     String(today.getMonth() + 1).padStart(2, '0') + '-' +
                      String(today.getDate()).padStart(2, '0');
 
     const allEvents = getAllEvents();
     const eventsThisMonth = getEventsByMonth(allEvents, year, month);
     const eventDates = new Set(eventsThisMonth.map(e => e.date));
-    
+
     const pinnedDates = new Set();
     eventsThisMonth.forEach(e => {
       if (e.pinned) pinnedDates.add(e.date);
     });
 
-    daysContainer.innerHTML = "";
+    // ✅ استخدام DocumentFragment
+    const fragment = document.createDocumentFragment();
 
     for (let i = 0; i < firstDay; i++) {
       const empty = document.createElement("div");
       empty.className = "calendar-day-empty";
-      daysContainer.appendChild(empty);
+      fragment.appendChild(empty);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
@@ -499,10 +640,16 @@ function renderEventsPage() {
         }
       });
 
-      daysContainer.appendChild(dayDiv);
+      fragment.appendChild(dayDiv);
     }
+
+    // ✅ استخدام replaceChildren
+    daysEl.replaceChildren(fragment);
   }
 
+  // ========================================
+  // ✅ createEventCard
+  // ========================================
   function createEventCard(event, showPinButton = true) {
     const card = document.createElement("div");
     card.className = "event-card";
@@ -534,7 +681,7 @@ function renderEventsPage() {
     const dateSpan = document.createElement("span");
     dateSpan.className = "event-date";
     const targetDate = parseEventDate(event.date);
-    const formattedDate = targetDate 
+    const formattedDate = targetDate
       ? targetDate.toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' })
       : event.date;
     dateSpan.innerHTML = '<span data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + formattedDate;
@@ -542,25 +689,9 @@ function renderEventsPage() {
     const remainingSpan = document.createElement("span");
     remainingSpan.className = "event-remaining";
     const remaining = getTimeRemaining(event.date);
-    const now = new Date();
-    const target = parseEventDate(event.date);
-    const diff = target ? (target - now) : 0;
-    const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (diff < 0) {
-      remainingSpan.innerHTML = '<span data-lucide="clock" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
-      remainingSpan.style.color = "#6b7280";
-    } else if (daysLeft <= 3) {
-      remainingSpan.innerHTML = '<span data-lucide="alert-triangle" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
-      remainingSpan.style.color = "#ef4444";
-      remainingSpan.style.fontWeight = "600";
-    } else if (daysLeft <= 7) {
-      remainingSpan.innerHTML = '<span data-lucide="alert-circle" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
-      remainingSpan.style.color = "#f59e0b";
-    } else {
-      remainingSpan.innerHTML = '<span data-lucide="clock" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + remaining;
-      remainingSpan.style.color = "#22c55e";
-    }
+    const remainingIcon = getRemainingIcon(event.date);
+    remainingSpan.innerHTML = `<span data-lucide="${remainingIcon}" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ` + remaining;
+    remainingSpan.style.color = getRemainingColor(event.date);
 
     const descSpan = document.createElement("span");
     descSpan.className = "event-description";
@@ -640,14 +771,17 @@ function renderEventsPage() {
     return card;
   }
 
-  function renderEventsList(events) {
-    const container = document.getElementById("events-list");
-    if (!container) return;
+  // ========================================
+  // ✅ renderEventsList (مع replaceChildren)
+  // ========================================
+  function renderEventsList() {
+    const listContainer = document.getElementById("events-list");
+    if (!listContainer) return;
 
-    const allEvents = events.length > 0 ? events : getAllEvents();
+    const allEvents = getAllEvents();
     const now = new Date();
-    const todayStr = now.getFullYear() + '-' + 
-                     String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+    const todayStr = now.getFullYear() + '-' +
+                     String(now.getMonth() + 1).padStart(2, '0') + '-' +
                      String(now.getDate()).padStart(2, '0');
 
     const upcomingEvents = allEvents.filter(e => e.date && e.date >= todayStr);
@@ -656,6 +790,7 @@ function renderEventsPage() {
     const pinnedEvents = upcomingEvents.filter(e => e.pinned);
     const unpinnedEvents = upcomingEvents.filter(e => !e.pinned);
 
+    // ✅ استخدام DocumentFragment
     const fragment = document.createDocumentFragment();
 
     if (upcomingEvents.length === 0) {
@@ -689,38 +824,46 @@ function renderEventsPage() {
       }
     }
 
-    container.innerHTML = "";
-    container.appendChild(fragment);
+    // ✅ استخدام replaceChildren
+    listContainer.replaceChildren(fragment);
 
     if (typeof debouncedLucide === 'function') debouncedLucide(50);
   }
 
-  document.getElementById("calendar-prev")?.addEventListener("click", function() {
+  // ========================================
+  // ✅ Event Listeners
+  // ========================================
+  prevBtn.addEventListener("click", function() {
     currentMonthState--;
     if (currentMonthState < 1) {
       currentMonthState = 12;
       currentYearState--;
     }
     renderCalendar(currentYearState, currentMonthState);
-    renderEventsList([]);
+    renderEventsList();
   });
 
-  document.getElementById("calendar-next")?.addEventListener("click", function() {
+  nextBtn.addEventListener("click", function() {
     currentMonthState++;
     if (currentMonthState > 12) {
       currentMonthState = 1;
       currentYearState++;
     }
     renderCalendar(currentYearState, currentMonthState);
-    renderEventsList([]);
+    renderEventsList();
   });
 
-  document.getElementById("events-add-btn")?.addEventListener("click", function() {
+  addBtn.addEventListener("click", function() {
     openEventModal();
   });
 
+  // ========================================
+  // ✅ Initial Render
+  // ========================================
   renderCalendar(currentYearState, currentMonthState);
-  renderEventsList([]);
+  renderEventsList();
+
+  // ✅ Lucide يُدار من main.js
 }
 
 // ========================================
@@ -732,7 +875,7 @@ function openEventModal(editEvent = null) {
 
   const modal = createModal({
     id: 'event-modal',
-    title: isEditing 
+    title: isEditing
       ? '<span data-lucide="pencil"></span> ' + (typeof t === 'function' ? t('edit_event', 'Edit Event') : 'Edit Event')
       : '<span data-lucide="plus"></span> ' + (typeof t === 'function' ? t('add_event', 'Add Event') : 'Add Event'),
     size: 'medium'
@@ -813,7 +956,7 @@ function openEventModal(editEvent = null) {
       onClick: () => modal.close()
     },
     {
-      label: isEditing 
+      label: isEditing
         ? '<span data-lucide="check"></span> ' + (typeof t === 'function' ? t('update', 'Update') : 'Update')
         : '<span data-lucide="plus"></span> ' + (typeof t === 'function' ? t('add', 'Add') : 'Add'),
       type: 'primary',
@@ -834,10 +977,10 @@ function openEventModal(editEvent = null) {
  */
 function getUpcomingEventsCount() {
   const now = new Date();
-  const todayStr = now.getFullYear() + '-' + 
-                   String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+  const todayStr = now.getFullYear() + '-' +
+                   String(now.getMonth() + 1).padStart(2, '0') + '-' +
                    String(now.getDate()).padStart(2, '0');
-  
+
   return getAllEvents().filter(e => e.date && e.date >= todayStr).length;
 }
 
@@ -846,10 +989,10 @@ function getUpcomingEventsCount() {
  */
 function getTodayEvents() {
   const now = new Date();
-  const todayStr = now.getFullYear() + '-' + 
-                   String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+  const todayStr = now.getFullYear() + '-' +
+                   String(now.getMonth() + 1).padStart(2, '0') + '-' +
                    String(now.getDate()).padStart(2, '0');
-  
+
   return getAllEvents().filter(e => e.date === todayStr);
 }
 
@@ -859,10 +1002,10 @@ function getTodayEvents() {
 function getTomorrowEvents() {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.getFullYear() + '-' + 
-                      String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
+  const tomorrowStr = tomorrow.getFullYear() + '-' +
+                      String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' +
                       String(tomorrow.getDate()).padStart(2, '0');
-  
+
   return getAllEvents().filter(e => e.date === tomorrowStr);
 }
 
@@ -872,6 +1015,7 @@ function getTomorrowEvents() {
 
 window.renderEventsPage = renderEventsPage;
 window.getAllEvents = getAllEvents;
+window.getEventsCopy = getEventsCopy;
 window.addEvent = addEvent;
 window.updateEvent = updateEvent;
 window.deleteEvent = deleteEvent;
@@ -880,4 +1024,4 @@ window.getUpcomingEventsCount = getUpcomingEventsCount;
 window.getTodayEvents = getTodayEvents;
 window.getTomorrowEvents = getTomorrowEvents;
 
-console.log("✅ Events v2.0 loaded successfully!");
+console.log("✅ Events v2.2 loaded successfully!");

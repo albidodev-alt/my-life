@@ -1,6 +1,6 @@
 // ========================================
-// MY LIFE - BACKUP & RESTORE SYSTEM v2.0
-// (Safe Export + Validation + Better UX)
+// MY LIFE - BACKUP & RESTORE SYSTEM v2.2
+// (Safe Export + Strong Validation + Achievement Stats)
 // ========================================
 
 // ========================================
@@ -14,7 +14,8 @@ const BACKUP_KEYS = {
     EVENTS: "myLifeHub_events",
     PROGRAMS: "myLifeHub_programs",
     PROFILE: "myLifeHub_profile",
-    NOTIFICATIONS: "myLifeHub_notifications"
+    NOTIFICATIONS: "myLifeHub_notifications",
+    STATS: "myLifeHub_achievement_stats"  // ✅ جديد
 };
 
 const BACKUP_VERSION = 1;
@@ -34,7 +35,8 @@ function collectAllData() {
             notes: getData(BACKUP_KEYS.NOTES),
             events: getData(BACKUP_KEYS.EVENTS),
             programs: getData(BACKUP_KEYS.PROGRAMS),
-            notifications: getData(BACKUP_KEYS.NOTIFICATIONS)
+            notifications: getData(BACKUP_KEYS.NOTIFICATIONS),
+            achievementStats: getData(BACKUP_KEYS.STATS)  // ✅ جديد
         };
 
         return data;
@@ -81,8 +83,14 @@ function calculateMetadata(data) {
         totalEvents: Array.isArray(data.events) ? data.events.length : 0,
         totalPrograms: Array.isArray(data.programs) ? data.programs.length : 0,
         totalNotifications: Array.isArray(data.notifications) ? data.notifications.length : 0,
-        daysWithRoutine: 0
+        daysWithRoutine: 0,
+        totalAchievements: 0  // ✅ جديد
     };
+
+    // ✅ إحصائيات الإنجازات
+    if (data.achievementStats && typeof data.achievementStats === 'object') {
+        metadata.totalAchievements = data.achievementStats.totalCompleted || 0;
+    }
 
     if (data.routine && typeof data.routine === 'object') {
         const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -121,9 +129,7 @@ function exportBackup() {
         const json = JSON.stringify(backup, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
 
-        // ✅ التحقق من دعم URL.createObjectURL
         if (!window.URL || !window.URL.createObjectURL) {
-            // Fallback: تنزيل مباشر عبر data URL
             downloadViaDataURL(json);
             return true;
         }
@@ -131,8 +137,8 @@ function exportBackup() {
         const url = URL.createObjectURL(blob);
 
         const date = new Date();
-        const dateStr = date.getFullYear() + '-' + 
-                       String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+        const dateStr = date.getFullYear() + '-' +
+                       String(date.getMonth() + 1).padStart(2, '0') + '-' +
                        String(date.getDate()).padStart(2, '0');
         const filename = `My-Life-Backup-${dateStr}.json`;
 
@@ -143,7 +149,6 @@ function exportBackup() {
         document.body.appendChild(a);
         a.click();
 
-        // ✅ تنظيف بعد فترة
         setTimeout(() => {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
@@ -169,13 +174,10 @@ function exportBackup() {
     }
 }
 
-/**
- * ✅ طريقة احتياطية للتنزيل
- */
 function downloadViaDataURL(json) {
     const date = new Date();
-    const dateStr = date.getFullYear() + '-' + 
-                   String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+    const dateStr = date.getFullYear() + '-' +
+                   String(date.getMonth() + 1).padStart(2, '0') + '-' +
                    String(date.getDate()).padStart(2, '0');
     const filename = `My-Life-Backup-${dateStr}.json`;
 
@@ -199,7 +201,6 @@ function downloadViaDataURL(json) {
 
 function importBackup(file) {
     return new Promise((resolve, reject) => {
-        // ✅ التحقق من الحجم
         if (file.size > 50 * 1024 * 1024) {
             reject({ error: "File is too large (max 50 MB)" });
             return;
@@ -249,6 +250,10 @@ function validateBackup(backup) {
         return { valid: false, error: "Backup is empty" };
     }
 
+    if (typeof backup !== 'object' || Array.isArray(backup)) {
+        return { valid: false, error: "Backup must be a JSON object" };
+    }
+
     if (backup.app !== BACKUP_APP_NAME) {
         return { valid: false, error: "This backup does not belong to My Life" };
     }
@@ -257,15 +262,91 @@ function validateBackup(backup) {
         return { valid: false, error: `Unsupported version: ${backup.version}. Current version: ${BACKUP_VERSION}` };
     }
 
-    if (!backup.data || typeof backup.data !== 'object') {
+    if (!backup.data || typeof backup.data !== 'object' || Array.isArray(backup.data)) {
         return { valid: false, error: "Backup data is missing or invalid" };
     }
 
+    // ✅ نتحقق من المفاتيح الأساسية فقط (بدون achievementStats — لأنه قديم)
     const requiredKeys = ['profile', 'routine', 'tasks', 'notes', 'events', 'programs', 'notifications'];
     const missingKeys = requiredKeys.filter(key => !(key in backup.data));
-    
+
     if (missingKeys.length > 0) {
         return { valid: false, error: `Missing data sections: ${missingKeys.join(', ')}` };
+    }
+
+    const data = backup.data;
+
+    // ✅ التحقق من الأنواع
+    if (data.tasks !== null && !Array.isArray(data.tasks)) {
+        return { valid: false, error: "Invalid 'tasks' section: must be an array or null" };
+    }
+
+    if (data.notes !== null && !Array.isArray(data.notes)) {
+        return { valid: false, error: "Invalid 'notes' section: must be an array or null" };
+    }
+
+    if (data.events !== null && !Array.isArray(data.events)) {
+        return { valid: false, error: "Invalid 'events' section: must be an array or null" };
+    }
+
+    if (data.programs !== null && !Array.isArray(data.programs)) {
+        return { valid: false, error: "Invalid 'programs' section: must be an array or null" };
+    }
+
+    if (data.notifications !== null && !Array.isArray(data.notifications)) {
+        return { valid: false, error: "Invalid 'notifications' section: must be an array or null" };
+    }
+
+    if (data.routine !== null && (typeof data.routine !== 'object' || Array.isArray(data.routine))) {
+        return { valid: false, error: "Invalid 'routine' section: must be an object or null" };
+    }
+
+    if (data.profile !== null && (typeof data.profile !== 'object' || Array.isArray(data.profile))) {
+        return { valid: false, error: "Invalid 'profile' section: must be an object or null" };
+    }
+
+    // ✅ التحقق من achievementStats (اختياري — قديم قد لا يحتويها)
+    if (data.achievementStats !== undefined && data.achievementStats !== null) {
+        if (typeof data.achievementStats !== 'object' || Array.isArray(data.achievementStats)) {
+            return { valid: false, error: "Invalid 'achievementStats' section: must be an object or null" };
+        }
+    }
+
+    // ✅ التحقق من كل عنصر في المصفوفات
+    if (Array.isArray(data.tasks)) {
+        for (let i = 0; i < data.tasks.length; i++) {
+            const task = data.tasks[i];
+            if (!task || typeof task !== 'object' || Array.isArray(task)) {
+                return { valid: false, error: `Invalid task at index ${i}: must be an object` };
+            }
+        }
+    }
+
+    if (Array.isArray(data.notes)) {
+        for (let i = 0; i < data.notes.length; i++) {
+            const note = data.notes[i];
+            if (!note || typeof note !== 'object' || Array.isArray(note)) {
+                return { valid: false, error: `Invalid note at index ${i}: must be an object` };
+            }
+        }
+    }
+
+    if (Array.isArray(data.events)) {
+        for (let i = 0; i < data.events.length; i++) {
+            const event = data.events[i];
+            if (!event || typeof event !== 'object' || Array.isArray(event)) {
+                return { valid: false, error: `Invalid event at index ${i}: must be an object` };
+            }
+        }
+    }
+
+    if (Array.isArray(data.programs)) {
+        for (let i = 0; i < data.programs.length; i++) {
+            const program = data.programs[i];
+            if (!program || typeof program !== 'object' || Array.isArray(program)) {
+                return { valid: false, error: `Invalid program at index ${i}: must be an object` };
+            }
+        }
     }
 
     return { valid: true };
@@ -314,7 +395,15 @@ function restoreBackup(backupData) {
                 localStorage.setItem(BACKUP_KEYS.NOTIFICATIONS, JSON.stringify(data.notifications));
             }
 
-            // ✅ إبطال الكاش في الذاكرة
+            // ✅ استعادة إحصائيات الإنجازات
+            if (data.achievementStats) {
+                localStorage.setItem(BACKUP_KEYS.STATS, JSON.stringify(data.achievementStats));
+            } else {
+                // ✅ Backup قديم بدون إحصائيات → احذفها ليعاد حسابها
+                localStorage.removeItem(BACKUP_KEYS.STATS);
+            }
+
+            // ✅ إبطال الكاش
             if (typeof invalidateAllCaches === 'function') {
                 invalidateAllCaches();
             }
@@ -330,7 +419,7 @@ function restoreBackup(backupData) {
         } catch (innerError) {
             // ❌ فشل الحفظ → استرجع القيم القديمة
             console.error("Restore failed, rolling back...", innerError);
-            
+
             Object.entries(oldValues).forEach(([key, value]) => {
                 try {
                     if (value === null) {
@@ -416,6 +505,9 @@ function showBackupPreview(preview) {
             <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
                 📆 ${typeof t === 'function' ? t('routine', 'Routine Days') : 'Routine Days'}: ${metadata.daysWithRoutine || 0}
             </div>
+            <div style="padding: 6px 10px; background: linear-gradient(135deg, rgba(79,142,219,0.10), rgba(109,168,232,0.05)); border-radius: 4px; font-size: 14px; color: var(--primary-dark); font-weight: 600;">
+                🏆 ${typeof t === 'function' ? t('achievements', 'Achievements') : 'Achievements'}: ${metadata.totalAchievements || 0}
+            </div>
         </div>
     `;
     modal.body.appendChild(contentsBox);
@@ -441,10 +533,9 @@ function showBackupPreview(preview) {
             type: 'danger',
             onClick: () => {
                 modal.close();
-                // تأكيد ثانٍ
                 confirmModal({
                     title: '⚠️ ' + (typeof t === 'function' ? t('confirm_restore', 'Confirm Restore') : 'Confirm Restore'),
-                    message: typeof t === 'function' 
+                    message: typeof t === 'function'
                         ? 'سيتم استبدال جميع بياناتك الحالية ببيانات النسخة الاحتياطية. هل أنت متأكد؟'
                         : 'This will REPLACE all your current data with the backup data. Are you sure?',
                     confirmLabel: typeof t === 'function' ? t('yes_restore', 'Yes, Restore') : 'Yes, Restore',
@@ -504,7 +595,7 @@ function getBackupMetadata() {
 
 function renderBackupSection() {
     const metadata = getBackupMetadata();
-    
+
     const section = document.createElement("div");
     section.className = "profile-section";
     section.id = "backup-section";
@@ -546,7 +637,7 @@ function renderBackupSection() {
         margin-bottom: 16px;
         font-family: var(--font-body);
     `;
-    desc.textContent = typeof t === 'function' 
+    desc.textContent = typeof t === 'function'
         ? t('backup_desc', 'Your data is stored locally on this device. Export a backup to save your data, or import a previously exported backup.')
         : 'Your data is stored locally on this device. Export a backup to save your data, or import a previously exported backup.';
     section.appendChild(desc);
@@ -695,7 +786,7 @@ function renderBackupSection() {
         text-align: center;
         font-style: italic;
     `;
-    note.textContent = typeof t === 'function' 
+    note.textContent = typeof t === 'function'
         ? t('backup_note', '🔒 Your data never leaves your device. Backups are stored locally.')
         : '🔒 Your data never leaves your device. Backups are stored locally.';
     section.appendChild(note);
@@ -704,12 +795,9 @@ function renderBackupSection() {
 }
 
 // ========================================
-// ✅ دوال إضافية مفيدة
+// ✅ دوال إضافية
 // ========================================
 
-/**
- * الحصول على حجم الـ Backup المتوقع
- */
 function getBackupSize() {
     const backup = createBackupObject();
     if (!backup) return { bytes: 0, kb: "0", mb: "0" };
@@ -724,9 +812,6 @@ function getBackupSize() {
     };
 }
 
-/**
- * هل يوجد backup سابق؟
- */
 function hasPreviousBackup() {
     const metadata = getBackupMetadata();
     return !!metadata.lastExport;
@@ -744,5 +829,6 @@ window.renderBackupSection = renderBackupSection;
 window.getBackupMetadata = getBackupMetadata;
 window.getBackupSize = getBackupSize;
 window.hasPreviousBackup = hasPreviousBackup;
+window.validateBackup = validateBackup;
 
-console.log("✅ Backup & Restore v2.0 loaded successfully!");
+console.log("✅ Backup & Restore v2.2 loaded successfully!");

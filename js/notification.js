@@ -1,6 +1,7 @@
 // ========================================
-// MY LIFE HUB - NOTIFICATIONS
+// MY LIFE HUB - NOTIFICATIONS v2.1
 // نظام الإشعارات المتكامل
+// (Cached Language + Smart Refresh + No Duplicate Work)
 // ========================================
 
 const NOTIFICATIONS_STORAGE_KEY = "myLifeHub_notifications";
@@ -8,22 +9,29 @@ const NOTIFICATIONS_STORAGE_KEY = "myLifeHub_notifications";
 // ===== كاش في الذاكرة =====
 let notificationsCache = null;
 
+// ===== كاش لتتبع التغييرات (لتجنب refresh غير ضروري) =====
+let lastRefreshSignature = null;
+
 // ========================================
 // دوال التخزين الأساسية
 // ========================================
 
 function getAllNotifications() {
   if (notificationsCache !== null) return notificationsCache;
-  
+
   try {
     const raw = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-    if (!raw) return [];
+    if (!raw) {
+      notificationsCache = [];
+      return notificationsCache;
+    }
     const notifications = JSON.parse(raw);
     notificationsCache = Array.isArray(notifications) ? notifications : [];
     return notificationsCache;
   } catch (error) {
     console.error("Error loading notifications:", error);
-    return [];
+    notificationsCache = [];
+    return notificationsCache;
   }
 }
 
@@ -93,13 +101,29 @@ function tr(key, fallback) {
 }
 
 // ========================================
+// ✅ الحصول على اللغة (مع كاش)
+// ========================================
+function _getNotifLanguage() {
+  if (typeof window.getCachedLanguage === 'function') {
+    const cached = window.getCachedLanguage();
+    if (cached) return cached;
+  }
+
+  try {
+    return localStorage.getItem('language') || 'en';
+  } catch (e) {
+    return 'en';
+  }
+}
+
+// ========================================
 // تحديث عداد الإشعارات
 // ========================================
 
 function updateNotificationBadge() {
   const count = getUnreadCount();
   const badge = document.getElementById("notification-badge");
-  
+
   if (badge) {
     if (count > 0) {
       badge.textContent = count > 99 ? "99+" : count;
@@ -111,27 +135,74 @@ function updateNotificationBadge() {
 }
 
 // ========================================
+// ✅ دالة تنسيق الوقت (مخصصة للإشعارات)
+// (بدل formatTime12 العامة لتجنب التعارض مع day.js)
+// ========================================
+
+function formatTime12Notif(hour, minute = 0) {
+  const lang = _getNotifLanguage();
+  const hour12 = hour % 12 || 12;
+  const minuteStr = minute.toString().padStart(2, '0');
+
+  let ampm;
+  if (lang === 'ar') {
+    ampm = hour >= 12 ? 'مساءً' : 'صباحاً';
+  } else {
+    ampm = hour >= 12 ? 'PM' : 'AM';
+  }
+  return hour12 + ':' + minuteStr + ' ' + ampm;
+}
+
+// ========================================
+// ✅ إنشاء بصمة للتغييرات (لتجنب refresh غير ضروري)
+// ========================================
+function _getDataSignature() {
+  try {
+    const tasksCount = (typeof getAllTasks === 'function')
+      ? getAllTasks().length
+      : 0;
+    const tasksCompleted = (typeof getAllTasks === 'function')
+      ? getAllTasks().filter(t => t.completed).length
+      : 0;
+    const eventsCount = (typeof getAllEvents === 'function')
+      ? getAllEvents().length
+      : 0;
+    const todayName = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()];
+    const dayData = (typeof getDayData === 'function')
+      ? getDayData(todayName)
+      : {};
+    const sleepHour = dayData.sleepHour ?? -1;
+    const wakeHour = dayData.wakeHour ?? -1;
+    const currentHour = new Date().getHours();
+
+    return `${tasksCount}-${tasksCompleted}-${eventsCount}-${sleepHour}-${wakeHour}-${currentHour}`;
+  } catch (e) {
+    return String(Date.now());
+  }
+}
+
+// ========================================
 // إنشاء الإشعارات تلقائياً
 // ========================================
 
 function generateNotifications() {
   const today = new Date();
-  const todayStr = today.getFullYear() + '-' + 
-                   String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+  const todayStr = today.getFullYear() + '-' +
+                   String(today.getMonth() + 1).padStart(2, '0') + '-' +
                    String(today.getDate()).padStart(2, '0');
-  
+
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.getFullYear() + '-' + 
-                      String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
+  const tomorrowStr = tomorrow.getFullYear() + '-' +
+                      String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' +
                       String(tomorrow.getDate()).padStart(2, '0');
 
   const notifications = [];
-  
+
   // 1. المهام المقررة اليوم
-  const tasks = getAllTasks();
+  const tasks = typeof getAllTasks === 'function' ? getAllTasks() : [];
   const todayTasks = tasks.filter(t => t.dueDate === todayStr && !t.completed);
-  
+
   todayTasks.forEach(task => {
     notifications.push({
       type: "task",
@@ -140,10 +211,10 @@ function generateNotifications() {
       relatedId: task.id
     });
   });
-  
+
   // 2. المهام المتأخرة
   const overdueTasks = tasks.filter(t => t.dueDate && t.dueDate < todayStr && !t.completed);
-  
+
   overdueTasks.forEach(task => {
     notifications.push({
       type: "task",
@@ -152,11 +223,11 @@ function generateNotifications() {
       relatedId: task.id
     });
   });
-  
+
   // 3. أحداث الغد
-  const events = getAllEvents();
+  const events = typeof getAllEvents === 'function' ? getAllEvents() : [];
   const tomorrowEvents = events.filter(e => e.date === tomorrowStr);
-  
+
   tomorrowEvents.forEach(event => {
     notifications.push({
       type: "event",
@@ -165,16 +236,16 @@ function generateNotifications() {
       relatedId: event.id
     });
   });
-  
-  // 4. أحداث الأيام القادمة
+
+  // 4. أحداث الأيام القادمة (خلال 3 أيام)
   const threeDaysLater = new Date(today);
   threeDaysLater.setDate(threeDaysLater.getDate() + 3);
-  const threeDaysStr = threeDaysLater.getFullYear() + '-' + 
-                       String(threeDaysLater.getMonth() + 1).padStart(2, '0') + '-' + 
+  const threeDaysStr = threeDaysLater.getFullYear() + '-' +
+                       String(threeDaysLater.getMonth() + 1).padStart(2, '0') + '-' +
                        String(threeDaysLater.getDate()).padStart(2, '0');
-  
+
   const upcomingEvents = events.filter(e => e.date > todayStr && e.date <= threeDaysStr && e.date !== tomorrowStr);
-  
+
   upcomingEvents.forEach(event => {
     const dateObj = new Date(event.date + "T00:00:00");
     const daysLeft = Math.ceil((dateObj - today) / (1000 * 60 * 60 * 24));
@@ -185,32 +256,32 @@ function generateNotifications() {
       relatedId: event.id
     });
   });
-  
+
   // 5. وقت النوم
   const todayName = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][today.getDay()];
-  const dayData = getDayData(todayName);
-  
-  if (dayData.sleepHour !== undefined && dayData.sleepHour !== null && 
+  const dayData = typeof getDayData === 'function' ? getDayData(todayName) : {};
+
+  if (dayData.sleepHour !== undefined && dayData.sleepHour !== null &&
       dayData.sleepMinute !== undefined && dayData.sleepMinute !== null &&
-      dayData.wakeHour !== undefined && dayData.wakeHour !== null && 
+      dayData.wakeHour !== undefined && dayData.wakeHour !== null &&
       dayData.wakeMinute !== undefined && dayData.wakeMinute !== null) {
-    
+
     const sleepTime = new Date();
     sleepTime.setHours(dayData.sleepHour, dayData.sleepMinute, 0, 0);
-    
+
     const now = new Date();
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     const sleepHourNum = dayData.sleepHour;
     const sleepMinuteNum = dayData.sleepMinute;
-    
+
     const currentTotalMinutes = currentHour * 60 + currentMinute;
     const oneHourBeforeTotal = (sleepHourNum - 1) * 60 + sleepMinuteNum;
     const halfHourBeforeTotal = sleepHourNum * 60 + sleepMinuteNum - 30;
     const sleepTotal = sleepHourNum * 60 + sleepMinuteNum;
-    
-    const sleepTimeStr = formatTime12(dayData.sleepHour, dayData.sleepMinute);
-    
+
+    const sleepTimeStr = formatTime12Notif(dayData.sleepHour, dayData.sleepMinute);
+
     if (currentTotalMinutes >= oneHourBeforeTotal && currentTotalMinutes < halfHourBeforeTotal) {
       notifications.push({
         type: "sleep",
@@ -235,86 +306,77 @@ function generateNotifications() {
         relatedId: null
       });
     }
-    
+
     // تقرير النوم اليومي
     const wakeHourNum = dayData.wakeHour;
     const wakeMinuteNum = dayData.wakeMinute;
     const wakeTotal = wakeHourNum * 60 + wakeMinuteNum;
-    
+
     if (currentTotalMinutes >= wakeTotal && currentTotalMinutes < wakeTotal + 120) {
       const wakeTime = new Date();
       wakeTime.setHours(dayData.wakeHour, dayData.wakeMinute, 0, 0);
       let sleepDuration = (wakeTime - sleepTime) / (1000 * 60 * 60);
       if (sleepDuration < 0) sleepDuration += 24;
-      
+
       const quality = sleepDuration >= 7 && sleepDuration <= 9 ? "excellent" :
                      sleepDuration >= 6 ? "good" :
                      sleepDuration >= 5 ? "fair" : "poor";
-      
+
       const qualityEmoji = quality === "excellent" ? "🟢" :
                           quality === "good" ? "🟡" :
                           quality === "fair" ? "🟠" : "🔴";
-      
+
       const qualityLabel = quality === "excellent" ? tr('excellent', 'Excellent') :
                           quality === "good" ? tr('good', 'Good') :
                           quality === "fair" ? tr('fair', 'Fair') : tr('poor', 'Poor');
-      
+
       notifications.push({
         type: "sleep",
         title: tr('sleep_report', 'Sleep Report'),
-        message: tr('sleep', 'Sleep') + `: ${formatTime12(dayData.sleepHour, dayData.sleepMinute)} - ${formatTime12(dayData.wakeHour, dayData.wakeMinute)} (${Math.round(sleepDuration)}h) ${qualityEmoji} ${qualityLabel}`,
+        message: tr('sleep', 'Sleep') + `: ${formatTime12Notif(dayData.sleepHour, dayData.sleepMinute)} - ${formatTime12Notif(dayData.wakeHour, dayData.wakeMinute)} (${Math.round(sleepDuration)}h) ${qualityEmoji} ${qualityLabel}`,
         relatedId: null
       });
     }
   }
-  
+
   return notifications;
 }
 
 // ========================================
-// دالة مساعدة لتنسيق الوقت
-// ========================================
-
-function formatTime12(hour, minute = 0) {
-  const lang = localStorage.getItem('language') || 'en';
-  const hour12 = hour % 12 || 12;
-  const minuteStr = minute.toString().padStart(2, '0');
-  
-  let ampm;
-  if (lang === 'ar') {
-    ampm = hour >= 12 ? 'مساءً' : 'صباحاً';
-  } else {
-    ampm = hour >= 12 ? 'PM' : 'AM';
-  }
-  return hour12 + ':' + minuteStr + ' ' + ampm;
-}
-
-// ========================================
-// تحديث الإشعارات
+// ✅ تحديث الإشعارات (مع فحص التغييرات)
 // ========================================
 
 function refreshNotifications() {
+  // ✅ فحص إذا كانت البيانات تغيرت
+  const currentSignature = _getDataSignature();
+  if (currentSignature === lastRefreshSignature) {
+    // لا تغيير → لا داعي للعمل
+    updateNotificationBadge();
+    return;
+  }
+  lastRefreshSignature = currentSignature;
+
   const allNotifications = getAllNotifications();
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  
+
   const filtered = allNotifications.filter(n => {
     const createdAt = new Date(n.createdAt);
     return createdAt > sevenDaysAgo;
   });
-  
+
   saveAllNotifications(filtered);
-  
+
   const newNotifications = generateNotifications();
   const existingIds = new Set(filtered.map(n => n.relatedId + n.type + n.message));
-  
+
   newNotifications.forEach(newNotif => {
     const key = newNotif.relatedId + newNotif.type + newNotif.message;
     if (!existingIds.has(key)) {
       addNotification(newNotif.type, newNotif.title, newNotif.message, newNotif.relatedId);
     }
   });
-  
+
   updateNotificationBadge();
 }
 
@@ -324,7 +386,7 @@ function refreshNotifications() {
 
 function openNotificationsModal() {
   const notifications = getAllNotifications();
-  
+
   const modal = createModal({
     id: 'notifications-modal',
     title: '<span data-lucide="bell"></span> ' + tr('notifications', 'Notifications'),
@@ -341,7 +403,6 @@ function openNotificationsModal() {
   markAllBtn.style.cssText = "flex: 1; min-width: 120px; padding: 8px 12px; font-size: 13px;";
   markAllBtn.innerHTML = '<span data-lucide="check-check"></span> ' + tr('mark_all_read', 'Mark all read');
 
-  // ✅ استخدام confirmModal بدلاً من confirm
   markAllBtn.addEventListener("click", function() {
     confirmModal({
       title: tr('mark_all_read', 'Mark All Read'),
@@ -364,7 +425,6 @@ function openNotificationsModal() {
   deleteAllBtn.style.cssText = "flex: 1; min-width: 120px; padding: 8px 12px; font-size: 13px;";
   deleteAllBtn.innerHTML = '<span data-lucide="trash-2"></span> ' + tr('clear_all', 'Clear all');
 
-  // ✅ استخدام confirmModal بدلاً من confirm
   deleteAllBtn.addEventListener("click", function() {
     confirmModal({
       title: tr('clear_all', 'Clear All'),
@@ -423,7 +483,7 @@ function openNotificationsModal() {
         transition: all 0.2s ease;
         cursor: pointer;
       `;
-      
+
       item.addEventListener("mouseenter", function() {
         this.style.transform = "translateX(4px)";
         this.style.boxShadow = "var(--shadow-sm)";
@@ -432,7 +492,7 @@ function openNotificationsModal() {
         this.style.transform = "translateX(0)";
         this.style.boxShadow = "none";
       });
-      
+
       const headerRow = document.createElement("div");
       headerRow.style.cssText = `
         display: flex;
@@ -441,7 +501,7 @@ function openNotificationsModal() {
         gap: 8px;
         margin-bottom: 4px;
       `;
-      
+
       const titleSpan = document.createElement("span");
       titleSpan.style.cssText = `
         font-family: var(--font-handwritten);
@@ -450,7 +510,7 @@ function openNotificationsModal() {
         color: var(--text-primary);
       `;
       titleSpan.textContent = notification.title;
-      
+
       const typeBadge = document.createElement("span");
       const typeColors = {
         task: "#4f8edb",
@@ -473,10 +533,10 @@ function openNotificationsModal() {
         color: ${typeColors[notification.type] || '#6b7280'};
       `;
       typeBadge.textContent = typeLabels[notification.type] || notification.type.toUpperCase();
-      
+
       headerRow.appendChild(titleSpan);
       headerRow.appendChild(typeBadge);
-      
+
       const messageSpan = document.createElement("p");
       messageSpan.style.cssText = `
         margin: 4px 0;
@@ -485,7 +545,7 @@ function openNotificationsModal() {
         line-height: 1.5;
       `;
       messageSpan.textContent = notification.message;
-      
+
       const dateSpan = document.createElement("span");
       dateSpan.style.cssText = `
         font-size: 11px;
@@ -499,14 +559,14 @@ function openNotificationsModal() {
         hour: '2-digit',
         minute: '2-digit'
       });
-      
+
       const actionsDiv = document.createElement("div");
       actionsDiv.style.cssText = `
         display: flex;
         gap: 8px;
         margin-top: 8px;
       `;
-      
+
       if (!notification.read) {
         const readBtn = document.createElement("button");
         readBtn.type = "button";
@@ -539,7 +599,7 @@ function openNotificationsModal() {
         });
         actionsDiv.appendChild(readBtn);
       }
-      
+
       const deleteBtn = document.createElement("button");
       deleteBtn.type = "button";
       deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('delete', 'Delete');
@@ -564,7 +624,6 @@ function openNotificationsModal() {
         this.style.color = "var(--danger)";
       });
 
-      // ✅ استخدام confirmModal بدلاً من confirm
       deleteBtn.addEventListener("click", function(e) {
         e.stopPropagation();
         confirmModal({
@@ -582,7 +641,7 @@ function openNotificationsModal() {
         });
       });
       actionsDiv.appendChild(deleteBtn);
-      
+
       if (notification.relatedId && (notification.type === "task" || notification.type === "event")) {
         const viewBtn = document.createElement("button");
         viewBtn.type = "button";
@@ -610,25 +669,25 @@ function openNotificationsModal() {
           e.stopPropagation();
           modal.close();
           if (notification.type === "task") {
-            navigateTo("task");
+            if (typeof navigateTo === 'function') navigateTo("task");
           } else if (notification.type === "event") {
-            navigateTo("events");
+            if (typeof navigateTo === 'function') navigateTo("events");
           }
         });
         actionsDiv.appendChild(viewBtn);
       }
-      
+
       item.appendChild(headerRow);
       item.appendChild(messageSpan);
       item.appendChild(dateSpan);
       if (actionsDiv.children.length > 0) {
         item.appendChild(actionsDiv);
       }
-      
+
       listContainer.appendChild(item);
     });
   }
-  
+
   modal.body.appendChild(listContainer);
 
   // زر الإغلاق
@@ -640,7 +699,7 @@ function openNotificationsModal() {
     }
   ]);
   modal.body.appendChild(closeActions);
-  
+
   updateNotificationBadge();
 }
 
@@ -655,14 +714,14 @@ function closeNotificationsModal() {
 
 function setupNotificationButton() {
   let notificationBtn = document.getElementById("notification-btn");
-  
+
   if (!notificationBtn) {
     const header = document.getElementById("main-header");
     if (!header) return;
-    
+
     const headerLeft = header.querySelector(".header-left");
     if (!headerLeft) return;
-    
+
     notificationBtn = document.createElement("button");
     notificationBtn.id = "notification-btn";
     notificationBtn.className = "notification-toggle";
@@ -685,7 +744,7 @@ function setupNotificationButton() {
       font-size: 18px;
       color: var(--text-primary);
     `;
-    
+
     notificationBtn.innerHTML = `
       <span data-lucide="bell" style="width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;"></span>
       <span id="notification-badge" style="
@@ -707,33 +766,52 @@ function setupNotificationButton() {
         box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
       ">0</span>
     `;
-    
+
     notificationBtn.addEventListener("mouseenter", function() {
       this.style.background = "rgba(255, 255, 255, 0.2)";
       this.style.borderColor = "rgba(79, 142, 219, 0.25)";
       this.style.transform = "scale(1.05)";
     });
-    
+
     notificationBtn.addEventListener("mouseleave", function() {
       this.style.background = "rgba(255, 255, 255, 0.12)";
       this.style.borderColor = "rgba(79, 142, 219, 0.12)";
       this.style.transform = "scale(1)";
     });
-    
+
     notificationBtn.addEventListener("click", function() {
       openNotificationsModal();
     });
-    
+
     headerLeft.appendChild(notificationBtn);
   }
-  
+
   setTimeout(function() {
     if (typeof initLucideIcons === 'function') {
       initLucideIcons();
     }
   }, 50);
-  
+
   updateNotificationBadge();
+}
+
+// ========================================
+// ✅ دوال مساعدة للتشخيص
+// ========================================
+
+/**
+ * إعادة تعيين بصمة التغييرات (للاستخدام بعد Clear All Data)
+ */
+function resetNotificationSignature() {
+  lastRefreshSignature = null;
+}
+
+/**
+ * إبطال كاش الإشعارات (للاستخدام بعد Restore)
+ */
+function invalidateNotificationsCache() {
+  notificationsCache = null;
+  lastRefreshSignature = null;
 }
 
 // ========================================
@@ -744,5 +822,7 @@ window.openNotificationsModal = openNotificationsModal;
 window.refreshNotifications = refreshNotifications;
 window.setupNotificationButton = setupNotificationButton;
 window.updateNotificationBadge = updateNotificationBadge;
+window.resetNotificationSignature = resetNotificationSignature;
+window.invalidateNotificationsCache = invalidateNotificationsCache;
 
-console.log("✅ Notifications module loaded successfully!");
+console.log("✅ Notifications v2.1 loaded successfully!");

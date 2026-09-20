@@ -1,6 +1,6 @@
 // ========================================
-// MY LIFE HUB - PROGRAM (Learning Only)
-// نظام تعلم بسيط مع خطوات وتايمر حقيقي وموارد
+// MY LIFE HUB - PROGRAM (Learning Only) v2.2
+// (Event Delegation + replaceChildren + Safe Copy)
 // ========================================
 
 const PROGRAM_STORAGE_KEY = "myLifeHub_programs";
@@ -21,11 +21,49 @@ function getAllPrograms() {
   }
 }
 
+/**
+ * ✅ نسخة من البرامج (للاستخدام عند التعديل)
+ */
+function getProgramsCopy() {
+  if (typeof deepClone === 'function') {
+    return deepClone(getAllPrograms());
+  }
+  try {
+    return JSON.parse(JSON.stringify(getAllPrograms()));
+  } catch (e) {
+    console.warn('getProgramsCopy failed:', e);
+    return getAllPrograms();
+  }
+}
+
+/**
+ * ✅ حفظ آمن مع معالجة QuotaExceededError
+ */
 function saveAllPrograms(programs) {
+  if (!Array.isArray(programs)) {
+    console.error("saveAllPrograms: programs must be an array");
+    return false;
+  }
+
   try {
     localStorage.setItem(PROGRAM_STORAGE_KEY, JSON.stringify(programs));
+    return true;
   } catch (error) {
-    console.error("Error saving programs:", error);
+    if (error.name === 'QuotaExceededError' || error.code === 22) {
+      console.warn('⚠️ localStorage quota exceeded for programs');
+      if (typeof showToast === 'function') {
+        showToast(
+          '⚠️ ' + (typeof t === 'function'
+            ? t('storage_full', 'Storage is full. Please delete some programs.')
+            : 'Storage is full. Please delete some programs.'),
+          'warning',
+          5000
+        );
+      }
+    } else {
+      console.error("Error saving programs:", error);
+    }
+    return false;
   }
 }
 
@@ -35,18 +73,22 @@ function getProgram(programId) {
 }
 
 function updateProgram(updatedProgram) {
-  const programs = getAllPrograms();
+  if (!updatedProgram || !updatedProgram.id) return false;
+
+  // ✅ نسخة من الكاش
+  const programs = getProgramsCopy();
   const index = programs.findIndex(p => p.id === updatedProgram.id);
   if (index === -1) return false;
+
   programs[index] = updatedProgram;
-  saveAllPrograms(programs);
-  return true;
+  return saveAllPrograms(programs);
 }
 
 function deleteProgram(programId) {
-  const programs = getAllPrograms();
+  // ✅ نسخة من الكاش
+  const programs = getProgramsCopy();
   const filtered = programs.filter(p => p.id !== programId);
-  saveAllPrograms(filtered);
+  return saveAllPrograms(filtered);
 }
 
 // ========================================
@@ -80,7 +122,7 @@ function tr(key, fallback) {
 // ========================================
 
 function createProgram(name, description, goal, resources) {
-  const programs = getAllPrograms();
+  const programs = getProgramsCopy();
   const newProgram = {
     id: Date.now() + Math.random() * 1000,
     name: name.trim(),
@@ -243,7 +285,9 @@ function getProgramStats(program) {
   const weekAgo = new Date(now);
   weekAgo.setDate(weekAgo.getDate() - 7);
 
-  const recentSessions = program.sessions ? program.sessions.filter(s => new Date(s.completedAt) >= weekAgo) : [];
+  const recentSessions = program.sessions
+    ? program.sessions.filter(s => new Date(s.completedAt) >= weekAgo)
+    : [];
 
   return {
     totalSteps: progress.total,
@@ -266,46 +310,75 @@ function renderProgramPage() {
     return;
   }
 
+  // ✅ استخدام replaceChildren
+  app.replaceChildren();
+
   const programs = getAllPrograms();
   console.log("📌 Programs loaded:", programs.length);
 
   const activePrograms = programs.filter(p => p.status === "active");
   const completedPrograms = programs.filter(p => p.status !== "active");
 
-  const html = `
-    <div id="program-container">
-      <div class="program-header">
-        <div class="program-title-area">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span data-lucide="graduation-cap" style="width: 32px; height: 32px; color: var(--primary);"></span>
-            <h2 class="program-main-title" style="margin: 0;">${tr('program', 'Learning Programs')}</h2>
-          </div>
-          <p class="program-main-subtitle">${tr('program_subtitle', 'Create your learning programs and track your progress step by step')}</p>
-        </div>
-        <button class="program-add-btn" id="program-add-btn">
-          <span class="program-add-icon" data-lucide="plus" style="width: 20px; height: 20px;"></span>
-          ${tr('add_program', 'New Program')}
-        </button>
-      </div>
-    </div>
+  // ===== Container =====
+  const container = document.createElement("div");
+  container.id = "program-container";
+
+  // ===== Header =====
+  const header = document.createElement("div");
+  header.className = "program-header";
+
+  const titleArea = document.createElement("div");
+  titleArea.className = "program-title-area";
+
+  const titleRow = document.createElement("div");
+  titleRow.style.cssText = "display: flex; align-items: center; gap: 12px;";
+
+  const titleIcon = document.createElement("span");
+  titleIcon.setAttribute("data-lucide", "graduation-cap");
+  titleIcon.style.cssText = "width: 32px; height: 32px; color: var(--primary);";
+
+  const title = document.createElement("h2");
+  title.className = "program-main-title";
+  title.style.margin = "0";
+  title.textContent = tr('program', 'Learning Programs');
+
+  titleRow.appendChild(titleIcon);
+  titleRow.appendChild(title);
+
+  const subtitle = document.createElement("p");
+  subtitle.className = "program-main-subtitle";
+  subtitle.textContent = tr('program_subtitle', 'Create your learning programs and track your progress step by step');
+
+  titleArea.appendChild(titleRow);
+  titleArea.appendChild(subtitle);
+
+  const addBtn = document.createElement("button");
+  addBtn.className = "program-add-btn";
+  addBtn.id = "program-add-btn";
+  addBtn.type = "button";
+  addBtn.innerHTML = `
+    <span class="program-add-icon" data-lucide="plus" style="width: 20px; height: 20px;"></span>
+    ${tr('add_program', 'New Program')}
   `;
 
-  app.innerHTML = html;
+  header.appendChild(titleArea);
+  header.appendChild(addBtn);
+  container.appendChild(header);
 
-  const container = document.getElementById("program-container");
-  const fragment = document.createDocumentFragment();
+  // ===== Active Programs Grid =====
   const grid = document.createElement("div");
   grid.className = "program-grid";
   grid.id = "program-grid";
 
   if (activePrograms.length > 0) {
+    const gridFragment = document.createDocumentFragment();
     activePrograms.forEach(p => {
-      const card = createProgramCardHTML(p);
+      const cardHTML = createProgramCardHTML(p);
       const temp = document.createElement("div");
-      temp.innerHTML = card;
-      while (temp.firstChild) grid.appendChild(temp.firstChild);
+      temp.innerHTML = cardHTML;
+      while (temp.firstChild) gridFragment.appendChild(temp.firstChild);
     });
-    fragment.appendChild(grid);
+    grid.appendChild(gridFragment);
   } else {
     const emptyHTML = `
       <div class="program-empty-state">
@@ -318,48 +391,61 @@ function renderProgramPage() {
     `;
     const temp = document.createElement("div");
     temp.innerHTML = emptyHTML;
-    while (temp.firstChild) fragment.appendChild(temp.firstChild);
+    while (temp.firstChild) grid.appendChild(temp.firstChild);
   }
 
+  container.appendChild(grid);
+
+  // ===== Completed Programs Section =====
   if (completedPrograms.length > 0) {
-    const sectionTitle = document.createElement("h3");
-    sectionTitle.className = "program-section-title";
-    sectionTitle.textContent = "✅ " + tr('completed_programs', 'Completed Programs');
-    fragment.appendChild(sectionTitle);
+    const completedTitle = document.createElement("h3");
+    completedTitle.className = "program-section-title";
+    completedTitle.textContent = "✅ " + tr('completed_programs', 'Completed Programs');
+    container.appendChild(completedTitle);
 
     const subgrid = document.createElement("div");
     subgrid.className = "program-section-subgrid";
+
+    const subFragment = document.createDocumentFragment();
     completedPrograms.forEach(p => {
       const cardHTML = createCompletedCardHTML(p);
       const temp = document.createElement("div");
       temp.innerHTML = cardHTML;
-      while (temp.firstChild) subgrid.appendChild(temp.firstChild);
+      while (temp.firstChild) subFragment.appendChild(temp.firstChild);
     });
-    fragment.appendChild(subgrid);
+    subgrid.appendChild(subFragment);
+    container.appendChild(subgrid);
   }
 
-  document.getElementById("program-grid")?.remove();
-  container.querySelector(".program-empty-state")?.remove();
-  container.querySelector(".program-section-title")?.remove();
-  container.querySelector(".program-section-subgrid")?.remove();
+  app.appendChild(container);
 
-  while (fragment.firstChild) {
-    container.appendChild(fragment.firstChild);
-  }
+  // ========================================
+  // ✅ ربط الأحداث بـ Event Delegation
+  // (يحل مشكلة اختفاء زر الحذف بعد العودة)
+  // ========================================
 
-  // الأحداث
-  document.getElementById("program-add-btn")?.addEventListener("click", () => openProgramBuilder());
+  // 1. زر الإضافة
+  addBtn.addEventListener("click", () => openProgramBuilder());
 
-  document.querySelectorAll(".program-card-continue-btn").forEach(btn => {
-    btn.addEventListener("click", function() {
-      openProgramDetail(parseFloat(this.dataset.programId));
-    });
-  });
+  // 2. Event Delegation لكل الأزرار داخل الـ container
+  container.addEventListener("click", function(e) {
+    const target = e.target.closest("button");
+    if (!target) return;
 
-  // ✨ استخدام deleteModal
-  document.querySelectorAll(".program-card-delete-btn").forEach(btn => {
-    btn.addEventListener("click", function() {
-      const id = parseFloat(this.dataset.programId);
+    // ✅ زر المتابعة
+    if (target.classList.contains("program-card-continue-btn")) {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = parseFloat(target.dataset.programId);
+      if (id) openProgramDetail(id);
+      return;
+    }
+
+    // ✅ زر الحذف
+    if (target.classList.contains("program-card-delete-btn")) {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = parseFloat(target.dataset.programId);
       const program = getProgram(id);
       if (!program) return;
 
@@ -371,20 +457,20 @@ function renderProgramPage() {
           renderProgramPage();
         }
       });
-    });
-  });
-
-  document.querySelectorAll(".program-card-small-btn").forEach(btn => {
-    btn.addEventListener("click", function() {
-      openProgramDetail(parseFloat(this.dataset.programId));
-    });
-  });
-
-  setTimeout(() => { 
-    if (typeof initLucideIcons === 'function') {
-      initLucideIcons();
+      return;
     }
-  }, 50);
+
+    // ✅ زر العرض (للبرامج المكتملة)
+    if (target.classList.contains("program-card-small-btn")) {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = parseFloat(target.dataset.programId);
+      if (id) openProgramDetail(id);
+      return;
+    }
+  });
+
+  // ✅ Lucide يُدار من main.js بعد navigateTo
 }
 
 // ========================================
@@ -421,11 +507,11 @@ function createProgramCardHTML(program) {
         <span class="program-card-stat"><span data-lucide="clock" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ${stats.totalSessions} ${tr('sessions', 'Sessions')}</span>
       </div>
       <div class="program-card-actions">
-        <button class="program-card-continue-btn" data-program-id="${program.id}">
+        <button class="program-card-continue-btn" data-program-id="${program.id}" type="button">
           ${stats.totalSteps === 0 ? tr('add_steps', 'Add Steps →') : tr('continue', 'Continue →')}
         </button>
-        <button class="program-card-delete-btn" data-program-id="${program.id}">
-          <span data-lucide="trash-2" style="width: 16px; height: 16px;"></span>
+        <button class="program-card-delete-btn" data-program-id="${program.id}" type="button">
+          <span data-lucide="trash-2" style="width: 16px; height: 16px; pointer-events: none;"></span>
         </button>
       </div>
     </div>
@@ -448,8 +534,8 @@ function createCompletedCardHTML(program) {
           ${stats.completedSteps}/${stats.totalSteps} ${tr('steps', 'Steps')}
         </div>
       </div>
-      <button class="program-card-small-btn" data-program-id="${program.id}">
-        <span data-lucide="eye" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
+      <button class="program-card-small-btn" data-program-id="${program.id}" type="button">
+        <span data-lucide="eye" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>
         ${tr('view', 'View')}
       </button>
     </div>
@@ -457,7 +543,7 @@ function createCompletedCardHTML(program) {
 }
 
 // ========================================
-// Program Builder
+// Program Builder Modal
 // ========================================
 
 function openProgramBuilder() {
@@ -495,6 +581,7 @@ function openProgramBuilder() {
   });
   modal.body.appendChild(goalField.field);
 
+  // ===== Resources Section =====
   const resourcesLabel = document.createElement("label");
   resourcesLabel.className = "modal-base-label";
   resourcesLabel.textContent = tr('resources_optional', 'Resources (optional)');
@@ -531,24 +618,30 @@ function openProgramBuilder() {
   modal.body.appendChild(resourcesList);
 
   function renderTempResources() {
-    resourcesList.innerHTML = "";
+    resourcesList.replaceChildren();
+
     tempResources.forEach((r, i) => {
       const div = document.createElement("div");
       div.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 6px; font-size: 13px;";
+
       const text = document.createElement("span");
       text.textContent = r.name + (r.url ? " 🔗" : "");
+
       const btn = document.createElement("button");
       btn.type = "button";
       btn.innerHTML = '<span data-lucide="x" style="width: 14px; height: 14px;"></span>';
       btn.style.cssText = "background: none; border: none; color: var(--danger); cursor: pointer; padding: 0 4px;";
-      btn.onclick = () => { tempResources.splice(i, 1); renderTempResources(); };
+      btn.onclick = () => {
+        tempResources.splice(i, 1);
+        renderTempResources();
+      };
+
       div.appendChild(text);
       div.appendChild(btn);
       resourcesList.appendChild(div);
     });
-    setTimeout(() => {
-      if (typeof initLucideIcons === 'function') initLucideIcons();
-    }, 30);
+
+    if (typeof debouncedLucide === 'function') debouncedLucide(30);
   }
 
   addResourceBtn.onclick = () => {
@@ -562,6 +655,7 @@ function openProgramBuilder() {
     }
   };
 
+  // ===== Actions =====
   const actions = createModalActions([
     {
       label: tr('cancel', 'Cancel'),
@@ -618,73 +712,142 @@ function renderProgramDetail(program) {
   const app = document.getElementById("app");
   if (!app) return;
 
+  // ✅ استخدام replaceChildren
+  app.replaceChildren();
+
   const stats = getProgramStats(program);
   const progress = stats.percentage;
 
-  const html = `
-    <div class="program-detail-container">
-      <div class="program-detail-header">
-        <div class="program-detail-title-area">
-          <span class="program-detail-icon" data-lucide="book-open" style="width: 32px; height: 32px; color: var(--primary);"></span>
-          <div>
-            <h2 class="program-detail-name">${escapeHtml(program.name)}</h2>
-            <span class="program-detail-type">${program.status}</span>
-            ${program.goal ? `<span class="program-detail-goal"><span data-lucide="target" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ${escapeHtml(program.goal)}</span>` : ''}
-          </div>
-        </div>
-        <div class="program-detail-actions">
-          <button class="program-detail-back-btn" id="program-detail-back">
-            <span data-lucide="arrow-left" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
-            ${tr('back', 'Back')}
-          </button>
-          <button class="program-detail-delete-btn" id="program-detail-delete">
-            <span data-lucide="trash-2" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
-            ${tr('delete', 'Delete')}
-          </button>
-        </div>
-      </div>
+  // ===== Container =====
+  const container = document.createElement("div");
+  container.className = "program-detail-container";
 
-      <div style="margin-bottom: 20px; background: var(--bg-card); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border-color);">
-        <div style="display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted); margin-bottom: 6px;">
-          <span>${tr('progress', 'Progress')}</span>
-          <span>${progress}% (${stats.completedSteps}/${stats.totalSteps} ${tr('steps', 'steps')})</span>
-        </div>
-        <div style="width: 100%; height: 8px; background: var(--border-light); border-radius: 10px; overflow: hidden;">
-          <div style="height: 100%; width: ${progress}%; background: var(--primary-gradient); border-radius: 10px; transition: width 0.6s ease;"></div>
-        </div>
-      </div>
+  // ===== Header =====
+  const header = document.createElement("div");
+  header.className = "program-detail-header";
 
-      <div class="program-detail-tabs">
-        <button class="program-detail-tab ${currentTab === 'overview' ? 'active' : ''}" data-tab="overview">
-          <span data-lucide="info" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-          ${tr('overview', 'Overview')}
-        </button>
-        <button class="program-detail-tab ${currentTab === 'steps' ? 'active' : ''}" data-tab="steps">
-          <span data-lucide="list" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-          ${tr('steps', 'Steps')}
-        </button>
-        <button class="program-detail-tab ${currentTab === 'resources' ? 'active' : ''}" data-tab="resources">
-          <span data-lucide="link" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-          ${tr('resources', 'Resources')}
-        </button>
-        <button class="program-detail-tab ${currentTab === 'sessions' ? 'active' : ''}" data-tab="sessions">
-          <span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-          ${tr('sessions', 'Sessions')}
-        </button>
-      </div>
+  const titleArea = document.createElement("div");
+  titleArea.className = "program-detail-title-area";
 
-      <div id="program-tab-content"></div>
-    </div>
+  const detailIcon = document.createElement("span");
+  detailIcon.className = "program-detail-icon";
+  detailIcon.setAttribute("data-lucide", "book-open");
+  detailIcon.style.cssText = "width: 32px; height: 32px; color: var(--primary);";
+
+  const titleWrapper = document.createElement("div");
+
+  const detailName = document.createElement("h2");
+  detailName.className = "program-detail-name";
+  detailName.textContent = program.name;
+
+  const detailType = document.createElement("span");
+  detailType.className = "program-detail-type";
+  detailType.textContent = program.status;
+
+  titleWrapper.appendChild(detailName);
+  titleWrapper.appendChild(detailType);
+
+  if (program.goal) {
+    const goalSpan = document.createElement("span");
+    goalSpan.className = "program-detail-goal";
+    goalSpan.innerHTML = '<span data-lucide="target" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span> ' + escapeHtml(program.goal);
+    titleWrapper.appendChild(goalSpan);
+  }
+
+  titleArea.appendChild(detailIcon);
+  titleArea.appendChild(titleWrapper);
+
+  const headerActions = document.createElement("div");
+  headerActions.className = "program-detail-actions";
+
+  const backBtn = document.createElement("button");
+  backBtn.className = "program-detail-back-btn";
+  backBtn.id = "program-detail-back";
+  backBtn.type = "button";
+  backBtn.innerHTML = '<span data-lucide="arrow-left" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>' + tr('back', 'Back');
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.className = "program-detail-delete-btn";
+  deleteBtn.id = "program-detail-delete";
+  deleteBtn.type = "button";
+  deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>' + tr('delete', 'Delete');
+
+  headerActions.appendChild(backBtn);
+  headerActions.appendChild(deleteBtn);
+
+  header.appendChild(titleArea);
+  header.appendChild(headerActions);
+  container.appendChild(header);
+
+  // ===== Progress Bar =====
+  const progressBox = document.createElement("div");
+  progressBox.style.cssText = "margin-bottom: 20px; background: var(--bg-card); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border-color);";
+
+  const progressHeader = document.createElement("div");
+  progressHeader.style.cssText = "display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted); margin-bottom: 6px;";
+  progressHeader.innerHTML = `
+    <span>${tr('progress', 'Progress')}</span>
+    <span>${progress}% (${stats.completedSteps}/${stats.totalSteps} ${tr('steps', 'steps')})</span>
   `;
 
-  app.innerHTML = html;
+  const progressBar = document.createElement("div");
+  progressBar.style.cssText = "width: 100%; height: 8px; background: var(--border-light); border-radius: 10px; overflow: hidden;";
 
-  setTimeout(() => { if (typeof initLucideIcons === 'function') initLucideIcons(); }, 50);
+  const progressFill = document.createElement("div");
+  progressFill.style.cssText = `height: 100%; width: ${progress}%; background: var(--primary-gradient); border-radius: 10px; transition: width 0.6s ease;`;
 
-  document.getElementById("program-detail-back").onclick = () => renderProgramPage();
+  progressBar.appendChild(progressFill);
+  progressBox.appendChild(progressHeader);
+  progressBox.appendChild(progressBar);
+  container.appendChild(progressBox);
 
-  // ✨ استخدام deleteModal
-  document.getElementById("program-detail-delete").onclick = () => {
+  // ===== Tabs =====
+  const tabs = document.createElement("div");
+  tabs.className = "program-detail-tabs";
+
+  const tabDefs = [
+    { id: 'overview', icon: 'info', label: tr('overview', 'Overview') },
+    { id: 'steps', icon: 'list', label: tr('steps', 'Steps') },
+    { id: 'resources', icon: 'link', label: tr('resources', 'Resources') },
+    { id: 'sessions', icon: 'clock', label: tr('sessions', 'Sessions') }
+  ];
+
+  tabDefs.forEach(tab => {
+    const btn = document.createElement("button");
+    btn.className = "program-detail-tab" + (currentTab === tab.id ? ' active' : '');
+    btn.dataset.tab = tab.id;
+    btn.type = "button";
+    btn.innerHTML = `
+      <span data-lucide="${tab.icon}" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>
+      ${tab.label}
+    `;
+    tabs.appendChild(btn);
+  });
+
+  container.appendChild(tabs);
+
+  // ===== Tab Content =====
+  const content = document.createElement("div");
+  content.id = "program-tab-content";
+  container.appendChild(content);
+
+  app.appendChild(container);
+
+  // ========================================
+  // ✅ ربط الأحداث بـ Event Delegation
+  // ========================================
+
+  // ✅ زر الرجوع
+  backBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    renderProgramPage();
+  });
+
+  // ✅ زر الحذف
+  deleteBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     deleteModal({
       itemName: program.name,
       itemType: 'program',
@@ -693,22 +856,29 @@ function renderProgramDetail(program) {
         renderProgramPage();
       }
     });
-  };
-
-  document.querySelectorAll(".program-detail-tab").forEach(tab => {
-    tab.onclick = function() {
-      currentTab = this.dataset.tab;
-      renderProgramDetail(program);
-    };
   });
 
-  const content = document.getElementById("program-tab-content");
+  // ✅ Event Delegation للـ Tabs
+  tabs.addEventListener("click", function(e) {
+    const tabBtn = e.target.closest(".program-detail-tab");
+    if (!tabBtn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    currentTab = tabBtn.dataset.tab;
+    renderProgramDetail(program);
+  });
+
+  // ===== Render Active Tab =====
   switch (currentTab) {
     case "overview": renderOverview(content, program); break;
     case "steps": renderSteps(content, program); break;
     case "resources": renderResources(content, program); break;
     case "sessions": renderSessions(content, program); break;
   }
+
+  // ✅ Lucide يُدار من main.js بعد navigateTo
 }
 
 // ========================================
@@ -719,99 +889,84 @@ function renderOverview(container, program) {
   const stats = getProgramStats(program);
   const nextStep = getNextStep(program);
 
-  const html = `
-    <div class="program-overview">
-      <div class="program-overview-grid">
-        <div class="program-overview-item">
-          <span class="program-overview-label">
-            <span data-lucide="file-text" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-            ${tr('description', 'Description')}
-          </span>
-          <span class="program-overview-value">${escapeHtml(program.description) || tr('no_description', 'No description')}</span>
-        </div>
-        <div class="program-overview-item">
-          <span class="program-overview-label">
-            <span data-lucide="target" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-            ${tr('goal', 'Goal')}
-          </span>
-          <span class="program-overview-value">${escapeHtml(program.goal) || tr('not_set', 'Not set')}</span>
-        </div>
-        <div class="program-overview-item">
-          <span class="program-overview-label">
-            <span data-lucide="activity" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-            ${tr('status', 'Status')}
-          </span>
-          <span class="program-overview-value">${program.status}</span>
-        </div>
-        <div class="program-overview-item">
-          <span class="program-overview-label">
-            <span data-lucide="trending-up" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-            ${tr('progress', 'Progress')}
-          </span>
-          <span class="program-overview-value">${stats.percentage}%</span>
-        </div>
-        <div class="program-overview-item">
-          <span class="program-overview-label">
-            <span data-lucide="list" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-            ${tr('steps', 'Steps')}
-          </span>
-          <span class="program-overview-value">${stats.completedSteps}/${stats.totalSteps}</span>
-        </div>
-        <div class="program-overview-item">
-          <span class="program-overview-label">
-            <span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-            ${tr('sessions', 'Sessions')}
-          </span>
-          <span class="program-overview-value">${stats.totalSessions}</span>
-        </div>
-        <div class="program-overview-item">
-          <span class="program-overview-label">
-            <span data-lucide="link" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-            ${tr('resources', 'Resources')}
-          </span>
-          <span class="program-overview-value">${program.resources ? program.resources.length : 0}</span>
-        </div>
-        <div class="program-overview-item">
-          <span class="program-overview-label">
-            <span data-lucide="arrow-right-circle" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-            ${tr('next_step', 'Next Step')}
-          </span>
-          <span class="program-overview-value">${nextStep ? escapeHtml(nextStep.name) : (stats.totalSteps > 0 ? "✅ " + tr('all_completed', 'All completed!') : tr('no_steps_added', 'No steps added'))}</span>
-        </div>
-        <div class="program-overview-item">
-          <span class="program-overview-label">
-            <span data-lucide="calendar" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-            ${tr('created', 'Created')}
-          </span>
-          <span class="program-overview-value">${formatDate(program.createdAt)}</span>
-        </div>
-        ${program.completedAt ? `
-        <div class="program-overview-item">
-          <span class="program-overview-label">
-            <span data-lucide="check-circle" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>
-            ${tr('completed', 'Completed')}
-          </span>
-          <span class="program-overview-value">${formatDate(program.completedAt)}</span>
-        </div>` : ''}
-      </div>
+  const overview = document.createElement("div");
+  overview.className = "program-overview";
 
-      ${program.status === "active" ? `
-        <button class="program-card-continue-btn" id="program-start-session" style="width: 100%; margin-top: 12px;">
-          <span data-lucide="play" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
-          ${getNextStep(program) ? tr('start_session', 'Start Session') + ': ' + escapeHtml(getNextStep(program).name) + ' →' : (stats.totalSteps === 0 ? tr('add_steps_first', 'Add Steps First →') : '✅ ' + tr('all_steps_completed', 'All Steps Completed!'))}
-        </button>` : ''}
+  const grid = document.createElement("div");
+  grid.className = "program-overview-grid";
 
-      ${program.status === "completed" ? `
-        <div style="text-align: center; padding: 12px; background: #4caf84; color: white; border-radius: 8px; margin-top: 12px;">
-          <span data-lucide="check-circle" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px;"></span>
-          ${tr('program_completed', 'Program Completed! All')} ${stats.totalSteps} ${tr('steps_done', 'steps done!')}
-        </div>` : ''}
-    </div>
-  `;
+  const items = [
+    { icon: 'file-text', label: tr('description', 'Description'), value: escapeHtml(program.description) || tr('no_description', 'No description') },
+    { icon: 'target', label: tr('goal', 'Goal'), value: escapeHtml(program.goal) || tr('not_set', 'Not set') },
+    { icon: 'activity', label: tr('status', 'Status'), value: program.status },
+    { icon: 'trending-up', label: tr('progress', 'Progress'), value: `${stats.percentage}%` },
+    { icon: 'list', label: tr('steps', 'Steps'), value: `${stats.completedSteps}/${stats.totalSteps}` },
+    { icon: 'clock', label: tr('sessions', 'Sessions'), value: stats.totalSessions },
+    { icon: 'link', label: tr('resources', 'Resources'), value: program.resources ? program.resources.length : 0 },
+    { icon: 'arrow-right-circle', label: tr('next_step', 'Next Step'), value: nextStep ? escapeHtml(nextStep.name) : (stats.totalSteps > 0 ? "✅ " + tr('all_completed', 'All completed!') : tr('no_steps_added', 'No steps added')) },
+    { icon: 'calendar', label: tr('created', 'Created'), value: formatDate(program.createdAt) }
+  ];
 
-  container.innerHTML = html;
+  if (program.completedAt) {
+    items.push({ icon: 'check-circle', label: tr('completed', 'Completed'), value: formatDate(program.completedAt) });
+  }
 
-  document.getElementById("program-start-session")?.addEventListener("click", () => startSession(program.id));
+  items.forEach(item => {
+    const itemEl = document.createElement("div");
+    itemEl.className = "program-overview-item";
+    itemEl.innerHTML = `
+      <span class="program-overview-label">
+        <span data-lucide="${item.icon}" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>
+        ${item.label}
+      </span>
+      <span class="program-overview-value">${item.value}</span>
+    `;
+    grid.appendChild(itemEl);
+  });
+
+  overview.appendChild(grid);
+
+  // ===== Start Session Button =====
+  if (program.status === "active") {
+    const startBtn = document.createElement("button");
+    startBtn.className = "program-card-continue-btn";
+    startBtn.id = "program-start-session";
+    startBtn.type = "button";
+    startBtn.style.cssText = "width: 100%; margin-top: 12px;";
+
+    const next = getNextStep(program);
+    let label = '';
+    if (next) {
+      label = tr('start_session', 'Start Session') + ': ' + escapeHtml(next.name) + ' →';
+    } else if (stats.totalSteps === 0) {
+      label = tr('add_steps_first', 'Add Steps First →');
+    } else {
+      label = '✅ ' + tr('all_steps_completed', 'All Steps Completed!');
+    }
+
+    startBtn.innerHTML = `<span data-lucide="play" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>${label}`;
+    overview.appendChild(startBtn);
+
+    startBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      startSession(program.id);
+    });
+  }
+
+  if (program.status === "completed") {
+    const completedBadge = document.createElement("div");
+    completedBadge.style.cssText = "text-align: center; padding: 12px; background: #4caf84; color: white; border-radius: 8px; margin-top: 12px;";
+    completedBadge.innerHTML = `
+      <span data-lucide="check-circle" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>
+      ${tr('program_completed', 'Program Completed! All')} ${stats.totalSteps} ${tr('steps_done', 'steps done!')}
+    `;
+    overview.appendChild(completedBadge);
+  }
+
+  container.replaceChildren(overview);
+
+  if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
 // ========================================
@@ -819,7 +974,6 @@ function renderOverview(container, program) {
 // ========================================
 
 function renderSteps(container, program) {
-  const fragment = document.createDocumentFragment();
   const wrapper = document.createElement("div");
   wrapper.className = "program-structure";
   wrapper.id = "program-steps-container";
@@ -836,31 +990,32 @@ function renderSteps(container, program) {
       phaseDiv.dataset.stepId = step.id;
       phaseDiv.draggable = true;
 
+      // ===== Header =====
       const headerDiv = document.createElement("div");
       headerDiv.className = "program-phase-header";
 
       const nameSpan = document.createElement("span");
       nameSpan.className = "program-phase-name";
-      nameSpan.innerHTML = (step.completed ? '<span data-lucide="check-circle" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: #4caf84;"></span>' : '<span data-lucide="circle" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>') + ' ' + escapeHtml(step.name);
+      nameSpan.innerHTML = (step.completed ? '<span data-lucide="check-circle" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: #4caf84; pointer-events: none;"></span>' : '<span data-lucide="circle" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>') + ' ' + escapeHtml(step.name);
       headerDiv.appendChild(nameSpan);
 
       if (step.completed) {
         const dateSpan = document.createElement("span");
         dateSpan.style.cssText = "font-size: 12px; color: var(--text-muted);";
-        dateSpan.innerHTML = '<span data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span>' + formatDate(step.completedAt);
+        dateSpan.innerHTML = '<span data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>' + formatDate(step.completedAt);
         headerDiv.appendChild(dateSpan);
 
         if (step.difficulty) {
           const diffSpan = document.createElement("span");
           diffSpan.style.cssText = "font-size: 12px; color: var(--text-muted);";
-          diffSpan.innerHTML = tr(step.difficulty.toLowerCase(), step.difficulty);
+          diffSpan.textContent = tr(step.difficulty.toLowerCase(), step.difficulty);
           headerDiv.appendChild(diffSpan);
         }
 
         if (step.rating) {
           const ratingSpan = document.createElement("span");
           ratingSpan.style.cssText = "font-size: 12px; color: var(--warning);";
-          ratingSpan.innerHTML = '<span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; fill: #f5a623; stroke: #f5a623;"></span>' + step.rating + '/5';
+          ratingSpan.innerHTML = '<span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; fill: #f5a623; stroke: #f5a623; pointer-events: none;"></span>' + step.rating + '/5';
           headerDiv.appendChild(ratingSpan);
         }
       }
@@ -871,13 +1026,15 @@ function renderSteps(container, program) {
       if (!step.completed) {
         const editBtn = document.createElement("button");
         editBtn.className = "program-phase-btn program-edit-step-btn";
-        editBtn.innerHTML = '<span data-lucide="pencil" style="width: 16px; height: 16px;"></span>';
+        editBtn.type = "button";
+        editBtn.innerHTML = '<span data-lucide="pencil" style="width: 16px; height: 16px; pointer-events: none;"></span>';
         editBtn.dataset.stepId = step.id;
         actionsDiv.appendChild(editBtn);
 
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "program-phase-btn program-phase-btn-danger program-delete-step-btn";
-        deleteBtn.innerHTML = '<span data-lucide="x" style="width: 16px; height: 16px;"></span>';
+        deleteBtn.type = "button";
+        deleteBtn.innerHTML = '<span data-lucide="x" style="width: 16px; height: 16px; pointer-events: none;"></span>';
         deleteBtn.dataset.stepId = step.id;
         actionsDiv.appendChild(deleteBtn);
       }
@@ -885,17 +1042,19 @@ function renderSteps(container, program) {
       headerDiv.appendChild(actionsDiv);
       phaseDiv.appendChild(headerDiv);
 
+      // ===== Learning Note =====
       if (step.completed && step.learning) {
         const learningDiv = document.createElement("div");
         learningDiv.style.cssText = "font-size: 13px; color: var(--text-secondary); padding: 4px 0 0 24px; font-style: italic;";
-        learningDiv.innerHTML = '<span data-lucide="lightbulb" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623;"></span>' + escapeHtml(step.learning);
+        learningDiv.innerHTML = '<span data-lucide="lightbulb" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623; pointer-events: none;"></span>' + escapeHtml(step.learning);
         phaseDiv.appendChild(learningDiv);
       }
 
+      // ===== Duration =====
       if (step.completed && step.duration) {
         const durationDiv = document.createElement("div");
         durationDiv.style.cssText = "font-size: 12px; color: var(--text-muted); padding: 2px 0 0 24px;";
-        durationDiv.innerHTML = '<span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span>' + step.duration + ' min';
+        durationDiv.innerHTML = '<span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>' + step.duration + ' min';
         phaseDiv.appendChild(durationDiv);
       }
 
@@ -903,19 +1062,26 @@ function renderSteps(container, program) {
     });
   }
 
+  // ===== Add Step Button =====
   const addBtn = document.createElement("button");
   addBtn.className = "program-add-phase-btn";
   addBtn.id = "program-add-step";
+  addBtn.type = "button";
   addBtn.style.marginTop = "12px";
-  addBtn.innerHTML = '<span data-lucide="plus" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>' + tr('add_step', 'Add Step');
+  addBtn.innerHTML = '<span data-lucide="plus" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>' + tr('add_step', 'Add Step');
   wrapper.appendChild(addBtn);
 
-  fragment.appendChild(wrapper);
-  container.innerHTML = "";
-  container.appendChild(fragment);
+  container.replaceChildren(wrapper);
 
-  // ✅ استخدام promptModal
-  document.getElementById("program-add-step").onclick = () => {
+  // ========================================
+  // ✅ Event Delegation للخطوات
+  // ========================================
+
+  // ✅ زر إضافة خطوة
+  addBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     promptModal({
       title: tr('add_step', 'Add Step'),
       message: tr('enter_step_name', 'Enter a descriptive name for this step'),
@@ -933,13 +1099,19 @@ function renderSteps(container, program) {
         }
       }
     });
-  };
+  });
 
-  // ✅ استخدام promptModal
-  document.querySelectorAll(".program-edit-step-btn").forEach(btn => {
-    btn.onclick = function(e) {
+  // ✅ Event Delegation لكل الأزرار في الخطوات
+  wrapper.addEventListener("click", function(e) {
+    const target = e.target.closest("button");
+    if (!target) return;
+
+    // ✅ زر تعديل الخطوة
+    if (target.classList.contains("program-edit-step-btn")) {
+      e.preventDefault();
       e.stopPropagation();
-      const stepId = parseFloat(this.dataset.stepId);
+
+      const stepId = parseFloat(target.dataset.stepId);
       const p = getProgram(program.id);
       if (!p) return;
       const step = p.steps.find(s => s.id === stepId);
@@ -961,14 +1133,15 @@ function renderSteps(container, program) {
           renderProgramDetail(p);
         }
       });
-    };
-  });
+      return;
+    }
 
-  // ✨ استخدام deleteModal لحذف الخطوة
-  document.querySelectorAll(".program-delete-step-btn").forEach(btn => {
-    btn.onclick = function(e) {
+    // ✅ زر حذف الخطوة
+    if (target.classList.contains("program-delete-step-btn")) {
+      e.preventDefault();
       e.stopPropagation();
-      const stepId = parseFloat(this.dataset.stepId);
+
+      const stepId = parseFloat(target.dataset.stepId);
       const step = program.steps.find(s => s.id === stepId);
       if (!step) return;
 
@@ -981,10 +1154,13 @@ function renderSteps(container, program) {
           if (updated) renderProgramDetail(updated);
         }
       });
-    };
+      return;
+    }
   });
 
   setupStepDragAndDrop(program.id);
+
+  if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
 // ========================================
@@ -992,75 +1168,119 @@ function renderSteps(container, program) {
 // ========================================
 
 function renderResources(container, program) {
-  let html = `<div class="program-overview">`;
+  const overview = document.createElement("div");
+  overview.className = "program-overview";
 
   if (!program.resources || program.resources.length === 0) {
-    html += `<p style="text-align: center; color: var(--text-muted); padding: 20px 0;">${tr('no_resources', 'No resources added.')}</p>`;
+    const empty = document.createElement("p");
+    empty.style.cssText = "text-align: center; color: var(--text-muted); padding: 20px 0;";
+    empty.textContent = tr('no_resources', 'No resources added.');
+    overview.appendChild(empty);
   } else {
     program.resources.forEach(res => {
-      html += `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 8px; background: var(--bg-surface);">
-          <div>
-            <span style="font-weight: 500; color: var(--text-primary);">
-              <span data-lucide="link" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></span>
-              ${escapeHtml(res.name)}
-            </span>
-            ${res.url ? `<a href="${escapeHtml(res.url)}" target="_blank" style="margin-left: 12px; color: var(--primary); text-decoration: none; font-size: 13px;"><span data-lucide="external-link" style="width: 14px; height: 14px; vertical-align: middle;"></span> ${tr('open', 'Open')}</a>` : ''}
-          </div>
-          <button class="program-phase-btn program-phase-btn-danger" data-action="delete-resource" data-resource-id="${res.id}" style="padding: 4px 10px;">
-            <span data-lucide="trash-2" style="width: 14px; height: 14px;"></span>
-          </button>
-        </div>
+      const resDiv = document.createElement("div");
+      resDiv.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 8px; background: var(--bg-surface);";
+
+      const infoDiv = document.createElement("div");
+      infoDiv.innerHTML = `
+        <span style="font-weight: 500; color: var(--text-primary);">
+          <span data-lucide="link" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: var(--primary); pointer-events: none;"></span>
+          ${escapeHtml(res.name)}
+        </span>
+        ${res.url ? `<a href="${escapeHtml(res.url)}" target="_blank" rel="noopener noreferrer" style="margin-left: 12px; color: var(--primary); text-decoration: none; font-size: 13px;"><span data-lucide="external-link" style="width: 14px; height: 14px; vertical-align: middle; pointer-events: none;"></span> ${tr('open', 'Open')}</a>` : ''}
       `;
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "program-phase-btn program-phase-btn-danger program-delete-resource-btn";
+      deleteBtn.type = "button";
+      deleteBtn.dataset.resourceId = res.id;
+      deleteBtn.style.cssText = "padding: 4px 10px;";
+      deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 14px; height: 14px; pointer-events: none;"></span>';
+
+      resDiv.appendChild(infoDiv);
+      resDiv.appendChild(deleteBtn);
+      overview.appendChild(resDiv);
     });
   }
 
-  html += `
-    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light);">
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <input type="text" id="program-add-resource-name" placeholder="${tr('resource_name', 'Resource name...')}" style="flex: 1; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);" />
-        <input type="text" id="program-add-resource-url" placeholder="${tr('url_optional', 'URL (optional)')}" style="flex: 1.5; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);" />
-        <button class="program-card-continue-btn" id="program-add-resource-btn" style="padding: 8px 20px;">
-          <span data-lucide="plus" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
-          ${tr('add_resource', 'Add Resource')}
-        </button>
-      </div>
-    </div>
-  `;
+  // ===== Add Resource Form =====
+  const addForm = document.createElement("div");
+  addForm.style.cssText = "margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light);";
 
-  html += `</div>`;
-  container.innerHTML = html;
+  const addRow = document.createElement("div");
+  addRow.style.cssText = "display: flex; gap: 8px; flex-wrap: wrap;";
 
-  document.getElementById("program-add-resource-btn").onclick = () => {
-    const name = document.getElementById("program-add-resource-name").value.trim();
-    const url = document.getElementById("program-add-resource-url").value.trim();
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.id = "program-add-resource-name";
+  nameInput.placeholder = tr('resource_name', 'Resource name...');
+  nameInput.style.cssText = "flex: 1; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);";
+
+  const urlInput = document.createElement("input");
+  urlInput.type = "text";
+  urlInput.id = "program-add-resource-url";
+  urlInput.placeholder = tr('url_optional', 'URL (optional)');
+  urlInput.style.cssText = "flex: 1.5; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);";
+
+  const addBtn = document.createElement("button");
+  addBtn.className = "program-card-continue-btn program-add-resource-btn";
+  addBtn.id = "program-add-resource-btn";
+  addBtn.type = "button";
+  addBtn.style.cssText = "padding: 8px 20px;";
+  addBtn.innerHTML = '<span data-lucide="plus" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>' + tr('add_resource', 'Add Resource');
+
+  addRow.appendChild(nameInput);
+  addRow.appendChild(urlInput);
+  addRow.appendChild(addBtn);
+  addForm.appendChild(addRow);
+  overview.appendChild(addForm);
+
+  container.replaceChildren(overview);
+
+  // ========================================
+  // ✅ Event Delegation للموارد
+  // ========================================
+
+  // ✅ زر إضافة مورد
+  addBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const name = nameInput.value.trim();
+    const url = urlInput.value.trim();
     if (name) {
       addResource(program.id, name, url);
-      document.getElementById("program-add-resource-name").value = "";
-      document.getElementById("program-add-resource-url").value = "";
+      nameInput.value = "";
+      urlInput.value = "";
       const updated = getProgram(program.id);
       if (updated) renderProgramDetail(updated);
     }
-  };
-
-  // ✨ استخدام deleteModal لحذف المورد
-  container.querySelectorAll("[data-action='delete-resource']").forEach(btn => {
-    btn.onclick = function() {
-      const resourceId = parseFloat(this.dataset.resourceId);
-      const res = program.resources.find(r => r.id === resourceId);
-      if (!res) return;
-
-      deleteModal({
-        itemName: res.name,
-        itemType: 'program',
-        onConfirm: () => {
-          deleteResource(program.id, resourceId);
-          const updated = getProgram(program.id);
-          if (updated) renderProgramDetail(updated);
-        }
-      });
-    };
   });
+
+  // ✅ Event Delegation لحذف المورد
+  overview.addEventListener("click", function(e) {
+    const target = e.target.closest(".program-delete-resource-btn");
+    if (!target) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const resourceId = parseFloat(target.dataset.resourceId);
+    const res = program.resources.find(r => r.id === resourceId);
+    if (!res) return;
+
+    deleteModal({
+      itemName: res.name,
+      itemType: 'program',
+      onConfirm: () => {
+        deleteResource(program.id, resourceId);
+        const updated = getProgram(program.id);
+        if (updated) renderProgramDetail(updated);
+      }
+    });
+  });
+
+  if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
 // ========================================
@@ -1069,70 +1289,110 @@ function renderResources(container, program) {
 
 function renderSessions(container, program) {
   const sessions = program.sessions || [];
+  const overview = document.createElement("div");
+  overview.className = "program-overview";
 
   if (sessions.length === 0) {
-    let html = `<div class="program-overview">`;
-    html += `<p style="text-align: center; color: var(--text-muted); padding: 20px 0;">${tr('no_sessions', 'No sessions completed yet. Start your first session!')}</p>`;
+    const empty = document.createElement("p");
+    empty.style.cssText = "text-align: center; color: var(--text-muted); padding: 20px 0;";
+    empty.textContent = tr('no_sessions', 'No sessions completed yet. Start your first session!');
+    overview.appendChild(empty);
+
     if (program.status === "active" && program.steps && program.steps.length > 0) {
       const nextStep = getNextStep(program);
       if (nextStep) {
-        html += `<button class="program-card-continue-btn" id="program-start-session-from-sessions" style="width: 100%;">
-          <span data-lucide="play" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>
-          ${tr('start_session', 'Start Session')} →
-        </button>`;
+        const startBtn = document.createElement("button");
+        startBtn.className = "program-card-continue-btn program-start-session-btn";
+        startBtn.type = "button";
+        startBtn.style.cssText = "width: 100%;";
+        startBtn.innerHTML = `<span data-lucide="play" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>${tr('start_session', 'Start Session')} →`;
+        overview.appendChild(startBtn);
       }
     }
-    html += `</div>`;
-    container.innerHTML = html;
-    document.getElementById("program-start-session-from-sessions")?.addEventListener("click", () => startSession(program.id));
+
+    container.replaceChildren(overview);
+
+    // ✅ Event Delegation
+    overview.addEventListener("click", function(e) {
+      const target = e.target.closest(".program-start-session-btn");
+      if (!target) return;
+      e.preventDefault();
+      e.stopPropagation();
+      startSession(program.id);
+    });
+
+    if (typeof debouncedLucide === 'function') debouncedLucide(50);
     return;
   }
 
   const sortedSessions = [...sessions].reverse();
 
-  let html = `<div class="program-overview">`;
-  html += `
-    <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-      <span style="font-weight: 600; color: var(--text-primary);">
-        <span data-lucide="clock" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></span>
-        ${sessions.length} ${tr('sessions_completed', 'Sessions Completed')}
-      </span>
-      ${program.status === "active" && getNextStep(program) ? `<button class="program-card-continue-btn" id="program-start-session-from-sessions"><span data-lucide="play" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"></span>${tr('start_session', 'Start Session')} →</button>` : ''}
-    </div>
-  `;
+  // ===== Header =====
+  const header = document.createElement("div");
+  header.style.cssText = "margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;";
 
+  const countSpan = document.createElement("span");
+  countSpan.style.cssText = "font-weight: 600; color: var(--text-primary);";
+  countSpan.innerHTML = `
+    <span data-lucide="clock" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 4px; color: var(--primary); pointer-events: none;"></span>
+    ${sessions.length} ${tr('sessions_completed', 'Sessions Completed')}
+  `;
+  header.appendChild(countSpan);
+
+  if (program.status === "active" && getNextStep(program)) {
+    const startBtn = document.createElement("button");
+    startBtn.className = "program-card-continue-btn program-start-session-btn";
+    startBtn.type = "button";
+    startBtn.innerHTML = `<span data-lucide="play" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>${tr('start_session', 'Start Session')} →`;
+    header.appendChild(startBtn);
+  }
+
+  overview.appendChild(header);
+
+  // ===== Sessions List =====
   sortedSessions.forEach(session => {
     const difficultyEmoji = session.difficulty === "Hard" ? "🔴" : session.difficulty === "Medium" ? "🟡" : "🟢";
     const difficultyLabel = tr(session.difficulty?.toLowerCase() || 'medium', session.difficulty || 'Medium');
 
-    html += `
-      <div style="padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 8px; background: var(--bg-surface);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-          <div>
-            <span style="font-weight: 600; color: var(--text-primary);">
-              <span data-lucide="book-open" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></span>
-              ${escapeHtml(session.stepName)}
-            </span>
-          </div>
-          <div style="display: flex; gap: 12px; font-size: 13px; color: var(--text-muted);">
-            <span>${difficultyEmoji} ${difficultyLabel}</span>
-            <span><span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 2px; fill: #f5a623; stroke: #f5a623;"></span>${session.rating}/5</span>
-            ${session.duration ? `<span><span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 2px;"></span>${session.duration} min</span>` : ''}
-          </div>
+    const sessionDiv = document.createElement("div");
+    sessionDiv.style.cssText = "padding: 12px 16px; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 8px; background: var(--bg-surface);";
+
+    sessionDiv.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <span style="font-weight: 600; color: var(--text-primary);">
+            <span data-lucide="book-open" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: var(--primary); pointer-events: none;"></span>
+            ${escapeHtml(session.stepName)}
+          </span>
         </div>
-        ${session.learning ? `<div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-style: italic;"><span data-lucide="lightbulb" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623;"></span>"${escapeHtml(session.learning)}"</div>` : ''}
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
-          <span data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 2px;"></span>
-          ${formatDate(session.completedAt)}
+        <div style="display: flex; gap: 12px; font-size: 13px; color: var(--text-muted);">
+          <span>${difficultyEmoji} ${difficultyLabel}</span>
+          <span><span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 2px; fill: #f5a623; stroke: #f5a623; pointer-events: none;"></span>${session.rating}/5</span>
+          ${session.duration ? `<span><span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 2px; pointer-events: none;"></span>${session.duration} min</span>` : ''}
         </div>
       </div>
+      ${session.learning ? `<div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-style: italic;"><span data-lucide="lightbulb" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623; pointer-events: none;"></span>"${escapeHtml(session.learning)}"</div>` : ''}
+      <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+        <span data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 2px; pointer-events: none;"></span>
+        ${formatDate(session.completedAt)}
+      </div>
     `;
+
+    overview.appendChild(sessionDiv);
   });
 
-  html += `</div>`;
-  container.innerHTML = html;
+  container.replaceChildren(overview);
 
-  document.getElementById("program-start-session-from-sessions")?.addEventListener("click", () => startSession(program.id));
+  // ✅ Event Delegation لزر بدء الجلسة
+  overview.addEventListener("click", function(e) {
+    const target = e.target.closest(".program-start-session-btn");
+    if (!target) return;
+    e.preventDefault();
+    e.stopPropagation();
+    startSession(program.id);
+  });
+
+  if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
 // ========================================
@@ -1258,7 +1518,7 @@ function openSessionModal(programId, stepId, stepName) {
 
   const stepTitle = document.createElement("p");
   stepTitle.style.cssText = "font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; text-align: center;";
-  stepTitle.innerHTML = '<span data-lucide="book-open" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: var(--primary);"></span> ' + escapeHtml(stepName);
+  stepTitle.innerHTML = '<span data-lucide="book-open" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: var(--primary); pointer-events: none;"></span> ' + escapeHtml(stepName);
   modal.body.appendChild(stepTitle);
 
   const timerBox = document.createElement("div");
@@ -1267,15 +1527,15 @@ function openSessionModal(programId, stepId, stepName) {
     <div style="font-size: 48px; font-weight: 700; font-family: monospace; color: var(--primary);" id="session-timer-display">00:00</div>
     <div style="display: flex; gap: 8px; justify-content: center; margin-top: 8px; flex-wrap: wrap;">
       <button type="button" class="modal-base-btn modal-base-btn-primary" id="session-timer-start" style="padding: 8px 20px; font-size: 14px; flex: 0 0 auto;">
-        <span data-lucide="play" style="width: 14px; height: 14px;"></span>
+        <span data-lucide="play" style="width: 14px; height: 14px; pointer-events: none;"></span>
         ${tr('start', 'Start')}
       </button>
       <button type="button" class="modal-base-btn modal-base-btn-secondary" id="session-timer-pause" style="padding: 8px 20px; font-size: 14px; flex: 0 0 auto; display: none;">
-        <span data-lucide="pause" style="width: 14px; height: 14px;"></span>
+        <span data-lucide="pause" style="width: 14px; height: 14px; pointer-events: none;"></span>
         ${tr('pause', 'Pause')}
       </button>
       <button type="button" class="modal-base-btn modal-base-btn-secondary" id="session-timer-reset" style="padding: 8px 20px; font-size: 14px; flex: 0 0 auto;">
-        <span data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></span>
+        <span data-lucide="rotate-ccw" style="width: 14px; height: 14px; pointer-events: none;"></span>
         ${tr('reset', 'Reset')}
       </button>
     </div>
@@ -1288,7 +1548,7 @@ function openSessionModal(programId, stepId, stepName) {
 
   const diffLabel = document.createElement("label");
   diffLabel.className = "modal-base-label";
-  diffLabel.innerHTML = '<span data-lucide="bar-chart" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></span> ' + tr('how_was_step', 'How was this step?');
+  diffLabel.innerHTML = '<span data-lucide="bar-chart" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span> ' + tr('how_was_step', 'How was this step?');
   modal.body.appendChild(diffLabel);
 
   const diffGrid = document.createElement("div");
@@ -1329,7 +1589,7 @@ function openSessionModal(programId, stepId, stepName) {
 
   const ratingLabel = document.createElement("label");
   ratingLabel.className = "modal-base-label";
-  ratingLabel.innerHTML = '<span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623;"></span> ' + tr('rating', 'Rating') + ' (1-5)';
+  ratingLabel.innerHTML = '<span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623; pointer-events: none;"></span> ' + tr('rating', 'Rating') + ' (1-5)';
   modal.body.appendChild(ratingLabel);
 
   const ratingGrid = document.createElement("div");
@@ -1406,7 +1666,6 @@ function openSessionModal(programId, stepId, stepName) {
         const learning = learnField.input.value.trim() || tr('completed_successfully', 'Completed successfully!');
         const duration = Math.ceil(timerSeconds / 60);
 
-        // ✅ استخدام confirmModal
         confirmModal({
           title: tr('complete_step', 'Complete Step'),
           message: `${tr('complete_step_confirm', 'Complete this step? You spent')} <strong>${duration} ${tr('minutes', 'minutes')}</strong>.`,
@@ -1427,9 +1686,28 @@ function openSessionModal(programId, stepId, stepName) {
 }
 
 // ========================================
-// تصدير الدالة
+// تصدير الدوال
 // ========================================
 
 window.renderProgramPage = renderProgramPage;
+window.getAllPrograms = getAllPrograms;
+window.getProgramsCopy = getProgramsCopy;
+window.getProgram = getProgram;
+window.createProgram = createProgram;
+window.deleteProgram = deleteProgram;
+window.updateProgram = updateProgram;
+window.addStep = addStep;
+window.deleteStep = deleteStep;
+window.addResource = addResource;
+window.deleteResource = deleteResource;
+window.completeStep = completeStep;
+window.getProgramStats = getProgramStats;
+window.getNextStep = getNextStep;
+window.reorderSteps = reorderSteps;
+window.openProgramBuilder = openProgramBuilder;
+window.openProgramDetail = openProgramDetail;
+window.renderProgramDetail = renderProgramDetail;
+window.startSession = startSession;
+window.openSessionModal = openSessionModal;
 
-console.log("✅ Program (Learning with Timer & Resources) loaded successfully!");
+console.log("✅ Program v2.2 loaded successfully!");
