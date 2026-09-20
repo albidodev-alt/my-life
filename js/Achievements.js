@@ -487,4 +487,4 @@ window.renderAchievementsGrid = renderAchievementsGrid;
 window.openAchievementDetails = openAchievementDetails;
 window.refreshAchievements = refreshAchievements;
 
-console.log("✅ Achievements.js v3.3 loaded successfully!");
+console.log("✅ achievements.js v3.3 loaded successfully!");
