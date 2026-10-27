@@ -1,10 +1,11 @@
 // ========================================
-// MY LIFE HUB - ACHIEVEMENTS v3.3
-// (replaceChildren + Clean Lucide + Stats Cards + Grid of 20 Tasks)
+// MY LIFE HUB - ACHIEVEMENTS v3.4
+// (Lucide Icons + Shared Configs from task.js + Clean Emoji Removal)
 // ========================================
 
 // ========================================
-// خريطة الألوان والأيقونات حسب الصعوبة
+// ✅ خريطة الألوان والأيقونات حسب الصعوبة
+// (Fallback إذا لم يكن DIFFICULTY_CONFIG متاحاً)
 // ========================================
 const ACHIEVEMENT_DIFFICULTY_MAP = {
   easy: {
@@ -37,6 +38,23 @@ const ACHIEVEMENT_DIFFICULTY_MAP = {
 // الحصول على بيانات الصعوبة
 // ========================================
 function getAchievementDifficultyConfig(difficulty) {
+  // ✅ محاولة استخدام DIFFICULTY_CONFIG من task.js إن وُجد
+  if (typeof window.DIFFICULTY_CONFIG !== 'undefined') {
+    const key = difficulty || 'Easy';
+    const cfg = window.DIFFICULTY_CONFIG[key];
+    if (cfg) {
+      return {
+        label: cfg.fallback || key,
+        translationKey: cfg.key || key.toLowerCase(),
+        color: cfg.color,
+        bgColor: cfg.bgColor,
+        borderColor: cfg.bgColor.replace('0.10', '0.30'),
+        icon: cfg.icon
+      };
+    }
+  }
+
+  // Fallback
   const key = (difficulty || 'Easy').toLowerCase();
   return ACHIEVEMENT_DIFFICULTY_MAP[key] || ACHIEVEMENT_DIFFICULTY_MAP.easy;
 }
@@ -48,7 +66,6 @@ function renderCompleted() {
   const app = document.getElementById("app");
   if (!app) return;
 
-  // ✅ استخدام replaceChildren
   app.replaceChildren();
 
   // ===== الإحصائيات =====
@@ -138,19 +155,31 @@ function renderCompleted() {
   filterLabel.style.cssText = "font-size:14px;font-weight:500;";
   filterDiv.appendChild(filterLabel);
 
-  const filters = [
-    { value: "all", label: typeof t === 'function' ? t('all', 'All') : 'All' },
-    { value: "Easy", label: typeof t === 'function' ? t('easy', 'Easy') : 'Easy' },
-    { value: "Medium", label: typeof t === 'function' ? t('medium', 'Medium') : 'Medium' },
-    { value: "Hard", label: typeof t === 'function' ? t('hard', 'Hard') : 'Hard' }
+  // ✅ أزرار الفلاتر (بأيقونات Lucide)
+  const filterDefs = [
+    { value: "all", icon: null, color: null, label: typeof t === 'function' ? t('all', 'All') : 'All' },
+    { value: "Easy",   icon: 'circle-check', color: '#4caf84', label: typeof t === 'function' ? t('easy', 'Easy') : 'Easy' },
+    { value: "Medium", icon: 'circle-check', color: '#f5a623', label: typeof t === 'function' ? t('medium', 'Medium') : 'Medium' },
+    { value: "Hard",   icon: 'circle-check', color: '#e74c5e', label: typeof t === 'function' ? t('hard', 'Hard') : 'Hard' }
   ];
 
-  filters.forEach(function (f) {
+  filterDefs.forEach(function (f) {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.textContent = f.label;
     btn.className = "filter-btn" + (f.value === "all" ? " active" : "");
     btn.dataset.filter = f.value;
+
+    if (f.icon) {
+      btn.innerHTML = `
+        <span data-lucide="${f.icon}" 
+              style="width:14px;height:14px;vertical-align:middle;
+                     margin-right:4px;color:${f.color};pointer-events:none;"></span>
+        ${f.label}
+      `;
+    } else {
+      btn.textContent = f.label;
+    }
+
     filterDiv.appendChild(btn);
   });
 
@@ -174,12 +203,10 @@ function renderCompleted() {
   });
 
   renderAchievementsGrid("all");
-
-  // ✅ Lucide يُدار من main.js
 }
 
 // ========================================
-// عرض شبكة المهام المكتملة (مع replaceChildren)
+// عرض شبكة المهام المكتملة
 // ========================================
 function renderAchievementsGrid(filter = "all") {
   const grid = document.getElementById("achievements-grid");
@@ -193,7 +220,6 @@ function renderAchievementsGrid(filter = "all") {
     tasks = tasks.filter(t => t.difficulty === filter);
   }
 
-  // ✅ استخدام DocumentFragment
   const fragment = document.createDocumentFragment();
 
   if (tasks.length === 0) {
@@ -215,10 +241,8 @@ function renderAchievementsGrid(filter = "all") {
     });
   }
 
-  // ✅ استخدام replaceChildren
   grid.replaceChildren(fragment);
 
-  // ✅ Lucide يُدار من main.js أو من الدوال المستدعية
   if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
@@ -245,7 +269,7 @@ function createAchievementCard(task) {
   const deleteBtn = document.createElement("button");
   deleteBtn.type = "button";
   deleteBtn.className = "achievement-card-delete";
-  deleteBtn.innerHTML = '<span data-lucide="trash-2"></span>';
+  deleteBtn.innerHTML = '<span data-lucide="trash-2" style="pointer-events:none;"></span>';
   deleteBtn.title = typeof t === 'function' ? t('delete', 'Delete') : 'Delete';
   deleteBtn.setAttribute("aria-label", deleteBtn.title);
 
@@ -274,12 +298,13 @@ function createAchievementCard(task) {
   title.textContent = task.text;
   title.title = task.text;
 
-  // ===== شارة الصعوبة =====
+  // ===== شارة الصعوبة (بأيقونة Lucide) =====
   const difficultyBadge = document.createElement("div");
   difficultyBadge.className = "achievement-card-badge";
   difficultyBadge.style.color = config.color;
   difficultyBadge.innerHTML = `
-    <span data-lucide="${config.icon}" class="achievement-card-badge-icon"></span>
+    <span data-lucide="${config.icon}" 
+          style="width:10px;height:10px;color:${config.color};pointer-events:none;"></span>
     <span>${typeof t === 'function' ? t(config.translationKey, config.label) : config.label}</span>
   `;
 
@@ -378,7 +403,7 @@ function openAchievementDetails(task) {
       ${typeof t === 'function' ? t('difficulty', 'Difficulty') : 'Difficulty'}
     </span>
     <span style="display:flex;align-items:center;gap:5px;font-family:var(--font-handwritten);font-size:15px;font-weight:700;color:${config.color};">
-      <span data-lucide="${config.icon}" style="width:14px;height:14px;"></span>
+      <span data-lucide="${config.icon}" style="width:14px;height:14px;color:${config.color};"></span>
       ${typeof t === 'function' ? t(config.translationKey, config.label) : config.label}
     </span>
   `;
@@ -487,4 +512,4 @@ window.renderAchievementsGrid = renderAchievementsGrid;
 window.openAchievementDetails = openAchievementDetails;
 window.refreshAchievements = refreshAchievements;
 
-console.log("✅ achievements.js v3.3 loaded successfully!");
+console.log("✅ achievements.js v3.4 loaded successfully! (Lucide Icons)");

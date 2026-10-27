@@ -2,22 +2,47 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
   <title>My Life</title>
 
+  <!-- ✅ SEO: Meta description -->
+  <meta name="description" content="My Life - Your personal life management hub. Organize your daily routine, tasks, notes, events, and learning programs in one beautiful place.">
+
   <!-- ===== PWA Meta Tags ===== -->
   <meta name="theme-color" content="#4f8edb">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#4f8edb">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1a2d4a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="My Life">
   <meta name="application-name" content="My Life">
-  
+
   <!-- ===== PWA Icons ===== -->
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
+  <!-- ===== ✅ Theme Init (منع FOUC) ===== -->
+  <script>
+    (function() {
+      try {
+        var theme = localStorage.getItem('myLifeHub_theme') || 'light';
+        if (theme !== 'light' && theme !== 'dark') {
+          theme = 'light';
+          localStorage.setItem('myLifeHub_theme', 'light');
+        }
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark-mode');
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+        document.documentElement.setAttribute('data-theme-mode', theme);
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
 
   <!-- ===== PWA Service Worker ===== -->
   <script>
@@ -34,29 +59,92 @@
     }
   </script>
 
-  <!-- ✅ Preload الخطوط الحرجة -->
-  <link rel="preload" href="fonts/inter-v20-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="fonts/inter-v20-latin-600.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="fonts/quicksand-v37-latin-600.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- ===== ✅ Preconnect للخطوط ===== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- ===== ✅ Preload الخطوط الحرجة ===== -->
   <link rel="preload" href="fonts/quicksand-v37-latin-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/quicksand-v37-latin-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/inter-v20-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
 
-  <!-- ✅ Fonts FIRST (محلية - للعمل بدون إنترنت) -->
+  <!-- ===== ✅ Preload صورة الـ Splash ===== -->
+  <link rel="preload" href="icons/icon-512.png" as="image">
+
+  <!-- ===== ✅ Preload الملفات الحرجة ===== -->
+  <link rel="preload" href="js/storage.js" as="script">
+  <link rel="preload" href="js/main.js" as="script">
+  <link rel="preload" href="js/week.js" as="script">
+
+  <!-- ===== ✅ Preload للـ CSS الأساسي ===== -->
+  <link rel="preload" href="css/style.css" as="style">
+  <link rel="preload" href="css/fonts.css" as="style">
+
+  <!-- ===== Styles ===== -->
   <link rel="stylesheet" href="css/fonts.css">
-
-  <!-- Main website styles -->
+  <link rel="stylesheet" href="css/splash.css">
   <link rel="stylesheet" href="css/modal-base.css">
   <link rel="stylesheet" href="css/toast.css">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dark-mode.css">
   <link rel="stylesheet" href="css/notes.css">
   <link rel="stylesheet" href="css/events.css">
   <link rel="stylesheet" href="css/program.css">
   <link rel="stylesheet" href="css/drops.css">
 
-  <!-- ✅ Lucide Icons (Local - للعمل بدون إنترنت) -->
-  <script src="vendor/lucide.min.js" defer></script>
+  <!-- ===== ✅ Lucide Icons — Async ===== -->
+  <script>
+    window.addEventListener('load', function() {
+      var script = document.createElement('script');
+      script.src = 'vendor/lucide.min.js';
+      script.async = true;
+      script.onload = function() {
+        console.log('✅ Lucide loaded lazily');
+        if (typeof window.debouncedLucide === 'function') {
+          window.debouncedLucide(50);
+        }
+        if (typeof window.initLucideIcons === 'function') {
+          window.initLucideIcons();
+        }
+      };
+      script.onerror = function() {
+        console.warn('⚠️ Failed to load Lucide');
+      };
+      document.head.appendChild(script);
+    });
+  </script>
 </head>
 
 <body>
+
+  <!-- ================= SPLASH SCREEN ================= -->
+  <div id="splash-screen" role="status" aria-label="Loading My Life">
+
+    <!-- الشعار (صورة التطبيق) -->
+    <div class="splash-logo">
+      <img id="splash-image"
+           src="icons/icon-512.png"
+           alt="My Life"
+           width="200"
+           height="200"
+           loading="eager"
+           decoding="sync">
+    </div>
+
+    <!-- العنوان -->
+    <h1 class="splash-title">My Life</h1>
+    <p class="splash-subtitle">Make Your Life Special</p>
+    <p class="splash-credit">Created by: <strong>JAWAD</strong></p>
+
+    <!-- نقاط التحميل -->
+    <div class="splash-loader">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+  </div>
+
 
   <!-- ================= HEADER ================= -->
   <header id="main-header">
@@ -82,6 +170,9 @@
         id="user-avatar-icon"
         src=""
         alt="User avatar"
+        width="34"
+        height="34"
+        loading="eager"
       >
 
       <span id="user-name-icon">User 1</span>
@@ -168,7 +259,7 @@
 
   <!-- ================= JAVASCRIPT ================= -->
 
-  <!-- ===== 1. الترجمات أولاً (ضرورية لـ t()) ===== -->
+  <!-- ===== 1. الترجمات أولاً ===== -->
   <script src="lang/en.js" defer></script>
   <script src="lang/ar.js" defer></script>
   <script src="lang/fr.js" defer></script>
@@ -176,24 +267,19 @@
 
   <!-- ===== 2. الأدوات الأساسية ===== -->
   <script src="js/utils.js" defer></script>
+  <script src="js/theme.js" defer></script>
+  <script src="js/splash.js" defer></script>
   <script src="js/toast.js" defer></script>
   <script src="js/modal-helper.js" defer></script>
 
-  <!-- ===== 3. التخزين (يجب أن يكون قبل كل شيء) ===== -->
+  <!-- ===== 3. التخزين ===== -->
   <script src="js/storage.js" defer></script>
 
-  <!-- ===== 4. hour.js يجب أن يكون قبل day.js ===== -->
+  <!-- ===== 4. hour.js قبل day.js ===== -->
   <script src="js/hour.js" defer></script>
   <script src="js/week.js" defer></script>
-  <script src="js/day.js" defer></script>
 
-  <!-- ===== 5. الميزات ===== -->
-  <script src="js/task.js" defer></script>
-  <script src="js/achievements.js" defer></script>
-  <script src="js/note.js" defer></script>
-  <script src="js/events.js" defer></script>
-  <script src="js/program.js" defer></script>
-  <script src="js/drops.js" defer></script>
+  <!-- ===== 5. الميزات (تُحمّل عند الحاجة) ===== -->
 
   <!-- ===== 6. النسخ الاحتياطي والبروفايل ===== -->
   <script src="js/backup.js" defer></script>
@@ -203,7 +289,7 @@
   <script src="js/notification.js" defer></script>
   <script src="js/update.js" defer></script>
 
-  <!-- ===== 8. الملف الرئيسي (الأخير دائماً) ===== -->
+  <!-- ===== 8. الملف الرئيسي ===== -->
   <script src="js/main.js" defer></script>
 
 </body>

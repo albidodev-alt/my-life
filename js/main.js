@@ -1,6 +1,6 @@
 // ========================================
-// MY LIFE HUB - MAIN v3.2
-// (Fixed debouncedLucide + Cached Language/HourSystem + Clean Init)
+// MY LIFE HUB - MAIN v4.0
+// (Lazy Loading + Dynamic Imports + Async Navigation + Performance Optimized)
 // ========================================
 
 let mainAbortController = null;
@@ -34,13 +34,11 @@ function updateCachedHourSystem(system) {
   cachedHourSystem = system || '12h';
 }
 
-// تصدير للاستخدام من ملفات أخرى
 window.getCachedLanguage = getCachedLanguage;
 window.getCachedHourSystem = getCachedHourSystem;
 window.updateCachedLanguage = updateCachedLanguage;
 window.updateCachedHourSystem = updateCachedHourSystem;
 
-// ✅ الاستماع لتغييرات localStorage من تبويبات أخرى
 window.addEventListener('storage', function (e) {
   if (e.key === 'language' && e.newValue) {
     cachedLanguage = e.newValue;
@@ -53,19 +51,13 @@ window.addEventListener('storage', function (e) {
 });
 
 // ========================================
-// ✅ Lucide Icons - Debounced + Optimized
+// ✅ Lucide Icons - Debounced + Lazy-aware
 // ========================================
 let lucideTimer = null;
 let lucidePending = false;
 let lucideInitialized = false;
 
-/**
- * ✅ Debounced Lucide - محسّن
- * - لا يعيد الجدولة إذا كان هناك timer قائم
- * - يستخدم setTimeout مباشرة (بدون RAF مزدوج)
- */
 function debouncedLucide(delay = 50) {
-  // ✅ إذا كان هناك timer قائم → لا تعيد الجدولة
   if (lucideTimer) return;
 
   lucidePending = true;
@@ -91,9 +83,6 @@ function initLucideIcons() {
   debouncedLucide(50);
 }
 
-/**
- * ✅ إعادة تعيين Lucide فوراً (للحالات الحرجة)
- */
 function forceLucideRender() {
   if (lucideTimer) {
     clearTimeout(lucideTimer);
@@ -143,29 +132,98 @@ function safeRender(renderFn, fallbackMessage = "Something went wrong") {
       app.innerHTML = `
         <div style="text-align:center;padding:60px 20px;color:var(--text-muted);">
           <div style="font-size:64px;margin-bottom:16px;">⚠️</div>
-          <h2 style="color:var(--text-primary);margin-bottom:8px;">${fallbackMessage}</h2>
-          <p style="font-size:14px;margin-bottom:24px;">${error.message || "Unknown error"}</p>
+          <h2 style="color:var(--text-primary);margin-bottom:8px;"></h2>
+          <p style="font-size:14px;margin-bottom:24px;"></p>
           <button onclick="location.reload()" style="padding:12px 24px;background:var(--primary-gradient);color:white;border:none;border-radius:10px;cursor:pointer;font-family:var(--font-handwritten);font-size:16px;font-weight:600;min-height:48px;">
             🔄 Reload Page
           </button>
         </div>
       `;
+      const h2 = app.querySelector('h2');
+      const p = app.querySelector('p');
+      if (h2) h2.textContent = fallbackMessage;
+      if (p) p.textContent = error.message || "Unknown error";
     }
   }
 }
 window.safeRender = safeRender;
 
 // ========================================
-// ✅ Page Initializers Map
+// ✅ Lazy Loading Manager
+// ========================================
+const moduleCache = {
+  day: null,
+  task: null,
+  achievements: null,
+  note: null,
+  events: null,
+  program: null,
+  drops: null
+};
+
+const modulePaths = {
+  day: './day.js',
+  task: './task.js',
+  achievements: './achievements.js',
+  note: './note.js',
+  events: './events.js',
+  program: './program.js',
+  drops: './drops.js'
+};
+
+/**
+ * ✅ تحميل وحدة (module) بشكل ديناميكي مع كاش
+ * @param {string} moduleName - اسم الوحدة
+ * @returns {Promise<void>}
+ */
+async function loadModule(moduleName) {
+  // ✅ إذا كانت محمّلة مسبقاً → لا تُحمّلها مرة أخرى
+  if (moduleCache[moduleName]) {
+    return moduleCache[moduleName];
+  }
+
+  const path = modulePaths[moduleName];
+  if (!path) {
+    console.warn(`⚠️ Unknown module: ${moduleName}`);
+    return;
+  }
+
+  try {
+    console.log(`📌 Loading ${moduleName}.js dynamically...`);
+    moduleCache[moduleName] = import(path);
+    await moduleCache[moduleName];
+    console.log(`✅ ${moduleName}.js loaded successfully`);
+  } catch (error) {
+    console.error(`❌ Failed to load ${moduleName}.js:`, error);
+    moduleCache[moduleName] = null; // اسمح بإعادة المحاولة
+    throw error;
+  }
+}
+
+window.loadModule = loadModule;
+
+// ========================================
+// ✅ Page Initializers (with Lazy Loading)
 // ========================================
 const pageInitializers = {
-  routine: () => {
+  routine: async () => {
+    if (typeof renderWeek === "undefined") {
+      await loadModule('day'); // day.js يحتوي على renderWeek في بعض الحالات
+    }
     if (typeof renderWeek === "function") renderWeek();
   },
-  task: () => {
+
+  task: async () => {
+    if (typeof renderTasks === "undefined") {
+      await loadModule('task');
+    }
     if (typeof renderTasks === "function") renderTasks();
   },
-  completed: () => {
+
+  completed: async () => {
+    if (typeof window.renderCompleted === "undefined") {
+      await loadModule('achievements');
+    }
     if (typeof window.renderCompleted === "function") {
       window.renderCompleted();
     } else if (typeof renderCompleted === "function") {
@@ -174,11 +232,29 @@ const pageInitializers = {
       renderCompletedFallback();
     }
   },
-  notes: () => renderNotesPage(),
-  events: () => {
+
+  notes: async () => {
+    if (typeof window.renderNotesPageV2 === "undefined") {
+      await loadModule('note');
+    }
+    if (typeof window.renderNotesPageV2 === "function") {
+      window.renderNotesPageV2();
+    } else {
+      renderNotesPage();
+    }
+  },
+
+  events: async () => {
+    if (typeof renderEventsPage === "undefined") {
+      await loadModule('events');
+    }
     if (typeof renderEventsPage === "function") renderEventsPage();
   },
-  program: () => {
+
+  program: async () => {
+    if (typeof window.renderProgramPage === "undefined") {
+      await loadModule('program');
+    }
     if (typeof window.renderProgramPage === "function") {
       window.renderProgramPage();
     } else if (typeof renderProgramPage === "function") {
@@ -190,7 +266,7 @@ const pageInitializers = {
 };
 
 // ========================================
-// ✅ Keyboard Detection (Mobile) - محسّن
+// ✅ Keyboard Detection (Mobile)
 // ========================================
 function setupKeyboardDetection() {
   if (!window.visualViewport) return;
@@ -200,7 +276,6 @@ function setupKeyboardDetection() {
   let rafId = null;
 
   function handleViewportResize() {
-    // ✅ استخدام RAF لتقليل الاستدعاءات
     if (rafId) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(() => {
       rafId = null;
@@ -229,6 +304,37 @@ function setupKeyboardDetection() {
 }
 
 // ========================================
+// ✅ Scroll Performance Optimization (Mobile)
+// ✅ إضافة body.is-scrolling أثناء التمرير لتعطيل animations
+// ========================================
+function setupScrollPerformance() {
+  const app = document.getElementById('app');
+  if (!app) return;
+
+  let scrollTimer = null;
+  let rafId = null;
+
+  app.addEventListener('scroll', function () {
+    // ✅ استخدام requestAnimationFrame للأداء الأمثل
+    if (rafId) return;
+
+    rafId = requestAnimationFrame(function () {
+      rafId = null;
+
+      if (!document.body.classList.contains('is-scrolling')) {
+        document.body.classList.add('is-scrolling');
+      }
+
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function () {
+        document.body.classList.remove('is-scrolling');
+        scrollTimer = null;
+      }, 120);
+    });
+  }, { passive: true });
+}
+
+// ========================================
 // ✅ Visibility-Aware Notification Timer
 // ========================================
 function startNotificationTimer() {
@@ -238,7 +344,7 @@ function startNotificationTimer() {
     if (!document.hidden && typeof refreshNotifications === "function") {
       refreshNotifications();
     }
-  }, 15 * 60 * 1000); // 15 دقيقة
+  }, 15 * 60 * 1000);
 }
 
 function stopNotificationTimer() {
@@ -271,7 +377,7 @@ function setupVisibilityAwareTimers() {
 document.addEventListener("DOMContentLoaded", function () {
   perfMark("app-start");
 
-  // ✅ تهيئة اللغة أولاً (مع كاش)
+  // ✅ تهيئة اللغة أولاً
   if (typeof initTranslations === "function") {
     initTranslations().then(function () {
       console.log("✅ Translations ready");
@@ -284,6 +390,7 @@ document.addEventListener("DOMContentLoaded", function () {
   setupSidebarToggle();
   setupBottomNav();
   setupKeyboardDetection();
+  setupScrollPerformance();  // ✅ جديد
 
   const notesFabBtn = document.getElementById("notes-fab-btn");
   if (notesFabBtn) {
@@ -296,27 +403,37 @@ document.addEventListener("DOMContentLoaded", function () {
     setupNotificationButton();
   }
 
-  // ✅ مؤقتات واعية بالرؤية
-  if (typeof refreshNotifications === "function") {
-    refreshNotifications();
-    setupVisibilityAwareTimers();
-  }
-
+  // ✅ الإشعارات تُؤخّر حتى بعد load
   initPWA();
   navigateTo("routine");
   initLucideIcons();
 
   perfMark("app-ready");
   perfMeasure("app-init", "app-start", "app-ready");
+
+  // ========================================
+  // ✅ تأخير الإشعارات حتى بعد load + 2 ثانية
+  // ========================================
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (typeof refreshNotifications === "function") {
+        refreshNotifications();
+      }
+      if (typeof setupVisibilityAwareTimers === "function") {
+        setupVisibilityAwareTimers();
+      }
+    }, 2000);
+  });
 });
 
 // ========================================
-// Navigation - محسّن
+// Navigation (Async + Lazy Loading)
 // ========================================
-function navigateTo(page) {
+async function navigateTo(page) {
   const app = document.getElementById("app");
   if (!app) return;
 
+  // ✅ إلغاء أي عملية سابقة
   if (mainAbortController) {
     mainAbortController.abort();
     mainAbortController = null;
@@ -324,6 +441,7 @@ function navigateTo(page) {
 
   mainAbortController = new AbortController();
 
+  // ✅ تحديث الأزرار النشطة
   document.querySelectorAll(".nav-btn").forEach(function (button) {
     button.classList.toggle("active", button.dataset.target === page);
   });
@@ -339,18 +457,34 @@ function navigateTo(page) {
 
   const initializer = pageInitializers[page];
 
-  safeRender(() => {
+  try {
     if (initializer) {
-      initializer();
+      await initializer();
     } else {
       renderNotFoundPage();
     }
-  });
+  } catch (error) {
+    console.error(`❌ Error loading page "${page}":`, error);
+    safeRender(() => {
+      const appEl = document.getElementById("app");
+      if (appEl) {
+        appEl.innerHTML = `
+          <div style="text-align:center;padding:60px 20px;color:var(--text-muted);">
+            <div style="font-size:64px;margin-bottom:16px;">⚠️</div>
+            <h2 style="color:var(--text-primary);margin-bottom:8px;">Failed to load page</h2>
+            <p style="font-size:14px;margin-bottom:24px;">${error.message || 'Unknown error'}</p>
+            <button onclick="location.reload()" style="padding:12px 24px;background:var(--primary-gradient);color:white;border:none;border-radius:10px;cursor:pointer;font-family:var(--font-handwritten);font-size:16px;font-weight:600;min-height:48px;">
+              🔄 Reload Page
+            </button>
+          </div>
+        `;
+      }
+    });
+  }
 
   perfMark(`page-${page}-end`);
   perfMeasure(`page-${page}`, `page-${page}-start`, `page-${page}-end`);
 
-  // ✅ استدعاء Lucide بعد انتهاء الرسم
   debouncedLucide(50);
 }
 
@@ -682,18 +816,19 @@ window.getPerfMetrics = function () {
 };
 
 // ========================================
-// ✅ دوال تشخيص إضافية
+// ✅ دوال تشخيص
 // ========================================
 window.getAppState = function () {
   return {
     currentPage: currentPage,
-    swVersion: 'v17',
+    swVersion: 'v19',
     lucideInitialized: lucideInitialized,
     deferredPrompt: !!deferredPrompt,
     isStandalone: window.matchMedia("(display-mode: standalone)").matches,
     isOnline: navigator.onLine,
     language: cachedLanguage,
-    hourSystem: cachedHourSystem
+    hourSystem: cachedHourSystem,
+    loadedModules: Object.keys(moduleCache).filter(k => moduleCache[k] !== null)
   };
 };
 
@@ -726,8 +861,10 @@ window.updateNavTranslations = updateNavTranslations;
 window.initPWA = initPWA;
 window.showInstallButtons = showInstallButtons;
 window.handleInstallClick = handleInstallClick;
+window.loadModule = loadModule;
 
-console.log("📌 Main.js v3.2 loaded successfully!");
+console.log("📌 Main.js v4.0 loaded successfully!");
+console.log("   - Lazy Loading: dynamic imports enabled");
+console.log("   - Async Navigation: navigateTo is now async");
+console.log("   - Scroll Performance: body.is-scrolling enabled");
 console.log("   - Try: getAppState() to inspect app state");
-console.log("   - Try: getPerfMetrics() to see performance");
-console.log("   - Try: getCachedLanguage() / getCachedHourSystem()");

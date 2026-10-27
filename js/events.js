@@ -1,9 +1,31 @@
 // ========================================
-// MY LIFE HUB - EVENTS (CALENDAR) v2.2
-// (replaceChildren + Safe Save + Date Validation + Pin in Modal)
+// MY LIFE HUB - EVENTS (CALENDAR) v2.4
+// (Quick Add + No Add Event Button + Inline Add From Day)
 // ========================================
 
 const EVENTS_STORAGE_KEY = "myLifeHub_events";
+
+// ===== ✅ كاش في الذاكرة =====
+let eventsCache = null;
+
+// ========================================
+// ✅ إبطال الكاش
+// ========================================
+function invalidateEventsCache() {
+  eventsCache = null;
+}
+
+// ========================================
+// ✅ مزامنة بين Tabs
+// ========================================
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', function (e) {
+    if (e.key === EVENTS_STORAGE_KEY) {
+      console.log('🔄 Events changed in another tab. Invalidating cache.');
+      eventsCache = null;
+    }
+  });
+}
 
 // ========================================
 // ✅ دوال التخزين الآمنة
@@ -56,18 +78,25 @@ function parseEventDate(dateStr) {
 }
 
 // ========================================
-// دوال التخزين
+// دوال التخزين (مع كاش)
 // ========================================
 
 function getAllEvents() {
+  if (eventsCache !== null) return eventsCache;
+
   try {
     const raw = localStorage.getItem(EVENTS_STORAGE_KEY);
-    if (!raw) return [];
+    if (!raw) {
+      eventsCache = [];
+      return eventsCache;
+    }
     const events = JSON.parse(raw);
-    return Array.isArray(events) ? events : [];
+    eventsCache = Array.isArray(events) ? events : [];
+    return eventsCache;
   } catch (error) {
     console.error("Error loading events:", error);
-    return [];
+    eventsCache = [];
+    return eventsCache;
   }
 }
 
@@ -78,6 +107,11 @@ function saveAllEvents(events) {
   }
 
   const result = safeSetEvents(EVENTS_STORAGE_KEY, JSON.stringify(events));
+
+  if (result.success) {
+    eventsCache = events;
+  }
+
   return result.success;
 }
 
@@ -85,7 +119,6 @@ function addEvent(title, date, description = "") {
   const trimmedTitle = (title || '').trim();
   if (!trimmedTitle || !date) return null;
 
-  // ✅ نسخة من الكاش
   const events = getEventsCopy();
   const newEvent = {
     id: (typeof generateId === "function") ? generateId() : Date.now() + Math.random(),
@@ -105,7 +138,6 @@ function updateEvent(eventId, title, date, description) {
   const trimmedTitle = (title || '').trim();
   if (!trimmedTitle || !date) return false;
 
-  // ✅ نسخة من الكاش
   const events = getEventsCopy();
   const index = events.findIndex(e => e.id === eventId);
   if (index === -1) return false;
@@ -117,14 +149,12 @@ function updateEvent(eventId, title, date, description) {
 }
 
 function deleteEvent(eventId) {
-  // ✅ نسخة من الكاش
   const events = getEventsCopy();
   const updatedEvents = events.filter(e => e.id !== eventId);
   return saveAllEvents(updatedEvents);
 }
 
 function togglePinEvent(eventId) {
-  // ✅ نسخة من الكاش
   const events = getEventsCopy();
   const event = events.find(e => e.id === eventId);
   if (!event) return false;
@@ -183,10 +213,10 @@ function getRemainingColor(eventDate) {
   const diff = target - now;
   const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-  if (diff < 0) return "#6b7280";       // رمادي - منتهي
-  if (daysLeft <= 3) return "#ef4444";  // أحمر - قريب
-  if (daysLeft <= 7) return "#f59e0b";  // برتقالي - هذا الأسبوع
-  return "#22c55e";                     // أخضر - بعيد
+  if (diff < 0) return "#6b7280";
+  if (daysLeft <= 3) return "#ef4444";
+  if (daysLeft <= 7) return "#f59e0b";
+  return "#22c55e";
 }
 
 // ========================================
@@ -207,9 +237,134 @@ function getRemainingIcon(eventDate) {
 }
 
 // ========================================
+// ✅ تنسيق التاريخ الكامل (للعنوان)
+// ========================================
+function formatFullDate(dateStr) {
+  const target = parseEventDate(dateStr);
+  if (!target) return dateStr;
+
+  return target.toLocaleDateString("en-US", {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+
+// ========================================
+// ✅ نافذة الإضافة السريعة (عنوان + وصف)
+// ========================================
+function openQuickAddEventModal(dateStr) {
+  if (!dateStr) return;
+
+  const modal = createModal({
+    id: 'quick-add-event-modal',
+    title: '<span data-lucide="calendar-plus"></span> ' + (typeof t === 'function' ? t('add_event', 'Add Event') : 'Add Event'),
+    size: 'small'
+  });
+
+  // ===== عرض التاريخ =====
+  const dateDisplay = document.createElement('div');
+  dateDisplay.style.cssText = `
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    background: var(--primary-light);
+    border: 1px solid rgba(79, 142, 219, 0.2);
+    border-radius: 10px;
+    font-family: var(--font-handwritten);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary-dark);
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  `;
+  dateDisplay.innerHTML = `
+    <span data-lucide="calendar" style="width: 16px; height: 16px;"></span>
+    <span>${formatFullDate(dateStr)}</span>
+  `;
+  modal.body.appendChild(dateDisplay);
+
+  // ===== حقل العنوان =====
+  const titleField = createModalField({
+    id: 'quick-event-title',
+    label: (typeof t === 'function' ? t('title', 'Title') : 'Title') + ' *',
+    type: 'text',
+    placeholder: typeof t === 'function' ? t('enter_event_title', 'Enter event title...') : 'Enter event title...',
+    required: true,
+    maxLength: 120
+  });
+  modal.body.appendChild(titleField.field);
+
+  // ===== حقل الوصف (اختياري) =====
+  const descField = createModalField({
+    id: 'quick-event-desc',
+    label: (typeof t === 'function' ? t('description', 'Description (optional)') : 'Description (optional)'),
+    type: 'textarea',
+    rows: 2,
+    placeholder: typeof t === 'function' ? t('add_description', 'Add a description...') : 'Add a description...',
+    maxLength: 500
+  });
+  modal.body.appendChild(descField.field);
+
+  // ===== زر الحفظ =====
+  function handleSave() {
+    const title = titleField.input.value.trim();
+    const description = descField.input.value.trim();
+
+    if (!title) {
+      titleField.input.classList.add("modal-base-input-error");
+      titleField.input.focus();
+      setTimeout(() => titleField.input.classList.remove("modal-base-input-error"), 500);
+      return;
+    }
+
+    const newEvent = addEvent(title, dateStr, description);
+
+    if (!newEvent) {
+      if (typeof showToast === 'function') {
+        showToast('❌ ' + (typeof t === 'function' ? t('save_failed', 'Failed to save event') : 'Failed to save event'), 'error');
+      }
+      return;
+    }
+
+    modal.close();
+    if (typeof showToast === 'function') {
+      showToast('✅ ' + (typeof t === 'function' ? t('event_added', 'Event added!') : 'Event added!'), 'success', 1500);
+    }
+    setTimeout(() => renderEventsPage(), 250);
+  }
+
+  // ===== Enter في حقل العنوان = الحفظ =====
+  titleField.input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSave();
+    }
+  });
+
+  const actions = createModalActions([
+    {
+      label: typeof t === 'function' ? t('cancel', 'Cancel') : 'Cancel',
+      type: 'secondary',
+      onClick: () => modal.close()
+    },
+    {
+      label: '<span data-lucide="check"></span> ' + (typeof t === 'function' ? t('add', 'Add') : 'Add'),
+      type: 'primary',
+      onClick: handleSave
+    }
+  ]);
+  modal.body.appendChild(actions);
+
+  setTimeout(() => titleField.input.focus(), 100);
+}
+
+// ========================================
 // عرض تفاصيل الحدث في نافذة منبثقة
 // ========================================
-
 function openEventDetailsModal(events, dateStr) {
   const target = parseEventDate(dateStr);
   if (!target) return;
@@ -227,6 +382,56 @@ function openEventDetailsModal(events, dateStr) {
     size: 'medium'
   });
 
+  // ========================================
+  // ✅ زر "إضافة حدث لهذا اليوم" (في الأعلى)
+  // ========================================
+  const addEventBtn = document.createElement("button");
+  addEventBtn.type = "button";
+  addEventBtn.style.cssText = `
+    width: 100%;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    background: var(--primary-gradient);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-handwritten);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: var(--shadow-sm);
+    min-height: 44px;
+    -webkit-tap-highlight-color: transparent;
+  `;
+  addEventBtn.innerHTML = `
+    <span data-lucide="plus" style="width: 16px; height: 16px; pointer-events: none;"></span>
+    <span>${typeof t === 'function' ? t('add_event_to_day', 'Add Event to This Day') : 'Add Event to This Day'}</span>
+  `;
+
+  addEventBtn.addEventListener("mouseenter", function() {
+    this.style.transform = "translateY(-2px)";
+    this.style.boxShadow = "var(--shadow-md)";
+  });
+  addEventBtn.addEventListener("mouseleave", function() {
+    this.style.transform = "translateY(0)";
+    this.style.boxShadow = "var(--shadow-sm)";
+  });
+
+  addEventBtn.addEventListener("click", function() {
+    modal.close();
+    setTimeout(() => {
+      openQuickAddEventModal(dateStr);
+    }, 250);
+  });
+
+  modal.body.appendChild(addEventBtn);
+
+  // ===== عدد الأحداث =====
   const countLabel = document.createElement("p");
   countLabel.className = "modal-base-message";
   countLabel.style.marginBottom = "16px";
@@ -235,6 +440,7 @@ function openEventDetailsModal(events, dateStr) {
   countLabel.textContent = events.length + " " + (typeof t === 'function' ? t('events', 'event') : "event") + (events.length > 1 ? "s" : "");
   modal.body.appendChild(countLabel);
 
+  // ===== قائمة الأحداث =====
   const eventsList = document.createElement("div");
   eventsList.style.cssText = `
     display: flex;
@@ -429,7 +635,6 @@ function openEventDetailsModal(events, dateStr) {
       });
     });
 
-    // ✅ ترتيب الأزرار: Pin → Edit → Delete
     actionsRow.appendChild(pinBtn);
     actionsRow.appendChild(editBtn);
     actionsRow.appendChild(deleteBtn);
@@ -458,12 +663,10 @@ function openEventDetailsModal(events, dateStr) {
 // ========================================
 // عرض صفحة الأحداث
 // ========================================
-
 function renderEventsPage() {
   const app = document.getElementById("app");
   if (!app) return;
 
-  // ✅ استخدام replaceChildren
   app.replaceChildren();
 
   const today = new Date();
@@ -474,7 +677,7 @@ function renderEventsPage() {
   const container = document.createElement("div");
   container.id = "events-container";
 
-  // ===== Header =====
+  // ===== Header (بدون زر Add Event) =====
   const header = document.createElement("div");
   header.className = "events-header";
 
@@ -493,17 +696,7 @@ function renderEventsPage() {
   headerTitleWrapper.appendChild(headerIcon);
   headerTitleWrapper.appendChild(headerTitle);
 
-  const addBtn = document.createElement("button");
-  addBtn.className = "events-add-btn";
-  addBtn.id = "events-add-btn";
-  addBtn.type = "button";
-  addBtn.innerHTML = `
-    <span class="events-add-icon" data-lucide="plus" style="width: 20px; height: 20px;"></span>
-    ${typeof t === 'function' ? t('add_event_btn', 'Add Event') : 'Add Event'}
-  `;
-
   header.appendChild(headerTitleWrapper);
-  header.appendChild(addBtn);
   container.appendChild(header);
 
   // ===== Calendar Wrapper =====
@@ -576,7 +769,7 @@ function renderEventsPage() {
   let currentMonthState = currentMonth;
 
   // ========================================
-  // ✅ renderCalendar (مع replaceChildren)
+  // ✅ renderCalendar
   // ========================================
   function renderCalendar(year, month) {
     const daysEl = document.getElementById("calendar-days");
@@ -603,7 +796,6 @@ function renderEventsPage() {
       if (e.pinned) pinnedDates.add(e.date);
     });
 
-    // ✅ استخدام DocumentFragment
     const fragment = document.createDocumentFragment();
 
     for (let i = 0; i < firstDay; i++) {
@@ -633,17 +825,24 @@ function renderEventsPage() {
         dayDiv.appendChild(pinIcon);
       }
 
+      // ========================================
+      // ✅ سلوك الضغط على اليوم (جديد)
+      // ========================================
       dayDiv.addEventListener("click", function() {
-        const eventsOnDay = getEventsByDate(allEvents, dateStr);
+        const eventsOnDay = getEventsByDate(getAllEvents(), dateStr);
+
         if (eventsOnDay.length > 0) {
+          // ✅ يوجد أحداث → نافذة التفاصيل (فيها زر إضافة)
           openEventDetailsModal(eventsOnDay, dateStr);
+        } else {
+          // ✅ فارغ → نافذة الإضافة السريعة
+          openQuickAddEventModal(dateStr);
         }
       });
 
       fragment.appendChild(dayDiv);
     }
 
-    // ✅ استخدام replaceChildren
     daysEl.replaceChildren(fragment);
   }
 
@@ -772,7 +971,7 @@ function renderEventsPage() {
   }
 
   // ========================================
-  // ✅ renderEventsList (مع replaceChildren)
+  // ✅ renderEventsList
   // ========================================
   function renderEventsList() {
     const listContainer = document.getElementById("events-list");
@@ -790,13 +989,12 @@ function renderEventsPage() {
     const pinnedEvents = upcomingEvents.filter(e => e.pinned);
     const unpinnedEvents = upcomingEvents.filter(e => !e.pinned);
 
-    // ✅ استخدام DocumentFragment
     const fragment = document.createDocumentFragment();
 
     if (upcomingEvents.length === 0) {
       const empty = document.createElement("p");
       empty.className = "events-empty";
-      empty.innerHTML = '<span data-lucide="calendar-x" style="width: 32px; height: 32px; vertical-align: middle; margin-right: 8px; opacity: 0.5;"></span> ' + (typeof t === 'function' ? t('no_events', 'No upcoming events. Add one!') : "No upcoming events. Add one!");
+      empty.innerHTML = '<span data-lucide="calendar-x" style="width: 32px; height: 32px; vertical-align: middle; margin-right: 8px; opacity: 0.5;"></span> ' + (typeof t === 'function' ? t('no_events', 'No upcoming events. Tap a day to add one!') : "No upcoming events. Tap a day to add one!");
       fragment.appendChild(empty);
     } else {
       if (pinnedEvents.length > 0) {
@@ -824,7 +1022,6 @@ function renderEventsPage() {
       }
     }
 
-    // ✅ استخدام replaceChildren
     listContainer.replaceChildren(fragment);
 
     if (typeof debouncedLucide === 'function') debouncedLucide(50);
@@ -853,23 +1050,14 @@ function renderEventsPage() {
     renderEventsList();
   });
 
-  addBtn.addEventListener("click", function() {
-    openEventModal();
-  });
-
-  // ========================================
   // ✅ Initial Render
-  // ========================================
   renderCalendar(currentYearState, currentMonthState);
   renderEventsList();
-
-  // ✅ Lucide يُدار من main.js
 }
 
 // ========================================
-// نافذة إضافة/تعديل حدث
+// نافذة إضافة/تعديل حدث (من التفاصيل أو التعديل)
 // ========================================
-
 function openEventModal(editEvent = null) {
   const isEditing = editEvent !== null;
 
@@ -972,9 +1160,6 @@ function openEventModal(editEvent = null) {
 // ✅ دوال إضافية
 // ========================================
 
-/**
- * عدد الأحداث القادمة
- */
 function getUpcomingEventsCount() {
   const now = new Date();
   const todayStr = now.getFullYear() + '-' +
@@ -984,9 +1169,6 @@ function getUpcomingEventsCount() {
   return getAllEvents().filter(e => e.date && e.date >= todayStr).length;
 }
 
-/**
- * أحداث اليوم
- */
 function getTodayEvents() {
   const now = new Date();
   const todayStr = now.getFullYear() + '-' +
@@ -996,9 +1178,6 @@ function getTodayEvents() {
   return getAllEvents().filter(e => e.date === todayStr);
 }
 
-/**
- * أحداث الغد
- */
 function getTomorrowEvents() {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1023,5 +1202,7 @@ window.togglePinEvent = togglePinEvent;
 window.getUpcomingEventsCount = getUpcomingEventsCount;
 window.getTodayEvents = getTodayEvents;
 window.getTomorrowEvents = getTomorrowEvents;
+window.openQuickAddEventModal = openQuickAddEventModal;
+window.invalidateEventsCache = invalidateEventsCache;
 
-console.log("✅ Events v2.2 loaded successfully!");
+console.log("✅ Events v2.4 loaded successfully! (Quick Add + No Add Button)");

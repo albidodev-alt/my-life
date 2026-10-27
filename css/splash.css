@@ -1,0 +1,210 @@
+/* ========================================
+   MY LIFE HUB - SPLASH SCREEN v1.3
+   شاشة الترحيب عند فتح التطبيق
+   (بدون قطرات)
+   ======================================== */
+
+#splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: linear-gradient(135deg, #0a1220 0%, #162032 50%, #1a2d4a 100%);
+  color: #ffffff;
+  font-family: var(--font-handwritten, 'Quicksand', sans-serif);
+  overflow: hidden;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ===== خلفية مخططة خفيفة ===== */
+#splash-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(109, 168, 232, 0.08) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(109, 168, 232, 0.08) 2px, transparent 2px);
+  background-size: 28px 28px;
+  background-position: -1px -1px;
+  pointer-events: none;
+  animation: splashGridMove 20s linear infinite;
+}
+
+@keyframes splashGridMove {
+  from { background-position: -1px -1px; }
+  to   { background-position: 27px 27px; }
+}
+
+/* ===== الحالة النهائية: اختفاء ===== */
+#splash-screen.splash-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ========================================
+   الشعار (صورة التطبيق)
+   ======================================== */
+.splash-logo {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: splashLogoFloat 3s ease-in-out infinite;
+}
+
+@keyframes splashLogoFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-12px) scale(1.03); }
+}
+
+/* ===== صورة التطبيق ===== */
+.splash-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 24px;
+  filter: drop-shadow(0 0 40px rgba(109, 168, 232, 0.6))
+          drop-shadow(0 0 20px rgba(147, 197, 253, 0.4));
+  animation: splashLogoGlow 2.5s ease-in-out infinite;
+}
+
+@keyframes splashLogoGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 40px rgba(109, 168, 232, 0.6))
+            drop-shadow(0 0 20px rgba(147, 197, 253, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 60px rgba(109, 168, 232, 0.9))
+            drop-shadow(0 0 30px rgba(147, 197, 253, 0.7));
+  }
+}
+
+/* ===== هالة متوهجة خلف الصورة ===== */
+.splash-logo::before {
+  content: "";
+  position: absolute;
+  inset: -25%;
+  background: radial-gradient(circle, rgba(109, 168, 232, 0.35) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: splashGlow 2.5s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes splashGlow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.15); }
+}
+
+/* ========================================
+   العنوان
+   ======================================== */
+.splash-title {
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #ffffff, #93c5fd);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  margin: 0;
+  text-align: center;
+  animation: splashTitleIn 0.8s ease 0.2s backwards;
+}
+
+@keyframes splashTitleIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== السطر الثاني (Slogan) ===== */
+.splash-subtitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #93c5fd;
+  opacity: 0.9;
+  margin: -12px 0 0 0;
+  letter-spacing: 1.2px;
+  text-align: center;
+  animation: splashTitleIn 0.8s ease 0.4s backwards;
+}
+
+/* ===== سطر الحقوق (Created by) ===== */
+.splash-credit {
+  font-size: 13px;
+  font-weight: 600;
+  color: #93c5fd;
+  opacity: 0.75;
+  letter-spacing: 1.5px;
+  margin: 4px 0 0 0;
+  text-align: center;
+  animation: splashTitleIn 0.8s ease 0.6s backwards;
+}
+
+.splash-credit strong {
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+/* ========================================
+   مؤشر التحميل
+   ======================================== */
+.splash-loader {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.splash-loader span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #6da8e8;
+  animation: splashLoaderBounce 1.4s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(109, 168, 232, 0.6);
+}
+
+.splash-loader span:nth-child(2) { animation-delay: 0.15s; }
+.splash-loader span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes splashLoaderBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40%           { transform: scale(1);   opacity: 1; }
+}
+
+/* ========================================
+   Responsive
+   ======================================== */
+@media (max-width: 480px) {
+  .splash-logo { width: 150px; height: 150px; }
+  .splash-title { font-size: 32px; }
+  .splash-subtitle { font-size: 14px; }
+  .splash-credit { font-size: 11px; }
+  .splash-loader span { width: 10px; height: 10px; }
+}
+
+/* ========================================
+   احترام تفضيل تقليل الحركة
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  #splash-screen::before,
+  .splash-logo,
+  .splash-logo::before,
+  .splash-logo img,
+  .splash-title,
+  .splash-subtitle,
+  .splash-credit,
+  .splash-loader span {
+    animation: none !important;
+  }
+}

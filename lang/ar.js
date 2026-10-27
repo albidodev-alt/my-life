@@ -61,6 +61,7 @@ const translationsAR = {
     "reset": "إعادة تعيين",
     "all": "الكل",
     "today": "اليوم",
+    "tomorrow": "غداً",
     "yesterday": "أمس",
     "days_ago": "أيام مضت",
     "drops": "قطرات",
@@ -77,7 +78,7 @@ const translationsAR = {
     "select_json": "الرجاء اختيار ملف JSON",
     "backup_unavailable": "قسم النسخ الاحتياطي غير متاح مؤقتاً",
 
-    // ✅ Achievements جديد
+    // ✅ Achievements
     "total_completed": "الإجمالي",
     "recent_completions": "أحدث المهام المكتملة",
 
@@ -198,6 +199,10 @@ const translationsAR = {
     "no_tasks_found": "لا توجد مهام مطابقة لبحثك",
     "no_tasks_priority": "لا توجد مهام بهذه الأولوية",
     "delete_task": "حذف المهمة",
+
+    // ✅ Date format (NEW)
+    "date_format_hint": "الصيغة: YYYY-MM-DD",
+    "invalid_date": "تاريخ غير صحيح. استخدم صيغة YYYY-MM-DD (مثل: 2020-05-31)",
 
     // ========================================
     // الإنجازات - Achievements

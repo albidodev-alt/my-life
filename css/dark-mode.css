@@ -1,0 +1,1034 @@
+/* ========================================
+   MY LIFE HUB - DARK MODE v2.0 (Final Fix)
+   - تم استخدام متغيرات CSS للساعات لمنع التعارض
+   - تم إصلاح الخلفية المخططة
+   ======================================== */
+
+/* ========================================
+   1. DARK MODE VARIABLES
+   ======================================== */
+
+body.dark-mode,
+html.dark-mode body {
+  /* ===== BRAND COLORS ===== */
+  --primary: #6da8e8;
+  --primary-dark: #4f8edb;
+  --primary-light: rgba(79, 142, 219, 0.18);
+  --primary-gradient: linear-gradient(135deg, #4f8edb, #6da8e8);
+
+  /* ===== SEMANTIC COLORS ===== */
+  --success: #4caf84;
+  --warning: #f5a623;
+  --danger: #e74c5e;
+  --ink: #ffffff;
+  --ink-light: #f1f5f9;
+  --ink-faded: #cbd5e1;
+
+  /* ===== ACHIEVEMENT COLORS ===== */
+  --ach-easy: var(--success);
+  --ach-medium: var(--warning);
+  --ach-hard: var(--danger);
+
+  /* ===== BACKGROUNDS ===== */
+  --bg-body: #0a1220;
+  --bg-surface: #162032;
+  --bg-sidebar: #0f1a2e;
+  --bg-card: #162032;
+  --bg-modal: #1a2438;
+  --bg-input: #1a2438;
+  --bg-hover: rgba(109, 168, 232, 0.15);
+
+  /* ===== TEXT ===== */
+  --text-primary: #ffffff;
+  --text-secondary: #f1f5f9;
+  --text-muted: #cbd5e1;
+  --text-light: #ffffff;
+
+  /* ===== BORDERS ===== */
+  --border-color: rgba(148, 163, 184, 0.25);
+  --border-light: rgba(148, 163, 184, 0.15);
+  --border-input: #334155;
+
+    /* ===== GRID (الخلفية المخططة - أوضح في الوضع الليلي) ===== */
+  --grid-color: rgba(109, 168, 232, 0.25); /* ✅ زيادة الشفافية لتظهر الخطوط بوضوح */
+
+  /* ===== SHADOWS ===== */
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 2px 3px 8px rgba(0, 0, 0, 0.5);
+  --shadow-md: 3px 5px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 4px 8px 20px rgba(0, 0, 0, 0.7);
+  --shadow-overlay: rgba(0, 0, 0, 0.75);
+
+  /* ===== ✅ HOUR BOX VARIABLES (الحل الجذري) ===== */
+  --hour-bg: #1a2d4a;
+  --hour-text: #ffffff;
+  --hour-label-color: rgba(203, 213, 225, 0.65);
+  --hour-border: rgba(109, 168, 232, 0.25);
+  --hour-bg-current: #223a5e;
+  --hour-text-current: #ffffff;
+}
+
+/* ========================================
+   2. GLOBAL BACKGROUND + TEXT
+   ======================================== */
+
+html.dark-mode,
+body.dark-mode {
+  color-scheme: dark;
+}
+
+/* ✅ تطبيق الشبكة على <html> مع لون الخلفية */
+html.dark-mode {
+  background-color: #0a1220;
+  background-image:
+    linear-gradient(var(--grid-color) 2px, transparent 2px),
+    linear-gradient(90deg, var(--grid-color) 2px, transparent 2px);
+  background-size: var(--grid-size) var(--grid-size);
+  background-position: -1px -1px;
+}
+
+/* ✅ إصلاح جذري: جعل خلفية <body> شفافة لكي تظهر شبكة الـ <html> من تحتها */
+body.dark-mode {
+  background-color: transparent !important; 
+  background-image: none !important;
+  color: #ffffff;
+}
+
+/* ✅ Headings + Handwritten */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode .handwritten,
+body.dark-mode .title-border,
+body.dark-mode .day-btn,
+body.dark-mode .profile-name,
+body.dark-mode .day-for-label,
+body.dark-mode .profile-section-title,
+body.dark-mode .profile-subsection-title,
+body.dark-mode .profile-stat-value,
+body.dark-mode .profile-badge-count,
+body.dark-mode .day-for-value,
+body.dark-mode .sleep-info-time,
+body.dark-mode .sleep-duration-value {
+  color: #ffffff;
+}
+
+/* ✅ أي نص غامق */
+body.dark-mode .event-title,
+body.dark-mode .event-title-row,
+body.dark-mode .event-pin-icon,
+body.dark-mode .task-text,
+body.dark-mode .statistics-item-name,
+body.dark-mode .profile-stat-label,
+body.dark-mode .profile-field-label,
+body.dark-mode .profile-setting-label,
+body.dark-mode .setting-row-value,
+body.dark-mode .profile-section-desc,
+body.dark-mode .profile-member-info,
+body.dark-mode .activity-display-name,
+body.dark-mode .alternative-primary-name,
+body.dark-mode .suggestion-btn-label,
+body.dark-mode .alternative-option-label,
+body.dark-mode .program-main-title,
+body.dark-mode .program-card-name,
+body.dark-mode .program-card-description,
+body.dark-mode .program-card-goal,
+body.dark-mode .program-detail-name,
+body.dark-mode .program-detail-goal,
+body.dark-mode .program-phase-name,
+body.dark-mode .program-overview-value,
+body.dark-mode .program-section-title,
+body.dark-mode .program-card-small-name,
+body.dark-mode .notes-main-title,
+body.dark-mode .notes-card-title,
+body.dark-mode .notes-card-content,
+body.dark-mode .notes-empty-title,
+body.dark-mode .notes-empty-desc,
+body.dark-mode .note-editor-title,
+body.dark-mode .note-editor-content,
+body.dark-mode .drops-title,
+body.dark-mode .drops-section-title,
+body.dark-mode .drops-item-name,
+body.dark-mode .drops-item-count,
+body.dark-mode .drops-next-name,
+body.dark-mode .drops-progress-text,
+body.dark-mode .drops-max-level h3,
+body.dark-mode .drops-max-level p,
+body.dark-mode .events-title,
+body.dark-mode .events-subtitle,
+body.dark-mode .calendar-month-year,
+body.dark-mode .calendar-weekdays,
+body.dark-mode .achievements-title,
+body.dark-mode .achievement-stat-value,
+body.dark-mode .achievement-stat-label,
+body.dark-mode .achievement-card-title,
+body.dark-mode .achievement-stat-card,
+body.dark-mode .achievements-empty-text {
+  color: #ffffff;
+}
+
+/* ✅ النصوص الثانوية */
+body.dark-mode .notes-main-subtitle,
+body.dark-mode .program-main-subtitle,
+body.dark-mode .event-date,
+body.dark-mode .event-remaining,
+body.dark-mode .event-description,
+body.dark-mode .task-category,
+body.dark-mode .task-date,
+body.dark-mode .notes-card-date,
+body.dark-mode .notes-card-edit-indicator,
+body.dark-mode .program-card-progress-text,
+body.dark-mode .program-card-stats,
+body.dark-mode .program-card-small-progress,
+body.dark-mode .program-overview-label,
+body.dark-mode .drops-counter-label,
+body.dark-mode .drops-counter-badge-label,
+body.dark-mode .note-editor-stats,
+body.dark-mode .note-editor-status,
+body.dark-mode .notes-stats,
+body.dark-mode .profile-char-counter,
+body.dark-mode .profile-section-note,
+body.dark-mode .empty-message,
+body.dark-mode .events-empty,
+body.dark-mode .calendar-day-empty,
+body.dark-mode .program-detail-type,
+body.dark-mode .program-empty-desc,
+body.dark-mode .profile-member-info,
+body.dark-mode .sleep-info-label {
+  color: #cbd5e1;
+}
+
+/* ========================================
+   3. HEADER
+   ======================================== */
+
+body.dark-mode #main-header {
+  background-color: rgba(10, 18, 32, 0.85);
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  border-block-end: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+body.dark-mode .title-border {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+body.dark-mode #user-profile-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode #user-name-icon {
+  color: #ffffff;
+}
+
+body.dark-mode .menu-toggle,
+body.dark-mode .notification-toggle {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .menu-toggle .menu-icon {
+  background: #ffffff;
+}
+
+/* ========================================
+   4. SIDEBAR
+   ======================================== */
+
+body.dark-mode #sidebar {
+  background-color: #0f1a2e;
+  border-inline-end: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+body.dark-mode .nav-btn {
+  color: #f1f5f9;
+}
+
+body.dark-mode .nav-btn:hover {
+  color: #ffffff;
+  background-color: rgba(109, 168, 232, 0.15);
+}
+
+body.dark-mode .nav-btn.active {
+  color: #ffffff;
+  background-color: rgba(109, 168, 232, 0.2);
+}
+
+/* ========================================
+   5. BOTTOM NAVIGATION
+   ======================================== */
+
+body.dark-mode #bottom-nav {
+  background: rgba(22, 32, 50, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .bottom-nav-btn {
+  color: #cbd5e1;
+}
+
+body.dark-mode .bottom-nav-btn.active {
+  color: #6da8e8;
+  background: rgba(109, 168, 232, 0.15);
+}
+
+body.dark-mode .bottom-nav-btn .bn-label {
+  color: inherit;
+}
+
+/* ========================================
+   6. HOUR BOXES (الساعات) - تعتمد الآن على المتغيرات
+   ======================================== */
+
+/* ✅ لا يوجد أي !important أو تلوين هنا، المتغيرات في القسم 1 تكفي */
+body.dark-mode .hour-box:hover {
+  background-color: #223a5e;
+  border-color: #6da8e8;
+  box-shadow: 0 4px 16px rgba(109, 168, 232, 0.25);
+}
+
+body.dark-mode .hour-swap-icon {
+  color: #93c5fd;
+}
+
+/* ========================================
+   7. DAY CARDS (أيام الأسبوع)
+   ======================================== */
+
+body.dark-mode .day-card {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .day-btn {
+  color: #ffffff;
+}
+
+body.dark-mode .day-btn:hover {
+  background-color: rgba(109, 168, 232, 0.15);
+}
+
+body.dark-mode .day-for-label {
+  color: #93c5fd;
+  border-block-start-color: rgba(148, 163, 184, 0.15);
+}
+
+body.dark-mode .day-card.today-card {
+  border: 2px solid #ffffff !important;
+  background: #1a2d4a !important;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.15) !important;
+}
+
+body.dark-mode .day-card.today-card .day-btn {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+body.dark-mode .day-card.today-card:hover {
+  border-color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.22) !important;
+}
+
+/* ========================================
+   8. DAY FOR CARD
+   ======================================== */
+
+body.dark-mode .day-for-card {
+  background: linear-gradient(135deg, rgba(245, 166, 35, 0.15), rgba(245, 166, 35, 0.08));
+  border-color: rgba(245, 166, 35, 0.4);
+}
+
+body.dark-mode .day-for-value {
+  color: #ffffff;
+}
+
+body.dark-mode .day-for-value.empty {
+  color: #cbd5e1;
+}
+
+body.dark-mode .day-for-edit {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .day-for-edit svg {
+  stroke: #ffffff;
+}
+
+/* ========================================
+   9. SLEEP CARD
+   ======================================== */
+
+body.dark-mode .sleep-card,
+body.dark-mode .sleep-info-item {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .sleep-info-time {
+  color: #ffffff;
+}
+
+body.dark-mode .sleep-info-divider {
+  background: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .sleep-time-card.sleep-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.08));
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+body.dark-mode .sleep-time-card.wake-card {
+  background: linear-gradient(135deg, rgba(245, 166, 35, 0.15), rgba(255, 140, 66, 0.08));
+  border-color: rgba(245, 166, 35, 0.4);
+}
+
+body.dark-mode .sleep-picker-display {
+  background: #1a2438;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+body.dark-mode .sleep-picker-time {
+  color: #ffffff;
+}
+
+body.dark-mode .sleep-picker-arrow {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+  color: #ffffff;
+}
+
+body.dark-mode .sleep-preset-btn {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+  color: #f1f5f9;
+}
+
+body.dark-mode .sleep-preset-btn.active {
+  background: rgba(109, 168, 232, 0.2);
+  border-color: #6da8e8;
+  color: #93c5fd;
+}
+
+body.dark-mode .sleep-duration-card {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+/* ========================================
+   10. TASKS
+   ======================================== */
+
+body.dark-mode .task-item {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .task-item:hover {
+  border-color: #6da8e8;
+}
+
+body.dark-mode .task-circle {
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+/* ========================================
+   11. STATISTICS
+   ======================================== */
+
+body.dark-mode .statistics-item {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .statistics-bar-container {
+  background: rgba(148, 163, 184, 0.15);
+}
+
+/* ========================================
+   12. EVENTS (calendar)
+   ======================================== */
+
+body.dark-mode .calendar-wrapper,
+body.dark-mode .events-list-section {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .calendar-day-today {
+  background-color: #1a2d4a !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.15) !important;
+  font-weight: 700;
+}
+
+body.dark-mode .calendar-day-today:hover {
+  background-color: #223a5e !important;
+}
+
+body.dark-mode .calendar-day-has-event {
+  background-color: #3a1f2a !important;
+  color: #fca5a5 !important;
+  font-weight: 700;
+}
+
+body.dark-mode .calendar-day-has-event:hover {
+  background-color: #4a2a35 !important;
+}
+
+body.dark-mode .calendar-day-today.calendar-day-has-event {
+  background: linear-gradient(135deg, #1a2d4a 50%, #3a1f2a 50%) !important;
+  border: 2px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .calendar-day {
+  color: #ffffff;
+}
+
+body.dark-mode .calendar-day:hover {
+  background-color: rgba(109, 168, 232, 0.15);
+}
+
+body.dark-mode .calendar-weekdays {
+  color: #cbd5e1;
+  border-bottom-color: rgba(148, 163, 184, 0.15);
+}
+
+body.dark-mode .event-card {
+  background: #1a2438;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .event-card:hover {
+  background-color: #22304d;
+}
+
+body.dark-mode .event-card-pinned {
+  background: rgba(109, 168, 232, 0.15);
+  border-left-color: #6da8e8;
+}
+
+body.dark-mode .event-card-pinned:hover {
+  background: rgba(109, 168, 232, 0.2);
+}
+
+body.dark-mode .calendar-pin-icon span[data-lucide] svg {
+  fill: #93c5fd;
+  stroke: #93c5fd;
+}
+
+/* ========================================
+   13. NOTES
+   ======================================== */
+
+body.dark-mode .notes-card {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .notes-card:hover {
+  border-color: #6da8e8;
+}
+
+body.dark-mode .notes-search-input {
+  background: #1a2438;
+  color: #ffffff;
+  border-color: #334155;
+}
+
+body.dark-mode .notes-search-input::placeholder {
+  color: #94a3b8;
+}
+
+body.dark-mode .note-editor {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .note-editor-header,
+body.dark-mode .note-editor-footer {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+body.dark-mode .note-editor-title,
+body.dark-mode .note-editor-content {
+  color: #ffffff;
+}
+
+body.dark-mode .note-editor-title::placeholder,
+body.dark-mode .note-editor-content::placeholder {
+  color: #94a3b8;
+}
+
+/* ========================================
+   14. PROGRAMS
+   ======================================== */
+
+body.dark-mode .program-card,
+body.dark-mode .program-card-small,
+body.dark-mode .program-overview,
+body.dark-mode .program-phase {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .program-card:hover {
+  border-color: #6da8e8;
+}
+
+body.dark-mode .program-card-progress-bar {
+  background: rgba(148, 163, 184, 0.15);
+}
+
+body.dark-mode .program-detail-back-btn {
+  background: #162032;
+  color: #ffffff;
+  border-color: #334155;
+}
+
+body.dark-mode .program-add-phase-btn,
+body.dark-mode .program-add-topic-btn {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
+}
+
+body.dark-mode .program-session-step {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .program-session-complete-form input,
+body.dark-mode .program-session-complete-form select {
+  background: #1a2438;
+  color: #ffffff;
+  border-color: #334155;
+}
+
+/* ========================================
+   15. DROPS
+   ======================================== */
+
+body.dark-mode .drops-items-row,
+body.dark-mode .drops-next-card {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .drops-item {
+  background: #1a2438;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .drops-item:hover {
+  border-color: #6da8e8;
+}
+
+body.dark-mode .drops-counter-badge {
+  background: linear-gradient(135deg, rgba(79, 142, 219, 0.25), rgba(109, 168, 232, 0.15));
+  border-color: rgba(109, 168, 232, 0.5);
+}
+
+body.dark-mode .drops-counter-badge:hover {
+  background: linear-gradient(135deg, rgba(79, 142, 219, 0.35), rgba(109, 168, 232, 0.25));
+}
+
+body.dark-mode .drops-counter-badge-number {
+  color: #93c5fd;
+}
+
+body.dark-mode .drops-counter-badge-label {
+  color: #ffffff;
+}
+
+body.dark-mode .drops-counter-badge-icon {
+  color: #93c5fd;
+}
+
+body.dark-mode .drops-counter-badge-icon svg {
+  fill: rgba(147, 197, 253, 0.3);
+  filter: drop-shadow(0 0 4px rgba(147, 197, 253, 0.5));
+}
+
+body.dark-mode .drops-max-level {
+  background: linear-gradient(135deg, rgba(245, 166, 35, 0.15), rgba(245, 166, 35, 0.05));
+  border-color: rgba(245, 166, 35, 0.35);
+}
+
+/* ========================================
+   16. COMPLETED COUNTER
+   ======================================== */
+
+body.dark-mode .completed-counter-bar {
+  background: linear-gradient(135deg, rgba(79, 142, 219, 0.2), rgba(109, 168, 232, 0.3));
+  border-color: rgba(109, 168, 232, 0.5);
+}
+
+body.dark-mode .completed-counter-number {
+  color: #93c5fd;
+}
+
+body.dark-mode .completed-counter-label {
+  color: #ffffff;
+}
+
+body.dark-mode .completed-counter-drop svg {
+  stroke: #93c5fd;
+  fill: rgba(147, 197, 253, 0.3);
+  filter: drop-shadow(0 0 5px rgba(147, 197, 253, 0.6));
+}
+
+/* ========================================
+   17. PROFILE
+   ======================================== */
+
+body.dark-mode .profile-card,
+body.dark-mode .profile-section {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .profile-avatar-img {
+  border-color: #6da8e8;
+  background-color: #1a2438;
+}
+
+body.dark-mode .profile-stat-box {
+  background: transparent;
+}
+
+body.dark-mode .profile-setting-row {
+  background: #1a2438;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .profile-setting-row.clickable:hover {
+  background: #22304d;
+  border-color: #6da8e8;
+}
+
+body.dark-mode .profile-field-input,
+body.dark-mode .profile-field-textarea,
+body.dark-mode .profile-setting-select {
+  background: #1a2438;
+  color: #ffffff;
+  border-color: #334155;
+}
+
+body.dark-mode .profile-field-input::placeholder,
+body.dark-mode .profile-field-textarea::placeholder {
+  color: #94a3b8;
+}
+
+body.dark-mode .profile-badge-row {
+  background: #1a2438;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .profile-badge-count {
+  color: #93c5fd;
+}
+
+body.dark-mode .profile-badge-label {
+  color: #ffffff;
+}
+
+body.dark-mode .profile-back-btn {
+  background: #162032;
+  color: #ffffff;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+body.dark-mode .profile-clear-btn {
+  background: transparent;
+  border-color: #e74c5e;
+}
+
+body.dark-mode .setting-row-value {
+  color: #93c5fd;
+}
+
+body.dark-mode .setting-choice-list {
+  background: #1a2438;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .setting-choice-item {
+  border-block-end-color: rgba(148, 163, 184, 0.15);
+}
+
+body.dark-mode .setting-choice-item:hover {
+  background: #22304d;
+}
+
+body.dark-mode .setting-choice-item.selected {
+  background: rgba(109, 168, 232, 0.2);
+}
+
+body.dark-mode .setting-choice-label {
+  color: #ffffff;
+}
+
+body.dark-mode .setting-choice-item.selected .setting-choice-label {
+  color: #93c5fd;
+}
+
+/* ========================================
+   18. ACHIEVEMENTS
+   ======================================== */
+
+body.dark-mode .achievement-stat-card {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .achievement-card {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .achievement-card-title {
+  color: #ffffff;
+}
+
+body.dark-mode .achievements-stats-grid .achievement-stat-value {
+  color: #ffffff;
+}
+
+body.dark-mode .achievement-stat-total .achievement-stat-value {
+  color: #93c5fd;
+}
+
+body.dark-mode .achievement-stat-label {
+  color: #cbd5e1;
+}
+
+/* ========================================
+   19. MODALS
+   ======================================== */
+
+body.dark-mode .modal-base,
+body.dark-mode .notes-modal {
+  background: #1a2438;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .modal-base-header {
+  border-block-end-color: rgba(148, 163, 184, 0.15);
+}
+
+body.dark-mode .modal-base-title {
+  color: #ffffff;
+}
+
+body.dark-mode .modal-base-close {
+  color: #cbd5e1;
+}
+
+body.dark-mode .modal-base-close:hover {
+  background: rgba(109, 168, 232, 0.15);
+  color: #ffffff;
+}
+
+body.dark-mode .modal-base-body {
+  color: #ffffff;
+}
+
+body.dark-mode .modal-base-btn-secondary {
+  background: #1e293b;
+  color: #ffffff;
+  border-color: #334155;
+}
+
+body.dark-mode .modal-base-btn-secondary:hover:not(:disabled) {
+  background: #22304d;
+}
+
+body.dark-mode .modal-base-label {
+  color: #cbd5e1;
+}
+
+body.dark-mode .modal-base-input,
+body.dark-mode .modal-base-textarea,
+body.dark-mode .modal-base-select {
+  background: #0f1a2e;
+  color: #ffffff;
+  border-color: #334155;
+}
+
+body.dark-mode .modal-base-input::placeholder,
+body.dark-mode .modal-base-textarea::placeholder {
+  color: #94a3b8;
+}
+
+body.dark-mode .modal-base-message {
+  color: #cbd5e1;
+}
+
+body.dark-mode .modal-base-icon-centered {
+  background: rgba(109, 168, 232, 0.2);
+  color: #93c5fd;
+}
+
+body.dark-mode #delete-modal {
+  background: #1a2438;
+}
+
+/* ========================================
+   20. TOASTS
+   ======================================== */
+
+body.dark-mode .toast {
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+/* ========================================
+   21. SCROLLBARS
+   ======================================== */
+
+body.dark-mode .modal-base-body::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+body.dark-mode .modal-base-body::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+body.dark-mode #app::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+/* ========================================
+   22. ACTIVITY / ALTERNATIVE CARDS
+   ======================================== */
+
+body.dark-mode .activity-display-card {
+  background: #1a2438;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .primary-card {
+  background: linear-gradient(135deg, rgba(245, 166, 35, 0.15), rgba(245, 166, 35, 0.05));
+  border-color: rgba(245, 166, 35, 0.35);
+}
+
+body.dark-mode .alternative-card {
+  background: linear-gradient(135deg, rgba(79, 142, 219, 0.15), rgba(109, 168, 232, 0.08));
+  border-color: rgba(79, 142, 219, 0.35);
+}
+
+body.dark-mode .empty-card {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .activity-add-alt-btn {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
+}
+
+body.dark-mode .suggestion-btn,
+body.dark-mode .alternative-option-btn {
+  background: #1a2438;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark-mode .suggestion-btn-label,
+body.dark-mode .alternative-option-label {
+  color: #cbd5e1;
+}
+
+body.dark-mode .suggestion-btn.selected .suggestion-btn-label,
+body.dark-mode .alternative-option-btn.selected .alternative-option-label {
+  color: #93c5fd;
+}
+
+body.dark-mode .alternative-primary-info {
+  background: linear-gradient(135deg, rgba(245, 166, 35, 0.15), rgba(245, 166, 35, 0.05));
+  border-color: rgba(245, 166, 35, 0.35);
+}
+
+/* ========================================
+   23. FILTERS
+   ======================================== */
+
+body.dark-mode .filter-btn {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+}
+
+body.dark-mode .filter-btn.active {
+  background: #4f8edb;
+  color: #ffffff;
+  border-color: #4f8edb;
+}
+
+/* ========================================
+   24. BACK BUTTON
+   ======================================== */
+
+body.dark-mode #back-btn {
+  background: #162032;
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #ffffff;
+}
+
+/* ========================================
+   25. NOTES FAB
+   ======================================== */
+
+body.dark-mode #notes-fab .fab-btn {
+  box-shadow: 0 4px 20px rgba(79, 142, 219, 0.55);
+}
+
+/* ========================================
+   26. SLEEP QUALITY BADGES
+   ======================================== */
+
+body.dark-mode .sleep-quality-badge.excellent {
+  background: rgba(76, 175, 132, 0.25);
+  color: #6ee7b7;
+}
+
+body.dark-mode .sleep-quality-badge.good {
+  background: rgba(245, 166, 35, 0.25);
+  color: #fbbf24;
+}
+
+body.dark-mode .sleep-quality-badge.fair {
+  background: rgba(255, 152, 0, 0.25);
+  color: #fb923c;
+}
+
+body.dark-mode .sleep-quality-badge.poor {
+  background: rgba(231, 76, 94, 0.25);
+  color: #fca5a5;
+}
+
+/* ========================================
+   27. TRANSPARENCY PREFERENCES
+   ======================================== */
+
+@media (prefers-reduced-transparency: reduce) {
+  body.dark-mode #main-header,
+  body.dark-mode #sidebar,
+  body.dark-mode .day-card,
+  body.dark-mode .task-item,
+  body.dark-mode .profile-card,
+  body.dark-mode .profile-section,
+  body.dark-mode #bottom-nav {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

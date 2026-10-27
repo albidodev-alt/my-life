@@ -1,6 +1,6 @@
 // ========================================
-// STORAGE.JS - Unified Storage Layer v2.3
-// (Fixed: getAllTasks returns copy + _getTasksRaw internal)
+// STORAGE.JS - Unified Storage Layer v2.4
+// (Fixed: getAllTasks returns copy + _getTasksRaw internal + Single Migration + Filter-then-Clone)
 // ========================================
 
 const STORAGE_KEY = "myLifeHub_routine";
@@ -11,6 +11,9 @@ const STATS_KEY = "myLifeHub_achievement_stats";
 let routineCache = null;
 let tasksCache = null;
 let statsCache = null;
+
+// ✅ flag لمنع إعادة محاولة Migration
+let statsMigrationAttempted = false;
 
 // ===== الحد الأقصى للمهام المكتملة =====
 const MAX_COMPLETED_TASKS = 20;
@@ -210,10 +213,23 @@ function getAchievementStats() {
     return statsCache;
   }
 
-  // ✅ Migration
-  console.log('📊 Migrating achievement stats from tasks...');
-  statsCache = calculateStatsFromTasks();
-  saveAchievementStats(statsCache);
+  // ✅ Migration: جرّب مرة واحدة فقط
+  if (!statsMigrationAttempted) {
+    statsMigrationAttempted = true;
+    console.log('📊 Migrating achievement stats from tasks...');
+    statsCache = calculateStatsFromTasks();
+    saveAchievementStats(statsCache);
+    return statsCache;
+  }
+
+  // ✅ إذا فشلت Migration سابقاً → أعد قيماً افتراضية
+  statsCache = {
+    totalCompleted: 0,
+    easyCount: 0,
+    mediumCount: 0,
+    hardCount: 0,
+    lastUpdated: new Date().toISOString()
+  };
   return statsCache;
 }
 
@@ -293,6 +309,7 @@ function decrementAchievementStats(difficulty) {
 
 function resetAchievementStats() {
   statsCache = null;
+  statsMigrationAttempted = false;  // ✅ إعادة تعيين flag
   try {
     localStorage.removeItem(STATS_KEY);
   } catch (e) {
@@ -303,6 +320,7 @@ function resetAchievementStats() {
 
 function clearAchievementStats() {
   statsCache = null;
+  statsMigrationAttempted = false;  // ✅ إعادة تعيين flag
   try {
     localStorage.removeItem(STATS_KEY);
   } catch (e) {
@@ -502,31 +520,33 @@ function getActiveTasksCount() {
 
 /**
  * الحصول على المهام المكتملة (مرتبة من الأحدث للأقدم)
- * ✅ تعيد نسخة آمنة
+ * ✅ فلترة أولاً ثم clone (أسرع)
  */
 function getCompletedTasksSorted() {
-  return deepClone(_getTasksRaw())
-    .filter(t => t.completed)
-    .sort((a, b) => {
-      const dateA = new Date(a.completedAt || a.completionDate || 0);
-      const dateB = new Date(b.completedAt || b.completionDate || 0);
-      return dateB - dateA;
-    });
+  // ✅ فلترة بدون clone أولاً
+  const completed = _getTasksRaw().filter(t => t.completed);
+  // ✅ ثم clone + sort
+  return deepClone(completed).sort((a, b) => {
+    const dateA = new Date(a.completedAt || a.completionDate || 0);
+    const dateB = new Date(b.completedAt || b.completionDate || 0);
+    return dateB - dateA;
+  });
 }
 
 /**
  * الحصول على المهام النشطة (مرتبة حسب الأولوية)
- * ✅ تعيد نسخة آمنة
+ * ✅ فلترة أولاً ثم clone (أسرع)
  */
 function getActiveTasksSorted() {
   const priorityOrder = { high: 0, medium: 1, low: 2 };
-  return deepClone(_getTasksRaw())
-    .filter(t => !t.completed)
-    .sort((a, b) => {
-      const pa = priorityOrder[a.priority] ?? 3;
-      const pb = priorityOrder[b.priority] ?? 3;
-      return pa - pb;
-    });
+  // ✅ فلترة بدون clone أولاً
+  const active = _getTasksRaw().filter(t => !t.completed);
+  // ✅ ثم clone + sort
+  return deepClone(active).sort((a, b) => {
+    const pa = priorityOrder[a.priority] ?? 3;
+    const pb = priorityOrder[b.priority] ?? 3;
+    return pa - pb;
+  });
 }
 
 /**
@@ -616,9 +636,11 @@ window.MAX_COMPLETED_TASKS = MAX_COMPLETED_TASKS;
 // ========================================
 // ✅ تأكيد التحميل
 // ========================================
-console.log("✅ Storage.js v2.3 loaded successfully!");
+console.log("✅ Storage.js v2.4 loaded successfully!");
 console.log("   - getAllTasks returns deep copy (safe)");
 console.log("   - _getTasksRaw: internal use only");
+console.log("   - Single migration attempt only");
+console.log("   - Filter-then-clone for sorted lists");
 console.log("   - MAX_COMPLETED_TASKS:", MAX_COMPLETED_TASKS);
 
 // ✅ عرض استخدام التخزين في Console

@@ -22,10 +22,30 @@ const DROPS_LEVELS = [
 // دوال مساعدة
 // ========================================
 
+/**
+ * ✅ الحصول على عدد القطرات (المهام المكتملة)
+ * يستخدم getCompletedTasksCount() السريعة (بدون deep clone)
+ * مع fallback للطريقة البطيئة إن لم تكن متاحة
+ */
 function getDropsCount() {
-  if (typeof getAllTasks !== 'function') return 0;
-  const tasks = getAllTasks();
-  return tasks.filter(t => t.completed).length;
+  // ✅ الطريقة السريعة — لا clone
+  if (typeof getCompletedTasksCount === 'function') {
+    return getCompletedTasksCount();
+  }
+
+  // ⚠️ Fallback — أبطأ لكن آمن
+  if (typeof getTasksCopy === 'function') {
+    const tasks = getTasksCopy();
+    return tasks.filter(t => t.completed).length;
+  }
+
+  // ⚠️ Fallback أخير
+  if (typeof getAllTasks === 'function') {
+    const tasks = getAllTasks();
+    return tasks.filter(t => t.completed).length;
+  }
+
+  return 0;
 }
 
 function getNextLevel(drops) {

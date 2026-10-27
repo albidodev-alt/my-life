@@ -1,6 +1,6 @@
 /* ========================================
-   MY LIFE HUB - MODAL BASE STYLES v3.0
-   (Optimized: No Dark Mode + Logical Properties + Merged Rules)
+   MY LIFE HUB - MODAL BASE STYLES v3.1
+   (Swipe to Close + Drag State + Mobile Optimized)
    ======================================== */
 
 /* ========================================
@@ -21,7 +21,7 @@
   padding-inline-start: calc(16px + var(--safe-left));
   padding-inline-end: calc(16px + var(--safe-right));
   animation: modalOverlayFadeIn 0.3s ease;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -54,10 +54,30 @@
   color: var(--text-primary);
   -webkit-user-select: none;
   user-select: none;
+  /* ✅ تحسين الأداء أثناء السحب */
+  will-change: transform;
 }
 
 .modal-base.closing {
   animation: modalBaseSlideDown 0.2s ease forwards;
+}
+
+/* ✅ حالة السحب */
+.modal-base.dragging {
+  cursor: grabbing;
+  /* ✅ منع جميع أحداث اللمس على المحتوى أثناء السحب */
+  pointer-events: none;
+}
+
+.modal-base.dragging * {
+  pointer-events: none;
+}
+
+/* ✅ تكبير المقبض أثناء السحب */
+.modal-base.dragging::before {
+  width: 56px;
+  opacity: 1;
+  background: var(--primary);
 }
 
 @keyframes modalBaseSlideUp {
@@ -102,6 +122,8 @@
   border-block-end: 1px solid var(--border-light);
   flex-shrink: 0;
   min-height: 64px;
+  /* ✅ منطقة السحب على الجوال */
+  position: relative;
 }
 
 .modal-base-title {
@@ -467,7 +489,6 @@
    10. HOVER EFFECTS (Touch-Free Devices Only)
    ======================================== */
 @media (hover: hover) {
-  /* Close Button */
   .modal-base-close:hover {
     background: var(--bg-hover);
     color: var(--text-primary);
@@ -478,7 +499,6 @@
     transform: rotate(90deg) scale(0.92);
   }
 
-  /* Buttons */
   .modal-base-btn-primary:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
@@ -507,7 +527,6 @@
     transform: translateY(0);
   }
 
-  /* Scrollbar */
   .modal-base-body::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted);
   }
@@ -517,14 +536,12 @@
    11. RESPONSIVE - Mobile (≤768px)
    ======================================== */
 @media (max-width: 768px) {
-  /* ===== Overlay: Bottom-aligned ===== */
   .modal-base-overlay {
     padding: 0;
     align-items: flex-end;
     backdrop-filter: blur(4px);
   }
 
-  /* ===== Modal: Bottom Sheet ===== */
   .modal-base {
     max-width: 100%;
     max-height: 90vh;
@@ -532,6 +549,9 @@
     border-radius: 24px 24px 0 0;
     animation: modalBaseSlideUpMobile 0.35s cubic-bezier(0.32, 0.72, 0, 1);
     padding-block-end: var(--safe-bottom);
+    /* ✅ تحسين الأداء أثناء السحب */
+    will-change: transform;
+    touch-action: pan-y;
   }
 
   @keyframes modalBaseSlideUpMobile {
@@ -539,7 +559,7 @@
     to { transform: translateY(0); }
   }
 
-  /* ===== مقبض صغير في الأعلى (iOS Style) ===== */
+  /* ===== مقبض السحب (iOS Style) ===== */
   .modal-base::before {
     content: "";
     position: absolute;
@@ -551,6 +571,8 @@
     background: var(--border-color);
     border-radius: 4px;
     z-index: 10;
+    transition: width 0.2s ease, background-color 0.2s ease;
+    pointer-events: none;
   }
 
   .modal-base-header {
@@ -587,7 +609,6 @@
     padding-inline: 20px;
   }
 
-  /* ===== الأزرار: عمود واحد ===== */
   .modal-base-actions {
     flex-direction: column;
     gap: 10px;
@@ -609,7 +630,6 @@
     min-height: 52px;
   }
 
-  /* ✅ حقول بحجم 16px لمنع التكبير على iOS */
   .modal-base-input,
   .modal-base-textarea,
   .modal-base-select {
@@ -639,7 +659,6 @@
     text-align: center;
   }
 
-  /* أيقونة الحذف أكبر على الهاتف */
   #delete-modal .modal-base-body > div:first-child {
     width: 72px;
     height: 72px;
@@ -652,7 +671,6 @@
     height: 36px;
   }
 
-  /* ===== أزرار الحذف: عمود واحد ===== */
   #delete-modal .modal-base-body > div:last-child {
     display: flex;
     flex-direction: column;
@@ -806,7 +824,32 @@
 }
 
 /* ========================================
-   15. ACCESSIBILITY
+   15. SWIPE TO CLOSE (Mobile Only)
+   ======================================== */
+@media (max-width: 768px) {
+  /* ✅ منع تحديد النص أثناء السحب */
+  .modal-base.dragging {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* ✅ منع السحب على المناطق التفاعلية */
+  .modal-base-header button,
+  .modal-base-header input,
+  .modal-base-header textarea,
+  .modal-base-header select,
+  .modal-base-body button,
+  .modal-base-body input,
+  .modal-base-body textarea,
+  .modal-base-body select,
+  .modal-base-body a {
+    touch-action: manipulation;
+  }
+}
+
+/* ========================================
+   16. ACCESSIBILITY
    ======================================== */
 .modal-base-close:focus-visible,
 .modal-base-btn:focus-visible {
@@ -835,5 +878,10 @@
   #delete-modal [style*="deleteIconPop"],
   #delete-modal [style*="deleteIconPulse"] {
     animation: none;
+  }
+
+  .modal-base.dragging,
+  .modal-base.dragging::before {
+    transition: none !important;
   }
 }

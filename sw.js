@@ -1,10 +1,10 @@
 // ========================================
-// MY LIFE - SERVICE WORKER v18.0
-// (Stale-While-Revalidate for HTML + Quota Handling + Better Offline)
+// MY LIFE - SERVICE WORKER v19.0
+// (Splash screen added to cache)
 // ========================================
 
-const CACHE_NAME = 'my-life-v18';
-const RUNTIME_CACHE = 'runtime-v18';
+const CACHE_NAME = 'my-life-v19';
+const RUNTIME_CACHE = 'runtime-v19';
 
 // ========================================
 // ✅ قائمة الملفات المطلوب تخزينها مسبقاً
@@ -16,6 +16,7 @@ const ASSETS_TO_CACHE = [
 
   // ===== CSS =====
   'css/fonts.css',
+  'css/splash.css',
   'css/modal-base.css',
   'css/toast.css',
   'css/style.css',
@@ -26,6 +27,8 @@ const ASSETS_TO_CACHE = [
 
   // ===== JS (Core) =====
   'js/utils.js',
+  'js/theme.js',
+  'js/splash.js',
   'js/toast.js',
   'js/modal-helper.js',
   'js/storage.js',
@@ -83,16 +86,12 @@ async function safeCachePut(cache, request, response) {
     if (err.name === 'QuotaExceededError') {
       console.warn('[SW] Quota exceeded. Cleaning old entries...');
 
-      // احصل على مفاتيح الكاش
       const keys = await cache.keys();
-
-      // احذف أقدم 20% من المدخلات
       const deleteCount = Math.max(1, Math.floor(keys.length * 0.2));
       for (let i = 0; i < deleteCount; i++) {
         await cache.delete(keys[i]);
       }
 
-      // حاول مرة أخرى
       try {
         await cache.put(request, response);
         return true;
@@ -107,9 +106,6 @@ async function safeCachePut(cache, request, response) {
   }
 }
 
-// ========================================
-// ✅ دالة تخزين آمنة غير متزامنة (لا تحجب الاستجابة)
-// ========================================
 function backgroundCachePut(cacheName, request, response) {
   caches.open(cacheName).then(function (cache) {
     safeCachePut(cache, request, response.clone());
@@ -119,37 +115,35 @@ function backgroundCachePut(cacheName, request, response) {
 }
 
 // ========================================
-// INSTALL - تخزين كل الملفات
+// INSTALL
 // ========================================
 self.addEventListener('install', function (event) {
-  console.log('[SW v18] Installing...');
+  console.log('[SW v19] Installing...');
 
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(function (cache) {
-        console.log('[SW v18] Caching all assets...');
-
-        // استخدام Promise.allSettled لتفادي فشل التثبيت إذا فشل ملف
+        console.log('[SW v19] Caching all assets...');
         return Promise.allSettled(
           ASSETS_TO_CACHE.map(function (url) {
             return cache.add(url).catch(function (err) {
-              console.warn('[SW v18] Failed to cache:', url, err);
+              console.warn('[SW v19] Failed to cache:', url, err);
             });
           })
         );
       })
       .then(function () {
-        console.log('[SW v18] Installation complete!');
+        console.log('[SW v19] Installation complete!');
         return self.skipWaiting();
       })
   );
 });
 
 // ========================================
-// ACTIVATE - حذف الكاش القديم
+// ACTIVATE
 // ========================================
 self.addEventListener('activate', function (event) {
-  console.log('[SW v18] Activating...');
+  console.log('[SW v19] Activating...');
 
   event.waitUntil(
     caches.keys()
@@ -157,40 +151,34 @@ self.addEventListener('activate', function (event) {
         return Promise.all(
           cacheNames.map(function (cacheName) {
             if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
-              console.log('[SW v18] Deleting old cache:', cacheName);
+              console.log('[SW v19] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
       })
       .then(function () {
-        console.log('[SW v18] Activation complete!');
+        console.log('[SW v19] Activation complete!');
         return self.clients.claim();
       })
   );
 });
 
 // ========================================
-// FETCH - استراتيجية محسّنة
+// FETCH
 // ========================================
 self.addEventListener('fetch', function (event) {
   const requestUrl = new URL(event.request.url);
 
-  // تجاهل الطلبات غير GET
   if (event.request.method !== 'GET') return;
-
-  // تجاهل البروتوكولات غير HTTP(S)
   if (!requestUrl.protocol.startsWith('http')) return;
 
-  // ========================================
-  // ✅ 1. HTML: Stale-While-Revalidate (يُعرض من الكاش فوراً)
-  // ========================================
+  // ✅ 1. HTML: Stale-While-Revalidate
   if (event.request.mode === 'navigate' ||
       (event.request.headers.get('accept') || '').includes('text/html')) {
 
     event.respondWith(
       caches.match(event.request).then(function (cachedResponse) {
-        // ✅ بدء طلب الشبكة في الخلفية (لا ينتظر)
         const fetchPromise = fetch(event.request)
           .then(function (networkResponse) {
             if (networkResponse && networkResponse.status === 200) {
@@ -199,20 +187,16 @@ self.addEventListener('fetch', function (event) {
             return networkResponse;
           })
           .catch(function () {
-            // ❌ فشل الاتصال → استخدم index.html كـ fallback
             return caches.match('index.html');
           });
 
-        // ✅ إذا كان موجوداً في الكاش → أرجعه فوراً
         return cachedResponse || fetchPromise;
       })
     );
     return;
   }
 
-  // ========================================
-  // ✅ 2. ملفات CDN: Cache-First (احتياطي فقط)
-  // ========================================
+  // ✅ 2. CDN: Cache-First
   if (requestUrl.hostname.includes('unpkg.com') ||
       requestUrl.hostname.includes('fonts.googleapis.com') ||
       requestUrl.hostname.includes('fonts.gstatic.com') ||
@@ -223,9 +207,7 @@ self.addEventListener('fetch', function (event) {
         .then(function (cache) {
           return cache.match(event.request)
             .then(function (cached) {
-              if (cached) {
-                return cached;
-              }
+              if (cached) return cached;
               return fetch(event.request)
                 .then(function (response) {
                   if (response && response.status === 200) {
@@ -242,30 +224,24 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // ========================================
   // ✅ 3. الملفات المحلية: Cache-First + تحديث خلفي
-  // ========================================
   event.respondWith(
     caches.open(CACHE_NAME)
       .then(function (cache) {
         return cache.match(event.request)
           .then(function (cachedResponse) {
             if (cachedResponse) {
-              // ✅ تحديث خلفي (Stale-While-Revalidate)
               fetch(event.request)
                 .then(function (networkResponse) {
                   if (networkResponse && networkResponse.status === 200) {
                     safeCachePut(cache, event.request, networkResponse.clone());
                   }
                 })
-                .catch(function () {
-                  // Offline - تجاهل
-                });
+                .catch(function () { /* Offline - ignore */ });
 
               return cachedResponse;
             }
 
-            // غير موجود في الكاش - جرب الشبكة
             return fetch(event.request)
               .then(function (networkResponse) {
                 if (networkResponse && networkResponse.status === 200) {
@@ -274,7 +250,6 @@ self.addEventListener('fetch', function (event) {
                 return networkResponse;
               })
               .catch(function () {
-                // Offline fallback للصفحات
                 if (event.request.mode === 'navigate') {
                   return caches.match('index.html');
                 }
@@ -334,15 +309,13 @@ self.addEventListener('notificationclick', function (event) {
 });
 
 // ========================================
-// ✅ MESSAGE HANDLER
+// MESSAGE HANDLER
 // ========================================
 self.addEventListener('message', function (event) {
-  // تخطي الانتظار للتحديث
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 
-  // مسح كل الكاش (للتحديثات الكاملة)
   if (event.data && event.data.type === 'CLEAR_CACHE') {
     caches.keys().then(function (names) {
       names.forEach(function (name) {
@@ -351,7 +324,6 @@ self.addEventListener('message', function (event) {
     });
   }
 
-  // ✅ الحصول على إحصاءات الكاش
   if (event.data && event.data.type === 'CACHE_STATS') {
     caches.keys().then(function (names) {
       const stats = {};
@@ -377,4 +349,4 @@ self.addEventListener('message', function (event) {
   }
 });
 
-console.log('✅ Service Worker v18.0 loaded successfully!');
+console.log('✅ Service Worker v19.0 loaded successfully! (Splash screen cached)');

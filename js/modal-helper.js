@@ -1,11 +1,144 @@
 // ========================================
-// MY LIFE HUB - MODAL HELPER
-// نظام النوافذ الموحدة - الدوال المساعدة
+// MY LIFE HUB - MODAL HELPER v2.0
+// نظام النوافذ الموحدة + Swipe to Close + Anti-Password-Manager Fields
 // ========================================
 
 /**
- * إنشاء نافذة منبثقة موحدة
+ * إعداد خاصية السحب للأسفل لإغلاق النافذة (على الجوال فقط)
  */
+function setupSwipeToClose(modal, overlay, closeFn) {
+  if (typeof window === 'undefined') return;
+  if (window.innerWidth > 768) return;
+
+  let startY = 0;
+  let currentY = 0;
+  let isDragging = false;
+  let startTime = 0;
+  let rafId = null;
+  let currentDiff = 0;
+
+  const dragArea = modal.querySelector('.modal-base-header') || modal;
+  const getThreshold = () => Math.max(80, modal.offsetHeight * 0.30);
+
+  function onTouchStart(e) {
+    if (e.target.closest('button, input, textarea, select, a, [role="button"]')) {
+      return;
+    }
+    if (modal.scrollTop > 5) return;
+    if (e.touches.length !== 1) return;
+
+    startY = e.touches[0].clientY;
+    startTime = Date.now();
+    currentDiff = 0;
+    isDragging = true;
+
+    modal.style.transition = 'none';
+    overlay.style.transition = 'none';
+    modal.classList.add('dragging');
+  }
+
+  function onTouchMove(e) {
+    if (!isDragging) return;
+    if (e.touches.length !== 1) return;
+
+    currentY = e.touches[0].clientY;
+    currentDiff = Math.max(0, currentY - startY);
+
+    if (currentDiff < 0) {
+      currentDiff = 0;
+      return;
+    }
+
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      modal.style.transform = `translateY(${currentDiff}px)`;
+      const fadeRatio = Math.max(0, 1 - currentDiff / (modal.offsetHeight * 0.6));
+      overlay.style.backgroundColor = `rgba(40, 60, 90, ${fadeRatio * 0.35})`;
+    });
+  }
+
+  function onTouchEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    const diff = currentDiff;
+    const timeDiff = Math.max(1, Date.now() - startTime);
+    const velocity = diff / timeDiff;
+
+    const threshold = getThreshold();
+    const isFastFlick = velocity > 0.7 && diff > 60;
+
+    modal.classList.remove('dragging');
+
+    if (diff > threshold || isFastFlick) {
+      modal.style.transition = 'transform 0.25s ease-out';
+      overlay.style.transition = 'background-color 0.25s ease-out';
+      modal.style.transform = `translateY(${modal.offsetHeight}px)`;
+      overlay.style.backgroundColor = 'rgba(40, 60, 90, 0)';
+
+      setTimeout(() => {
+        closeFn();
+      }, 220);
+    } else {
+      modal.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+      overlay.style.transition = 'background-color 0.3s ease';
+      modal.style.transform = 'translateY(0)';
+      overlay.style.backgroundColor = '';
+
+      setTimeout(() => {
+        modal.style.transition = '';
+        overlay.style.transition = '';
+      }, 320);
+    }
+
+    currentDiff = 0;
+  }
+
+  function onTouchCancel() {
+    if (!isDragging) return;
+    isDragging = false;
+
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    modal.classList.remove('dragging');
+    modal.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+    overlay.style.transition = 'background-color 0.3s ease';
+    modal.style.transform = 'translateY(0)';
+    overlay.style.backgroundColor = '';
+
+    setTimeout(() => {
+      modal.style.transition = '';
+      overlay.style.transition = '';
+    }, 320);
+
+    currentDiff = 0;
+  }
+
+  dragArea.addEventListener('touchstart', onTouchStart, { passive: true });
+  dragArea.addEventListener('touchmove', onTouchMove, { passive: true });
+  dragArea.addEventListener('touchend', onTouchEnd, { passive: true });
+  dragArea.addEventListener('touchcancel', onTouchCancel, { passive: true });
+
+  return function cleanup() {
+    dragArea.removeEventListener('touchstart', onTouchStart);
+    dragArea.removeEventListener('touchmove', onTouchMove);
+    dragArea.removeEventListener('touchend', onTouchEnd);
+    dragArea.removeEventListener('touchcancel', onTouchCancel);
+    if (rafId) cancelAnimationFrame(rafId);
+  };
+}
+
+// ========================================
+// إنشاء نافذة منبثقة موحدة
+// ========================================
 function createModal(options = {}) {
   const {
     id = 'modal-' + Date.now(),
@@ -15,7 +148,8 @@ function createModal(options = {}) {
     onClose = null,
     closeOnOverlayClick = true,
     closeOnEscape = true,
-    showCloseButton = true
+    showCloseButton = true,
+    swipeToClose = true
   } = options;
 
   const existing = document.getElementById(`${id}-overlay`);
@@ -72,13 +206,12 @@ function createModal(options = {}) {
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  // ===== منع تمرير الصفحة الخلفية =====
   const previousOverflow = document.body.style.overflow;
   document.body.style.overflow = 'hidden';
 
-  // ===== دوال الإغلاق =====
   let isClosed = false;
   let escapeHandler = null;
+  let cleanupSwipe = null;
 
   function close() {
     if (isClosed) return;
@@ -86,6 +219,11 @@ function createModal(options = {}) {
 
     if (escapeHandler) {
       document.removeEventListener('keydown', escapeHandler);
+    }
+
+    if (cleanupSwipe) {
+      cleanupSwipe();
+      cleanupSwipe = null;
     }
 
     document.body.style.overflow = previousOverflow;
@@ -116,9 +254,12 @@ function createModal(options = {}) {
     document.addEventListener('keydown', escapeHandler);
   }
 
+  if (swipeToClose) {
+    cleanupSwipe = setupSwipeToClose(modal, overlay, close);
+  }
+
   if (typeof debouncedLucide === 'function') debouncedLucide(30);
 
-  // ===== Focus على أول عنصر تفاعلي =====
   setTimeout(() => {
     const firstFocusable = modal.querySelector(
       'input:not([type="hidden"]), textarea, select, button:not(.modal-base-close)'
@@ -169,6 +310,75 @@ function createModalActions(actions = []) {
   return wrapper;
 }
 
+// ========================================
+// ✅ دوال مساعدة لحماية الحقول من Password Managers
+// ========================================
+
+/**
+ * ✅ تطبيق خصائص الحماية على أي حقل نصي
+ * @param {HTMLElement} input - الحقل (input أو textarea)
+ * @param {string} mode - الوضع: 'text' | 'name' | 'search' | 'url' | 'content'
+ */
+function _applyInputProtection(input, mode = 'text') {
+  if (!input) return;
+
+  const isTextarea = input.tagName === 'TEXTAREA';
+
+  // ===== الأساسيات (كل الحقول) =====
+  input.setAttribute('autocomplete', 'off');
+  input.setAttribute('autocorrect', 'off');
+  input.setAttribute('spellcheck', 'false');
+  input.setAttribute('data-form-type', 'other');
+
+  // ===== Password Managers =====
+  input.setAttribute('data-lpignore', 'true');         // LastPass
+  input.setAttribute('data-1p-ignore', 'true');        // 1Password
+  input.setAttribute('data-bwignore', 'true');         // Bitwarden
+  input.setAttribute('data-protonpass-ignore', 'true'); // ProtonPass
+
+  // ===== إعدادات حسب النوع =====
+  switch (mode) {
+    case 'name':
+      // الأسماء: كل كلمة بحرف كبير
+      input.setAttribute('autocapitalize', 'words');
+      input.setAttribute('inputmode', 'text');
+      break;
+
+    case 'search':
+      // البحث: لا تصحيح، لا تكبير
+      input.setAttribute('autocapitalize', 'off');
+      input.setAttribute('inputmode', 'search');
+      break;
+
+    case 'url':
+      // الروابط
+      input.setAttribute('autocapitalize', 'off');
+      input.setAttribute('inputmode', 'url');
+      break;
+
+    case 'content':
+      // محتوى طويل (ملاحظة، وصف): اسمح بالتصحيح الإملائي
+      input.setAttribute('autocorrect', 'on');
+      input.setAttribute('spellcheck', 'true');
+      input.setAttribute('autocapitalize', 'sentences');
+      if (!isTextarea) {
+        input.setAttribute('inputmode', 'text');
+      }
+      break;
+
+    case 'text':
+    default:
+      // نص عادي: جملة بحرف كبير
+      input.setAttribute('autocapitalize', 'sentences');
+      if (!isTextarea) {
+        input.setAttribute('inputmode', 'text');
+      }
+      break;
+  }
+
+  return input;
+}
+
 /**
  * إنشاء حقل إدخال
  */
@@ -183,7 +393,10 @@ function createModalField(options = {}) {
     options: selectOptions = [],
     rows = 4,
     maxLength = null,
-    helper = ''
+    helper = '',
+    // ✅ خيارات جديدة للحماية
+    inputMode = 'text',        // 'text' | 'name' | 'search' | 'url' | 'content'
+    inputAttributes = {}       // لإضافة أي خصائص إضافية
   } = options;
 
   const field = document.createElement('div');
@@ -226,6 +439,28 @@ function createModalField(options = {}) {
   input.id = id;
   if (placeholder) input.placeholder = placeholder;
   if (required) input.required = true;
+
+  // ========================================
+  // ✅ تطبيق الحماية (فقط للنصوص والـ textarea)
+  // ========================================
+  if (type === 'text' || type === 'textarea') {
+    _applyInputProtection(input, inputMode);
+  } else if (type === 'date') {
+    // ✅ حقول التاريخ: منع password manager فقط
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('data-form-type', 'other');
+    input.setAttribute('data-lpignore', 'true');
+    input.setAttribute('data-1p-ignore', 'true');
+  }
+
+  // ✅ خصائص إضافية مخصصة
+  Object.entries(inputAttributes).forEach(([key, val]) => {
+    if (val === true) {
+      input.setAttribute(key, '');
+    } else if (val !== false && val != null) {
+      input.setAttribute(key, val);
+    }
+  });
 
   field.appendChild(input);
 
@@ -322,7 +557,9 @@ function promptModal(options = {}) {
     validate = null,
     errorMessage = 'Invalid input',
     onConfirm = () => {},
-    onCancel = null
+    onCancel = null,
+    // ✅ جديد
+    inputMode = 'text'
   } = options;
 
   const modal = createModal({
@@ -349,7 +586,8 @@ function promptModal(options = {}) {
     rows: rows,
     value: defaultValue,
     placeholder: placeholder,
-    maxLength: maxLength
+    maxLength: maxLength,
+    inputMode: inputMode  // ✅ تمرير الوضع
   });
 
   modal.body.appendChild(field.field);
@@ -476,9 +714,6 @@ function infoModal(options = {}) {
 // ✅ DELETE MODAL - مقسمة لدوال صغيرة
 // ========================================
 
-/**
- * إعدادات أنواع الحذف
- */
 function getDeleteTypeConfig() {
   return {
     note: {
@@ -506,9 +741,6 @@ function getDeleteTypeConfig() {
   };
 }
 
-/**
- * إنشاء أيقونة الحذف
- */
 function createDeleteIcon(config) {
   const BLUE_BG = 'rgba(79, 142, 219, 0.12)';
   const BLUE_COLOR = '#4f8edb';
@@ -540,14 +772,10 @@ function createDeleteIcon(config) {
   return iconWrapper;
 }
 
-/**
- * إنشاء عنوان الحذف
- */
 function createDeleteTitle(config, itemName) {
   const BLUE_COLOR = '#4f8edb';
   const fragment = document.createDocumentFragment();
 
-  // ===== العنوان الرئيسي =====
   const titleEl = document.createElement('h3');
   titleEl.style.cssText = `
     margin: 0 0 12px 0;
@@ -562,7 +790,6 @@ function createDeleteTitle(config, itemName) {
   titleEl.textContent = config.title + (config.isDangerous ? '؟' : '?');
   fragment.appendChild(titleEl);
 
-  // ===== اسم العنصر =====
   if (itemName && itemName.trim() !== '') {
     const nameEl = document.createElement('p');
     nameEl.style.cssText = `
@@ -580,7 +807,6 @@ function createDeleteTitle(config, itemName) {
     fragment.appendChild(nameEl);
   }
 
-  // ===== تحذير =====
   if (config.isDangerous) {
     const warningEl = document.createElement('p');
     warningEl.style.cssText = `
@@ -599,9 +825,6 @@ function createDeleteTitle(config, itemName) {
   return fragment;
 }
 
-/**
- * إنشاء أزرار الحذف
- */
 function createDeleteActions(config, onConfirm, onCancel, closeFn) {
   const BLUE_COLOR = '#4f8edb';
   const BLUE_BG = 'rgba(79, 142, 219, 0.12)';
@@ -609,7 +832,6 @@ function createDeleteActions(config, onConfirm, onCancel, closeFn) {
   const actionsWrapper = document.createElement('div');
   actionsWrapper.style.cssText = 'display:flex;gap:10px;margin-top:24px;';
 
-  // ===== زر الإلغاء =====
   const cancelBtn = document.createElement('button');
   cancelBtn.type = 'button';
   cancelBtn.className = 'modal-base-btn modal-base-btn-secondary';
@@ -619,7 +841,6 @@ function createDeleteActions(config, onConfirm, onCancel, closeFn) {
     if (typeof onCancel === 'function') onCancel();
   });
 
-  // ===== زر الحذف =====
   const confirmBtn = document.createElement('button');
   confirmBtn.type = 'button';
   confirmBtn.className = 'modal-base-btn';
@@ -654,9 +875,6 @@ function createDeleteActions(config, onConfirm, onCancel, closeFn) {
   return actionsWrapper;
 }
 
-/**
- * إنشاء زر الإغلاق (لنافذة الحذف)
- */
 function createDeleteCloseBtn(closeFn) {
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
@@ -669,7 +887,7 @@ function createDeleteCloseBtn(closeFn) {
 }
 
 /**
- * نافذة حذف موحدة (مبسطة الآن)
+ * نافذة حذف موحدة
  */
 function deleteModal(options = {}) {
   const {
@@ -692,19 +910,14 @@ function deleteModal(options = {}) {
     }
   });
 
-  // إخفاء الـ header
   modal.header.style.display = 'none';
 
-  // ===== زر الإغلاق =====
   modal.modal.appendChild(createDeleteCloseBtn(() => modal.close()));
 
-  // ===== الأيقونة =====
   modal.body.appendChild(createDeleteIcon(config));
 
-  // ===== العنوان والاسم والتحذير =====
   modal.body.appendChild(createDeleteTitle(config, itemName));
 
-  // ===== الأزرار =====
   modal.body.appendChild(
     createDeleteActions(config, onConfirm, onCancel, () => modal.close())
   );
@@ -722,5 +935,7 @@ window.confirmModal = confirmModal;
 window.promptModal = promptModal;
 window.infoModal = infoModal;
 window.deleteModal = deleteModal;
+window.setupSwipeToClose = setupSwipeToClose;
+window._applyInputProtection = _applyInputProtection;  // ✅ جديد
 
-console.log("✅ Modal Helper loaded successfully!");
+console.log("✅ Modal Helper v2.0 loaded successfully! (Anti-Password-Manager enabled)");

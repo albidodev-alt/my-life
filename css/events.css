@@ -167,7 +167,7 @@
   transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   cursor: default;
   aspect-ratio: 1;
-  min-height: 44px; /* ✅ بديل احتياطي */
+  min-height: 44px;
   position: relative;
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
@@ -435,65 +435,6 @@
 #events-details-modal .notes-modal-title {
   font-size: 22px;
   margin-bottom: 8px;
-}
-
-/* ========================================
-   DARK MODE
-   ======================================== */
-
-body.dark-mode .calendar-day-today {
-  background-color: #1a2d4a;
-  color: #93c5fd;
-  border-color: var(--primary);
-}
-
-body.dark-mode .calendar-day-has-event {
-  background-color: #4a1a1a;
-  color: #fca5a5;
-}
-
-body.dark-mode .calendar-day-has-event:hover {
-  background-color: #5a2a2a;
-}
-
-body.dark-mode .calendar-day-today.calendar-day-has-event {
-  background: linear-gradient(135deg, #1a2d4a 50%, #4a1a1a 50%);
-  border-color: var(--primary);
-}
-
-body.dark-mode .event-card {
-  background: var(--bg-card);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .event-card:hover {
-  background-color: var(--bg-hover);
-}
-
-body.dark-mode .event-card-pinned {
-  background: var(--primary-light);
-  border-left-color: var(--primary);
-}
-
-body.dark-mode .events-add-btn {
-  background: var(--primary-gradient);
-}
-
-body.dark-mode .calendar-nav-btn {
-  color: var(--text-light);
-}
-
-body.dark-mode .calendar-nav-btn:hover {
-  background-color: var(--bg-hover);
-}
-
-body.dark-mode .event-pin-btn:hover,
-body.dark-mode .event-edit-btn:hover {
-  background-color: var(--bg-hover);
-}
-
-body.dark-mode .event-delete-btn:hover {
-  background-color: rgba(231, 76, 94, 0.15);
 }
 
 /* ========================================

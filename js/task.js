@@ -1,26 +1,94 @@
 // ========================================
-// MY LIFE HUB - TASKS v2.3
-// (replaceChildren + Debounced Search + Clean Lucide + Dynamic i18n)
+// MY LIFE HUB - TASKS v2.5
+// (Lucide Icons + Priority/Difficulty Configs + Text Date Input)
 // ========================================
 
 // ========================================
-// ✅ Priority & Difficulty Options (Dynamic)
+// ✅ Priority & Difficulty Configs (Lucide Icons)
 // ========================================
 
-function getPriorityOptions() {
-  return [
-    { value: "high",   label: "🔴 " + (typeof t === 'function' ? t('high', 'High') : "High") },
-    { value: "medium", label: "🟡 " + (typeof t === 'function' ? t('medium', 'Medium') : "Medium") },
-    { value: "low",    label: "🟢 " + (typeof t === 'function' ? t('low', 'Low') : "Low") }
-  ];
+const PRIORITY_CONFIG = {
+  high: {
+    key: 'high',
+    fallback: 'High',
+    icon: 'flame',
+    color: '#e74c5e',
+    bgColor: 'rgba(231, 76, 94, 0.10)'
+  },
+  medium: {
+    key: 'medium',
+    fallback: 'Medium',
+    icon: 'zap',
+    color: '#f5a623',
+    bgColor: 'rgba(245, 166, 35, 0.10)'
+  },
+  low: {
+    key: 'low',
+    fallback: 'Low',
+    icon: 'leaf',
+    color: '#4caf84',
+    bgColor: 'rgba(76, 175, 132, 0.10)'
+  }
+};
+
+const DIFFICULTY_CONFIG = {
+  Easy: {
+    key: 'easy',
+    fallback: 'Easy',
+    icon: 'circle-check',
+    color: '#4caf84',
+    bgColor: 'rgba(76, 175, 132, 0.10)'
+  },
+  Medium: {
+    key: 'medium',
+    fallback: 'Medium',
+    icon: 'circle-check',
+    color: '#f5a623',
+    bgColor: 'rgba(245, 166, 35, 0.10)'
+  },
+  Hard: {
+    key: 'hard',
+    fallback: 'Hard',
+    icon: 'circle-check',
+    color: '#e74c5e',
+    bgColor: 'rgba(231, 76, 94, 0.10)'
+  }
+};
+
+// ========================================
+// ✅ Helper: بناء HTML لأيقونة الأولوية
+// ========================================
+function buildPriorityIconHTML(priority, size = 14) {
+  const cfg = PRIORITY_CONFIG[priority] || PRIORITY_CONFIG.medium;
+  return `<span data-lucide="${cfg.icon}" style="width:${size}px;height:${size}px;vertical-align:middle;margin-right:4px;color:${cfg.color};"></span>`;
 }
 
-function getDifficultyOptions() {
-  return [
-    { value: "Easy",   label: "🟢 " + (typeof t === 'function' ? t('easy', 'Easy') : "Easy") },
-    { value: "Medium", label: "🟡 " + (typeof t === 'function' ? t('medium', 'Medium') : "Medium") },
-    { value: "Hard",   label: "🔴 " + (typeof t === 'function' ? t('hard', 'Hard') : "Hard") }
-  ];
+// ========================================
+// ✅ Helper: بناء HTML لأيقونة الصعوبة
+// ========================================
+function buildDifficultyIconHTML(difficulty, size = 14) {
+  const cfg = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.Medium;
+  return `<span data-lucide="${cfg.icon}" style="width:${size}px;height:${size}px;vertical-align:middle;margin-right:4px;color:${cfg.color};"></span>`;
+}
+
+// ========================================
+// ✅ ترجمة الأولوية (Priority)
+// ========================================
+function translatePriority(priority) {
+  if (!priority) return "";
+  const cfg = PRIORITY_CONFIG[priority];
+  if (!cfg) return priority;
+  return typeof t === 'function' ? t(cfg.key, cfg.fallback) : cfg.fallback;
+}
+
+// ========================================
+// ✅ ترجمة الصعوبة (Difficulty)
+// ========================================
+function translateDifficulty(difficulty) {
+  if (!difficulty) return "";
+  const cfg = DIFFICULTY_CONFIG[difficulty];
+  if (!cfg) return difficulty;
+  return typeof t === 'function' ? t(cfg.key, cfg.fallback) : cfg.fallback;
 }
 
 const categoryOptions = [
@@ -46,25 +114,182 @@ function parseDate(dateStr) {
 }
 
 // ========================================
-// ✅ ترجمة الأولوية (Priority)
+// ✅ التحقق من صحة تاريخ نصي (YYYY-MM-DD)
 // ========================================
-function translatePriority(priority) {
-  if (!priority) return "";
-  const key = priority.toLowerCase();
-  if (typeof t !== 'function') return priority;
-  const translated = t(key);
-  return translated === key ? priority : translated;
+function isValidDateString(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return false;
+  
+  // التحقق من الصيغة: YYYY-MM-DD
+  const regex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!regex.test(dateStr)) return false;
+  
+  // التحقق من صحة التاريخ الفعلي
+  const parts = dateStr.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+  const day = parseInt(parts[2], 10);
+  
+  if (year < 1900 || year > 2100) return false;
+  if (month < 1 || month > 12) return false;
+  if (day < 1 || day > 31) return false;
+  
+  // التحقق الدقيق (مثلاً: 31 فبراير غير صحيح)
+  const date = new Date(year, month - 1, day);
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
 }
 
 // ========================================
-// ✅ ترجمة الصعوبة (Difficulty)
+// ✅ الحصول على تاريخ اليوم (YYYY-MM-DD)
 // ========================================
-function translateDifficulty(difficulty) {
-  if (!difficulty) return "";
-  const key = difficulty.toLowerCase();
-  if (typeof t !== 'function') return difficulty;
-  const translated = t(key);
-  return translated === key ? difficulty : translated;
+function getTodayDateString() {
+  const today = new Date();
+  return today.getFullYear() + '-' +
+         String(today.getMonth() + 1).padStart(2, '0') + '-' +
+         String(today.getDate()).padStart(2, '0');
+}
+
+// ========================================
+// ✅ الحصول على تاريخ الغد (YYYY-MM-DD)
+// ========================================
+function getTomorrowDateString() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.getFullYear() + '-' +
+         String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' +
+         String(tomorrow.getDate()).padStart(2, '0');
+}
+
+// ========================================
+// ✅ بناء حقل تاريخ نصي مع أزرار سريعة
+// ========================================
+function buildDateFieldWithShortcuts(options = {}) {
+  const {
+    id = 'date-input-' + Date.now(),
+    label = 'Date',
+    value = '',
+    placeholder = 'YYYY-MM-DD',
+    required = false,
+    helper = 'Format: YYYY-MM-DD',
+    showShortcuts = true
+  } = options;
+
+  // ===== الحقل الأساسي =====
+  const field = createModalField({
+    id: id,
+    label: label,
+    type: 'text',
+    value: value,
+    placeholder: placeholder,
+    required: required,
+    helper: helper,
+    inputMode: 'text',
+    inputAttributes: {
+      'maxlength': '10',
+      'pattern': '\\d{4}-\\d{2}-\\d{2}'
+    }
+  });
+
+  // ===== إضافة أزرار الاختصارات =====
+  if (showShortcuts) {
+    const shortcutsRow = document.createElement('div');
+    shortcutsRow.style.cssText = 'display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;';
+
+    const createShortcutBtn = (label, dateValue, icon) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.style.cssText = `
+        padding: 6px 12px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-input);
+        border-radius: 6px;
+        font-family: var(--font-handwritten);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        -webkit-tap-highlight-color: transparent;
+      `;
+      btn.innerHTML = `<span data-lucide="${icon}" style="width: 12px; height: 12px; pointer-events: none;"></span> ${label}`;
+      
+      btn.addEventListener('mouseenter', function() {
+        this.style.background = 'var(--primary-light)';
+        this.style.borderColor = 'var(--primary)';
+        this.style.color = 'var(--primary-dark)';
+      });
+      btn.addEventListener('mouseleave', function() {
+        this.style.background = 'var(--bg-surface)';
+        this.style.borderColor = 'var(--border-input)';
+        this.style.color = 'var(--text-secondary)';
+      });
+      
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        field.input.value = dateValue;
+        field.input.classList.remove('modal-base-input-error');
+        field.errorEl.classList.remove('show');
+      });
+      
+      return btn;
+    };
+
+    const todayLabel = typeof t === 'function' ? t('today', 'Today') : 'Today';
+    const tomorrowLabel = typeof t === 'function' ? t('tomorrow', 'Tomorrow') : 'Tomorrow';
+
+    shortcutsRow.appendChild(createShortcutBtn(todayLabel, getTodayDateString(), 'sun'));
+    shortcutsRow.appendChild(createShortcutBtn(tomorrowLabel, getTomorrowDateString(), 'arrow-right'));
+
+    // ✅ زر Clear
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.style.cssText = `
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid var(--border-input);
+      border-radius: 6px;
+      font-family: var(--font-handwritten);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      -webkit-tap-highlight-color: transparent;
+    `;
+    clearBtn.innerHTML = `<span data-lucide="x" style="width: 12px; height: 12px; pointer-events: none;"></span> ${typeof t === 'function' ? t('clear', 'Clear') : 'Clear'}`;
+    
+    clearBtn.addEventListener('mouseenter', function() {
+      this.style.background = 'rgba(231, 76, 94, 0.08)';
+      this.style.borderColor = 'var(--danger)';
+      this.style.color = 'var(--danger)';
+    });
+    clearBtn.addEventListener('mouseleave', function() {
+      this.style.background = 'transparent';
+      this.style.borderColor = 'var(--border-input)';
+      this.style.color = 'var(--text-muted)';
+    });
+    clearBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      field.input.value = '';
+      field.input.classList.remove('modal-base-input-error');
+      field.errorEl.classList.remove('show');
+    });
+    
+    shortcutsRow.appendChild(clearBtn);
+
+    field.field.appendChild(shortcutsRow);
+  }
+
+  return field;
 }
 
 // ========================================
@@ -86,7 +311,6 @@ function renderTasks() {
   const app = document.getElementById("app");
   if (!app) return;
 
-  // ✅ استخدام replaceChildren
   app.replaceChildren();
 
   // ===== العنوان وزر الإضافة =====
@@ -162,6 +386,7 @@ function renderTasks() {
   filterLabel.style.cssText = "font-size:14px;font-weight:500;";
   filterDiv.appendChild(filterLabel);
 
+  // ✅ زر "الكل"
   const filterAll = document.createElement("button");
   filterAll.type = "button";
   filterAll.textContent = typeof t === 'function' ? t('all', 'All') : "All";
@@ -169,12 +394,19 @@ function renderTasks() {
   filterAll.dataset.filter = "all";
   filterDiv.appendChild(filterAll);
 
-  getPriorityOptions().forEach(function (opt) {
+  // ✅ أزرار الأولويات (بأيقونات Lucide)
+  Object.keys(PRIORITY_CONFIG).forEach(function (priorityKey) {
+    const cfg = PRIORITY_CONFIG[priorityKey];
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.textContent = opt.label;
     btn.className = "filter-btn";
-    btn.dataset.filter = opt.value;
+    btn.dataset.filter = priorityKey;
+    btn.innerHTML = `
+      <span data-lucide="${cfg.icon}" 
+            style="width:14px;height:14px;vertical-align:middle;
+                   margin-right:4px;color:${cfg.color};pointer-events:none;"></span>
+      ${typeof t === 'function' ? t(cfg.key, cfg.fallback) : cfg.fallback}
+    `;
     filterDiv.appendChild(btn);
   });
 
@@ -197,18 +429,15 @@ function renderTasks() {
   });
 
   renderTaskList("all", "");
-
-  // ✅ Lucide يُدار من main.js بعد navigateTo
 }
 
 // ========================================
-// عرض قائمة المهام (مع replaceChildren)
+// عرض قائمة المهام
 // ========================================
 function renderTaskList(filter = "all", searchTerm = "") {
   const taskList = document.getElementById("task-list");
   if (!taskList) return;
 
-  // ✅ استخدام getTasksCopy لضمان عدم التعديل على الكاش
   const allTasks = (typeof getTasksCopy === 'function')
     ? getTasksCopy()
     : (typeof getAllTasks === 'function' ? getAllTasks() : []);
@@ -233,7 +462,6 @@ function renderTaskList(filter = "all", searchTerm = "") {
     return (priorityOrder[a.priority] ?? 3) - (priorityOrder[b.priority] ?? 3);
   });
 
-  // ✅ استخدام DocumentFragment
   const fragment = document.createDocumentFragment();
 
   if (tasks.length === 0) {
@@ -288,12 +516,17 @@ function renderTaskList(filter = "all", searchTerm = "") {
       const metaDiv = document.createElement("div");
       metaDiv.style.cssText = "display:flex;gap:8px;font-size:12px;color:#6b7280;flex-wrap:wrap;align-items:center;";
 
-      // ===== الأولوية (مترجمة) =====
+      // ✅ الأولوية (بأيقونة Lucide)
+      const priorityCfg = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium;
       const prioritySpan = document.createElement("span");
       prioritySpan.className = "task-category";
-      const priorityEmoji = task.priority === "high" ? "🔴" :
-                            task.priority === "low"  ? "🟢" : "🟡";
-      prioritySpan.textContent = priorityEmoji + " " + translatePriority(task.priority);
+      prioritySpan.innerHTML = `
+        <span data-lucide="${priorityCfg.icon}" 
+              style="width:12px;height:12px;vertical-align:middle;
+                     margin-right:3px;color:${priorityCfg.color};"></span>
+        ${translatePriority(task.priority)}
+      `;
+      prioritySpan.style.color = priorityCfg.color;
       metaDiv.appendChild(prioritySpan);
 
       // ===== التصنيف =====
@@ -317,12 +550,12 @@ function renderTaskList(filter = "all", searchTerm = "") {
 
           if (dueDate < today) {
             dateSpan.style.color = "#ef4444";
-            dateSpan.textContent = "🔴 " + (typeof t === 'function' ? t('overdue', 'Overdue') : "Overdue") + ": " + task.dueDate;
+            dateSpan.innerHTML = `<span data-lucide="alert-triangle" style="width:12px;height:12px;vertical-align:middle;margin-right:3px;"></span>${typeof t === 'function' ? t('overdue', 'Overdue') : "Overdue"}: ${task.dueDate}`;
           } else if (dueDate.getTime() === today.getTime()) {
             dateSpan.style.color = "#f59e0b";
-            dateSpan.textContent = "🟡 " + (typeof t === 'function' ? t('today', 'Today') : "Today");
+            dateSpan.innerHTML = `<span data-lucide="clock" style="width:12px;height:12px;vertical-align:middle;margin-right:3px;"></span>${typeof t === 'function' ? t('today', 'Today') : "Today"}`;
           } else {
-            dateSpan.textContent = "📅 " + task.dueDate;
+            dateSpan.innerHTML = `<span data-lucide="calendar" style="width:12px;height:12px;vertical-align:middle;margin-right:3px;"></span>${task.dueDate}`;
           }
           metaDiv.appendChild(dateSpan);
         }
@@ -340,7 +573,7 @@ function renderTaskList(filter = "all", searchTerm = "") {
       // ===== زر التعديل =====
       const editBtn = document.createElement("button");
       editBtn.type = "button";
-      editBtn.innerHTML = '<span data-lucide="pencil" style="width:16px;height:16px;"></span>';
+      editBtn.innerHTML = '<span data-lucide="pencil" style="width:16px;height:16px;pointer-events:none;"></span>';
       editBtn.className = "task-action-btn";
       editBtn.title = typeof t === 'function' ? t('edit_task', 'Edit task') : "Edit task";
       editBtn.setAttribute("aria-label", editBtn.title);
@@ -352,7 +585,7 @@ function renderTaskList(filter = "all", searchTerm = "") {
       // ===== زر الحذف =====
       const deleteBtn = document.createElement("button");
       deleteBtn.type = "button";
-      deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width:16px;height:16px;"></span>';
+      deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width:16px;height:16px;pointer-events:none;"></span>';
       deleteBtn.className = "task-action-btn";
       deleteBtn.title = typeof t === 'function' ? t('delete_task', 'Delete task') : "Delete task";
       deleteBtn.setAttribute("aria-label", deleteBtn.title);
@@ -381,10 +614,8 @@ function renderTaskList(filter = "all", searchTerm = "") {
     });
   }
 
-  // ✅ استخدام replaceChildren بدل innerHTML = ""
   taskList.replaceChildren(fragment);
 
-  // ✅ Lucide يُدار من main.js أو من الدوال المستدعية
   if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
@@ -418,21 +649,28 @@ function openAddTaskModal() {
   const priorityGrid = document.createElement("div");
   priorityGrid.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;";
 
-  getPriorityOptions().forEach(function (opt) {
+  Object.keys(PRIORITY_CONFIG).forEach(function (priorityKey) {
+    const cfg = PRIORITY_CONFIG[priorityKey];
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "modal-base-btn " + (opt.value === selectedPriority ? "modal-base-btn-primary" : "modal-base-btn-secondary");
-    btn.style.cssText = "padding:10px;font-size:14px;";
-    btn.textContent = opt.label;
+    btn.className = "modal-base-btn " + (priorityKey === selectedPriority ? "modal-base-btn-primary" : "modal-base-btn-secondary");
+    btn.style.cssText = "padding:10px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;";
+    btn.innerHTML = `
+      <span data-lucide="${cfg.icon}" 
+            style="width:16px;height:16px;color:${priorityKey === selectedPriority ? '#ffffff' : cfg.color};pointer-events:none;"></span>
+      <span>${typeof t === 'function' ? t(cfg.key, cfg.fallback) : cfg.fallback}</span>
+    `;
 
     btn.addEventListener("click", function () {
-      selectedPriority = opt.value;
+      selectedPriority = priorityKey;
       priorityGrid.querySelectorAll("button").forEach(function (b) {
         b.className = "modal-base-btn modal-base-btn-secondary";
-        b.style.cssText = "padding:10px;font-size:14px;";
+        b.style.cssText = "padding:10px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;";
       });
       btn.className = "modal-base-btn modal-base-btn-primary";
-      btn.style.cssText = "padding:10px;font-size:14px;";
+      btn.style.cssText = "padding:10px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;";
+
+      if (typeof debouncedLucide === 'function') debouncedLucide(30);
     });
 
     priorityGrid.appendChild(btn);
@@ -452,10 +690,15 @@ function openAddTaskModal() {
   });
   modal.body.appendChild(categoryField.field);
 
-  const dateField = createModalField({
+  // ✅ حقل تاريخ نصي مع أزرار سريعة
+  const dateField = buildDateFieldWithShortcuts({
     id: 'task-date-input',
     label: typeof t === 'function' ? t('due_date', 'Due Date (optional)') : 'Due Date (optional)',
-    type: 'date'
+    value: '',
+    placeholder: 'YYYY-MM-DD',
+    required: false,
+    helper: typeof t === 'function' ? t('date_format_hint', 'Format: YYYY-MM-DD') : 'Format: YYYY-MM-DD',
+    showShortcuts: true
   });
   modal.body.appendChild(dateField.field);
 
@@ -477,11 +720,26 @@ function openAddTaskModal() {
           return;
         }
 
+        // ✅ التحقق من صحة التاريخ
+        const dueDateValue = dateField.input.value.trim();
+        if (dueDateValue && !isValidDateString(dueDateValue)) {
+          dateField.input.classList.add("modal-base-input-error");
+          dateField.errorEl.textContent = typeof t === 'function' 
+            ? t('invalid_date', 'Invalid date. Use YYYY-MM-DD format (e.g. 2026-10-26)') 
+            : 'Invalid date. Use YYYY-MM-DD format (e.g. 2026-10-26)';
+          dateField.errorEl.classList.add('show');
+          dateField.input.focus();
+          setTimeout(() => {
+            dateField.input.classList.remove("modal-base-input-error");
+          }, 2000);
+          return;
+        }
+
         const newTask = addTask({
           text: text,
           priority: selectedPriority,
           category: categoryField.input.value,
-          dueDate: dateField.input.value || null
+          dueDate: dueDateValue || null
         });
 
         if (!newTask) {
@@ -537,21 +795,28 @@ function openEditTaskModal(task) {
   const priorityGrid = document.createElement("div");
   priorityGrid.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;";
 
-  getPriorityOptions().forEach(function (opt) {
+  Object.keys(PRIORITY_CONFIG).forEach(function (priorityKey) {
+    const cfg = PRIORITY_CONFIG[priorityKey];
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "modal-base-btn " + (opt.value === selectedPriority ? "modal-base-btn-primary" : "modal-base-btn-secondary");
-    btn.style.cssText = "padding:10px;font-size:14px;";
-    btn.textContent = opt.label;
+    btn.className = "modal-base-btn " + (priorityKey === selectedPriority ? "modal-base-btn-primary" : "modal-base-btn-secondary");
+    btn.style.cssText = "padding:10px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;";
+    btn.innerHTML = `
+      <span data-lucide="${cfg.icon}" 
+            style="width:16px;height:16px;color:${priorityKey === selectedPriority ? '#ffffff' : cfg.color};pointer-events:none;"></span>
+      <span>${typeof t === 'function' ? t(cfg.key, cfg.fallback) : cfg.fallback}</span>
+    `;
 
     btn.addEventListener("click", function () {
-      selectedPriority = opt.value;
+      selectedPriority = priorityKey;
       priorityGrid.querySelectorAll("button").forEach(function (b) {
         b.className = "modal-base-btn modal-base-btn-secondary";
-        b.style.cssText = "padding:10px;font-size:14px;";
+        b.style.cssText = "padding:10px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;";
       });
       btn.className = "modal-base-btn modal-base-btn-primary";
-      btn.style.cssText = "padding:10px;font-size:14px;";
+      btn.style.cssText = "padding:10px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;";
+
+      if (typeof debouncedLucide === 'function') debouncedLucide(30);
     });
 
     priorityGrid.appendChild(btn);
@@ -571,11 +836,15 @@ function openEditTaskModal(task) {
   });
   modal.body.appendChild(categoryField.field);
 
-  const dateField = createModalField({
+  // ✅ حقل تاريخ نصي مع أزرار سريعة
+  const dateField = buildDateFieldWithShortcuts({
     id: 'task-date-input',
     label: typeof t === 'function' ? t('due_date', 'Due Date') : 'Due Date',
-    type: 'date',
-    value: task.dueDate || ''
+    value: task.dueDate || '',
+    placeholder: 'YYYY-MM-DD',
+    required: false,
+    helper: typeof t === 'function' ? t('date_format_hint', 'Format: YYYY-MM-DD') : 'Format: YYYY-MM-DD',
+    showShortcuts: true
   });
   modal.body.appendChild(dateField.field);
 
@@ -597,11 +866,26 @@ function openEditTaskModal(task) {
           return;
         }
 
+        // ✅ التحقق من صحة التاريخ
+        const dueDateValue = dateField.input.value.trim();
+        if (dueDateValue && !isValidDateString(dueDateValue)) {
+          dateField.input.classList.add("modal-base-input-error");
+          dateField.errorEl.textContent = typeof t === 'function' 
+            ? t('invalid_date', 'Invalid date. Use YYYY-MM-DD format (e.g. 2026-10-26)') 
+            : 'Invalid date. Use YYYY-MM-DD format (e.g. 2026-10-26)';
+          dateField.errorEl.classList.add('show');
+          dateField.input.focus();
+          setTimeout(() => {
+            dateField.input.classList.remove("modal-base-input-error");
+          }, 2000);
+          return;
+        }
+
         const success = updateTask(task.id, {
           text: text,
           priority: selectedPriority,
           category: categoryField.input.value,
-          dueDate: dateField.input.value || null
+          dueDate: dueDateValue || null
         });
 
         if (!success) {
@@ -652,32 +936,43 @@ function openCompleteTaskModal(task) {
   const difficultyGrid = document.createElement("div");
   difficultyGrid.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;";
 
-  getDifficultyOptions().forEach(function (level) {
+  Object.keys(DIFFICULTY_CONFIG).forEach(function (diffKey) {
+    const cfg = DIFFICULTY_CONFIG[diffKey];
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "modal-base-btn " + (level.value === selectedDifficulty ? "modal-base-btn-primary" : "modal-base-btn-secondary");
-    btn.style.cssText = "padding:10px;font-size:14px;";
-    btn.textContent = level.label;
+    btn.className = "modal-base-btn " + (diffKey === selectedDifficulty ? "modal-base-btn-primary" : "modal-base-btn-secondary");
+    btn.style.cssText = "padding:10px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;";
+    btn.innerHTML = `
+      <span data-lucide="${cfg.icon}" 
+            style="width:16px;height:16px;color:${diffKey === selectedDifficulty ? '#ffffff' : cfg.color};pointer-events:none;"></span>
+      <span>${typeof t === 'function' ? t(cfg.key, cfg.fallback) : cfg.fallback}</span>
+    `;
 
     btn.addEventListener("click", function () {
-      selectedDifficulty = level.value;
+      selectedDifficulty = diffKey;
       difficultyGrid.querySelectorAll("button").forEach(function (b) {
         b.className = "modal-base-btn modal-base-btn-secondary";
-        b.style.cssText = "padding:10px;font-size:14px;";
+        b.style.cssText = "padding:10px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;";
       });
       btn.className = "modal-base-btn modal-base-btn-primary";
-      btn.style.cssText = "padding:10px;font-size:14px;";
+      btn.style.cssText = "padding:10px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;";
+
+      if (typeof debouncedLucide === 'function') debouncedLucide(30);
     });
 
     difficultyGrid.appendChild(btn);
   });
   modal.body.appendChild(difficultyGrid);
 
-  const dateField = createModalField({
+  // ✅ حقل تاريخ نصي مع أزرار سريعة
+  const dateField = buildDateFieldWithShortcuts({
     id: 'completion-date-input',
     label: typeof t === 'function' ? t('completion_date', 'Completion date') : 'Completion date',
-    type: 'date',
-    value: new Date().toISOString().split("T")[0]
+    value: getTodayDateString(),
+    placeholder: 'YYYY-MM-DD',
+    required: false,
+    helper: typeof t === 'function' ? t('date_format_hint', 'Format: YYYY-MM-DD') : 'Format: YYYY-MM-DD',
+    showShortcuts: true
   });
   modal.body.appendChild(dateField.field);
 
@@ -688,13 +983,28 @@ function openCompleteTaskModal(task) {
       onClick: () => modal.close()
     },
     {
-      label: '✅ ' + (typeof t === 'function' ? t('done', 'Done') : 'Done'),
+      label: '<span data-lucide="check"></span> ' + (typeof t === 'function' ? t('done', 'Done') : 'Done'),
       type: 'primary',
       onClick: () => {
-        // ✅ completeTask في storage.js تتكفل بـ:
-        // - زيادة الإحصائيات
-        // - التنظيف التلقائي (حذف الأقدم إذا تجاوز 20)
-        const success = completeTask(task.id, selectedDifficulty, dateField.input.value);
+        // ✅ التحقق من صحة التاريخ
+        const completionDateValue = dateField.input.value.trim();
+        if (!completionDateValue) {
+          // إذا كان فارغاً، استخدم اليوم
+          dateField.input.value = getTodayDateString();
+        } else if (!isValidDateString(completionDateValue)) {
+          dateField.input.classList.add("modal-base-input-error");
+          dateField.errorEl.textContent = typeof t === 'function' 
+            ? t('invalid_date', 'Invalid date. Use YYYY-MM-DD format (e.g. 2026-10-26)') 
+            : 'Invalid date. Use YYYY-MM-DD format (e.g. 2026-10-26)';
+          dateField.errorEl.classList.add('show');
+          dateField.input.focus();
+          setTimeout(() => {
+            dateField.input.classList.remove("modal-base-input-error");
+          }, 2000);
+          return;
+        }
+
+        const success = completeTask(task.id, selectedDifficulty, dateField.input.value.trim());
 
         if (!success) {
           if (typeof showToast === 'function') {
@@ -765,5 +1075,12 @@ window.renderTaskList = renderTaskList;
 window.getActiveTasks = getActiveTasks;
 window.getOverdueTasks = getOverdueTasks;
 window.getTodayTasks = getTodayTasks;
+window.isValidDateString = isValidDateString;
 
-console.log("✅ Tasks.js v2.3 loaded successfully!");
+// ✅ تصدير الإعدادات (للاستخدام في ملفات أخرى مثل achievements.js)
+window.PRIORITY_CONFIG = PRIORITY_CONFIG;
+window.DIFFICULTY_CONFIG = DIFFICULTY_CONFIG;
+window.buildPriorityIconHTML = buildPriorityIconHTML;
+window.buildDifficultyIconHTML = buildDifficultyIconHTML;
+
+console.log("✅ Tasks.js v2.5 loaded successfully! (Text Date Input)");

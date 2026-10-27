@@ -1,10 +1,19 @@
 // ========================================
-// MY LIFE - TRANSLATION SYSTEM
-// نظام الترجمة المتكامل (يدعم الملفات الخارجية)
+// MY LIFE - TRANSLATION SYSTEM v2.1
+// نظام الترجمة المتكامل (يدعم الملفات الخارجية + Cached Language Sync)
 // ========================================
 
 let currentLanguage = 'en';
 let translations = {};
+
+// ========================================
+// ✅ دالة مساعدة لتحديث الكاش في main.js
+// ========================================
+function _syncCachedLanguage(lang) {
+  if (typeof window.updateCachedLanguage === 'function') {
+    window.updateCachedLanguage(lang);
+  }
+}
 
 // ========================================
 // تحميل الترجمات من الملفات الخارجية
@@ -47,6 +56,7 @@ function loadTranslations(lang) {
                     translations = translationsEN;
                     currentLanguage = 'en';
                     localStorage.setItem('language', 'en');
+                    _syncCachedLanguage('en');  // ✅ تحديث الكاش
                     console.log('✅ Language loaded: English');
                     return translations;
                 }
@@ -57,6 +67,7 @@ function loadTranslations(lang) {
                     translations = translationsAR;
                     currentLanguage = 'ar';
                     localStorage.setItem('language', 'ar');
+                    _syncCachedLanguage('ar');  // ✅ تحديث الكاش
                     console.log('✅ Language loaded: العربية');
                     return translations;
                 }
@@ -67,6 +78,7 @@ function loadTranslations(lang) {
                     translations = translationsFR;
                     currentLanguage = 'fr';
                     localStorage.setItem('language', 'fr');
+                    _syncCachedLanguage('fr');  // ✅ تحديث الكاش
                     console.log('✅ Language loaded: Français');
                     return translations;
                 }
@@ -78,6 +90,7 @@ function loadTranslations(lang) {
                     translations = translationsEN;
                     currentLanguage = 'en';
                     localStorage.setItem('language', 'en');
+                    _syncCachedLanguage('en');  // ✅ تحديث الكاش
                     return translations;
                 }
         }
@@ -269,4 +282,4 @@ window.changeLanguage = changeLanguage;
 window.updateLanguageSelector = updateLanguageSelector;
 window.translateWeekDays = translateWeekDays;
 
-console.log('✅ Translation system loaded successfully!');
+console.log('✅ Translation system v2.1 loaded successfully!');

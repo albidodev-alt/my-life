@@ -1,6 +1,7 @@
 // ========================================
-// MY LIFE HUB - PROGRAM (Learning Only) v2.2
-// (Event Delegation + replaceChildren + Safe Copy)
+// MY LIFE HUB - PROGRAM (Learning Only) v2.3
+// (Removed: Learning field + Star Rating)
+// (Kept: Timer + Difficulty + Steps + Sessions)
 // ========================================
 
 const PROGRAM_STORAGE_KEY = "myLifeHub_programs";
@@ -75,7 +76,6 @@ function getProgram(programId) {
 function updateProgram(updatedProgram) {
   if (!updatedProgram || !updatedProgram.id) return false;
 
-  // ✅ نسخة من الكاش
   const programs = getProgramsCopy();
   const index = programs.findIndex(p => p.id === updatedProgram.id);
   if (index === -1) return false;
@@ -85,7 +85,6 @@ function updateProgram(updatedProgram) {
 }
 
 function deleteProgram(programId) {
-  // ✅ نسخة من الكاش
   const programs = getProgramsCopy();
   const filtered = programs.filter(p => p.id !== programId);
   return saveAllPrograms(filtered);
@@ -188,9 +187,7 @@ function addStep(programId, stepName) {
     completed: false,
     completedAt: null,
     duration: null,
-    difficulty: null,
-    learning: null,
-    rating: null
+    difficulty: null
   };
 
   program.steps.push(newStep);
@@ -225,7 +222,10 @@ function reorderSteps(programId, stepIds) {
   return true;
 }
 
-function completeStep(programId, stepId, duration, difficulty, learning, rating) {
+/**
+ * ✅ إكمال خطوة (بدون learning و rating)
+ */
+function completeStep(programId, stepId, duration, difficulty) {
   const program = getProgram(programId);
   if (!program || !program.steps) return false;
 
@@ -240,9 +240,7 @@ function completeStep(programId, stepId, duration, difficulty, learning, rating)
     stepName: step.name,
     completedAt: new Date().toISOString(),
     duration: duration,
-    difficulty: difficulty,
-    learning: learning,
-    rating: rating
+    difficulty: difficulty
   };
 
   program.sessions.push(session);
@@ -251,8 +249,6 @@ function completeStep(programId, stepId, duration, difficulty, learning, rating)
   step.completedAt = new Date().toISOString();
   step.duration = duration;
   step.difficulty = difficulty;
-  step.learning = learning;
-  step.rating = rating;
 
   const allCompleted = program.steps.every(s => s.completed);
   if (allCompleted && program.steps.length > 0) {
@@ -310,7 +306,6 @@ function renderProgramPage() {
     return;
   }
 
-  // ✅ استخدام replaceChildren
   app.replaceChildren();
 
   const programs = getAllPrograms();
@@ -421,7 +416,6 @@ function renderProgramPage() {
 
   // ========================================
   // ✅ ربط الأحداث بـ Event Delegation
-  // (يحل مشكلة اختفاء زر الحذف بعد العودة)
   // ========================================
 
   // 1. زر الإضافة
@@ -469,8 +463,6 @@ function renderProgramPage() {
       return;
     }
   });
-
-  // ✅ Lucide يُدار من main.js بعد navigateTo
 }
 
 // ========================================
@@ -596,11 +588,21 @@ function openProgramBuilder() {
   resourceNameInput.placeholder = tr('resource_name', 'Resource name...');
   resourceNameInput.style.cssText = "flex: 1; min-width: 120px;";
 
+  // ✅ حماية من Password Manager
+  if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(resourceNameInput, 'text');
+  }
+
   const resourceUrlInput = document.createElement("input");
   resourceUrlInput.type = "text";
   resourceUrlInput.className = "modal-base-input";
   resourceUrlInput.placeholder = tr('url_optional', 'URL (optional)');
   resourceUrlInput.style.cssText = "flex: 1.5; min-width: 150px;";
+
+  // ✅ حماية من Password Manager (وضع URL)
+  if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(resourceUrlInput, 'url');
+  }
 
   const addResourceBtn = document.createElement("button");
   addResourceBtn.type = "button";
@@ -712,7 +714,6 @@ function renderProgramDetail(program) {
   const app = document.getElementById("app");
   if (!app) return;
 
-  // ✅ استخدام replaceChildren
   app.replaceChildren();
 
   const stats = getProgramStats(program);
@@ -834,7 +835,7 @@ function renderProgramDetail(program) {
   app.appendChild(container);
 
   // ========================================
-  // ✅ ربط الأحداث بـ Event Delegation
+  // ✅ ربط الأحداث
   // ========================================
 
   // ✅ زر الرجوع
@@ -877,8 +878,6 @@ function renderProgramDetail(program) {
     case "resources": renderResources(content, program); break;
     case "sessions": renderSessions(content, program); break;
   }
-
-  // ✅ Lucide يُدار من main.js بعد navigateTo
 }
 
 // ========================================
@@ -1005,18 +1004,12 @@ function renderSteps(container, program) {
         dateSpan.innerHTML = '<span data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>' + formatDate(step.completedAt);
         headerDiv.appendChild(dateSpan);
 
+        // ✅ تم حذف عرض difficulty (لأنه بقي فقط في badge الصعوبة)
         if (step.difficulty) {
           const diffSpan = document.createElement("span");
           diffSpan.style.cssText = "font-size: 12px; color: var(--text-muted);";
           diffSpan.textContent = tr(step.difficulty.toLowerCase(), step.difficulty);
           headerDiv.appendChild(diffSpan);
-        }
-
-        if (step.rating) {
-          const ratingSpan = document.createElement("span");
-          ratingSpan.style.cssText = "font-size: 12px; color: var(--warning);";
-          ratingSpan.innerHTML = '<span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; fill: #f5a623; stroke: #f5a623; pointer-events: none;"></span>' + step.rating + '/5';
-          headerDiv.appendChild(ratingSpan);
         }
       }
 
@@ -1042,13 +1035,7 @@ function renderSteps(container, program) {
       headerDiv.appendChild(actionsDiv);
       phaseDiv.appendChild(headerDiv);
 
-      // ===== Learning Note =====
-      if (step.completed && step.learning) {
-        const learningDiv = document.createElement("div");
-        learningDiv.style.cssText = "font-size: 13px; color: var(--text-secondary); padding: 4px 0 0 24px; font-style: italic;";
-        learningDiv.innerHTML = '<span data-lucide="lightbulb" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623; pointer-events: none;"></span>' + escapeHtml(step.learning);
-        phaseDiv.appendChild(learningDiv);
-      }
+      // ✅ تم حذف عرض learning و rating
 
       // ===== Duration =====
       if (step.completed && step.duration) {
@@ -1077,7 +1064,6 @@ function renderSteps(container, program) {
   // ✅ Event Delegation للخطوات
   // ========================================
 
-  // ✅ زر إضافة خطوة
   addBtn.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1101,7 +1087,6 @@ function renderSteps(container, program) {
     });
   });
 
-  // ✅ Event Delegation لكل الأزرار في الخطوات
   wrapper.addEventListener("click", function(e) {
     const target = e.target.closest("button");
     if (!target) return;
@@ -1216,11 +1201,21 @@ function renderResources(container, program) {
   nameInput.placeholder = tr('resource_name', 'Resource name...');
   nameInput.style.cssText = "flex: 1; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);";
 
+  // ✅ حماية من Password Manager
+  if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(nameInput, 'text');
+  }
+
   const urlInput = document.createElement("input");
   urlInput.type = "text";
   urlInput.id = "program-add-resource-url";
   urlInput.placeholder = tr('url_optional', 'URL (optional)');
   urlInput.style.cssText = "flex: 1.5; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);";
+
+  // ✅ حماية من Password Manager (وضع URL)
+  if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(urlInput, 'url');
+  }
 
   const addBtn = document.createElement("button");
   addBtn.className = "program-card-continue-btn program-add-resource-btn";
@@ -1241,7 +1236,6 @@ function renderResources(container, program) {
   // ✅ Event Delegation للموارد
   // ========================================
 
-  // ✅ زر إضافة مورد
   addBtn.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1257,7 +1251,6 @@ function renderResources(container, program) {
     }
   });
 
-  // ✅ Event Delegation لحذف المورد
   overview.addEventListener("click", function(e) {
     const target = e.target.closest(".program-delete-resource-btn");
     if (!target) return;
@@ -1312,7 +1305,6 @@ function renderSessions(container, program) {
 
     container.replaceChildren(overview);
 
-    // ✅ Event Delegation
     overview.addEventListener("click", function(e) {
       const target = e.target.closest(".program-start-session-btn");
       if (!target) return;
@@ -1349,7 +1341,7 @@ function renderSessions(container, program) {
 
   overview.appendChild(header);
 
-  // ===== Sessions List =====
+  // ===== Sessions List (بدون learning و rating) =====
   sortedSessions.forEach(session => {
     const difficultyEmoji = session.difficulty === "Hard" ? "🔴" : session.difficulty === "Medium" ? "🟡" : "🟢";
     const difficultyLabel = tr(session.difficulty?.toLowerCase() || 'medium', session.difficulty || 'Medium');
@@ -1367,11 +1359,9 @@ function renderSessions(container, program) {
         </div>
         <div style="display: flex; gap: 12px; font-size: 13px; color: var(--text-muted);">
           <span>${difficultyEmoji} ${difficultyLabel}</span>
-          <span><span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 2px; fill: #f5a623; stroke: #f5a623; pointer-events: none;"></span>${session.rating}/5</span>
           ${session.duration ? `<span><span data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 2px; pointer-events: none;"></span>${session.duration} min</span>` : ''}
         </div>
       </div>
-      ${session.learning ? `<div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-style: italic;"><span data-lucide="lightbulb" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623; pointer-events: none;"></span>"${escapeHtml(session.learning)}"</div>` : ''}
       <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
         <span data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 2px; pointer-events: none;"></span>
         ${formatDate(session.completedAt)}
@@ -1383,7 +1373,6 @@ function renderSessions(container, program) {
 
   container.replaceChildren(overview);
 
-  // ✅ Event Delegation لزر بدء الجلسة
   overview.addEventListener("click", function(e) {
     const target = e.target.closest(".program-start-session-btn");
     if (!target) return;
@@ -1500,12 +1489,14 @@ function startSession(programId) {
   openSessionModal(programId, nextStep.id, nextStep.name);
 }
 
+/**
+ * ✅ نافذة الجلسة (بدون Learning + Rating)
+ */
 function openSessionModal(programId, stepId, stepName) {
   let timerSeconds = 0;
   let timerInterval = null;
   let isTimerRunning = false;
   let selectedDifficulty = "Medium";
-  let selectedRating = 3;
 
   const modal = createModal({
     id: 'session-modal',
@@ -1521,6 +1512,7 @@ function openSessionModal(programId, stepId, stepName) {
   stepTitle.innerHTML = '<span data-lucide="book-open" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; color: var(--primary); pointer-events: none;"></span> ' + escapeHtml(stepName);
   modal.body.appendChild(stepTitle);
 
+  // ===== Timer Box =====
   const timerBox = document.createElement("div");
   timerBox.style.cssText = "text-align: center; margin: 16px 0;";
   timerBox.innerHTML = `
@@ -1546,6 +1538,7 @@ function openSessionModal(programId, stepId, stepName) {
   hr.style.cssText = "border: none; border-top: 1px solid var(--border-light); margin: 16px 0;";
   modal.body.appendChild(hr);
 
+  // ===== Difficulty Selection =====
   const diffLabel = document.createElement("label");
   diffLabel.className = "modal-base-label";
   diffLabel.innerHTML = '<span data-lucide="bar-chart" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span> ' + tr('how_was_step', 'How was this step?');
@@ -1579,43 +1572,7 @@ function openSessionModal(programId, stepId, stepName) {
   });
   modal.body.appendChild(diffGrid);
 
-  const learnField = createModalField({
-    id: 'session-learning',
-    label: tr('what_did_you_learn', 'What did you learn?'),
-    type: 'text',
-    placeholder: tr('learning_placeholder', 'e.g. I understood the concept...')
-  });
-  modal.body.appendChild(learnField.field);
-
-  const ratingLabel = document.createElement("label");
-  ratingLabel.className = "modal-base-label";
-  ratingLabel.innerHTML = '<span data-lucide="star" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f5a623; pointer-events: none;"></span> ' + tr('rating', 'Rating') + ' (1-5)';
-  modal.body.appendChild(ratingLabel);
-
-  const ratingGrid = document.createElement("div");
-  ratingGrid.id = "rating-stars";
-  ratingGrid.style.cssText = "display: flex; gap: 8px; margin-bottom: 16px;";
-
-  [1,2,3,4,5].forEach(function(i) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "modal-base-btn modal-base-btn-secondary";
-    btn.style.cssText = "flex: 1; padding: 10px; font-size: 20px;";
-    btn.dataset.rating = i;
-    btn.textContent = i <= selectedRating ? "★" : "☆";
-    btn.style.color = i <= selectedRating ? "#f5a623" : "var(--text-muted)";
-    btn.addEventListener("click", function() {
-      selectedRating = i;
-      ratingGrid.querySelectorAll("button").forEach(b => {
-        const num = parseInt(b.dataset.rating);
-        b.textContent = num <= i ? "★" : "☆";
-        b.style.color = num <= i ? "#f5a623" : "var(--text-muted)";
-      });
-    });
-    ratingGrid.appendChild(btn);
-  });
-  modal.body.appendChild(ratingGrid);
-
+  // ===== Timer Functions =====
   const updateDisplay = () => {
     const mins = Math.floor(timerSeconds / 60);
     const secs = timerSeconds % 60;
@@ -1649,6 +1606,7 @@ function openSessionModal(programId, stepId, stepName) {
   document.getElementById("session-timer-pause").onclick = pauseTimer;
   document.getElementById("session-timer-reset").onclick = resetTimer;
 
+  // ===== Actions =====
   const actions = createModalActions([
     {
       label: tr('cancel', 'Cancel'),
@@ -1663,7 +1621,6 @@ function openSessionModal(programId, stepId, stepName) {
       type: 'primary',
       onClick: () => {
         pauseTimer();
-        const learning = learnField.input.value.trim() || tr('completed_successfully', 'Completed successfully!');
         const duration = Math.ceil(timerSeconds / 60);
 
         confirmModal({
@@ -1674,7 +1631,8 @@ function openSessionModal(programId, stepId, stepName) {
           type: 'primary',
           icon: 'check-circle',
           onConfirm: () => {
-            completeStep(programId, stepId, duration, selectedDifficulty, learning, selectedRating);
+            // ✅ completeStep بدون learning و rating
+            completeStep(programId, stepId, duration, selectedDifficulty);
             modal.close();
             openProgramDetail(programId);
           }
@@ -1683,6 +1641,8 @@ function openSessionModal(programId, stepId, stepName) {
     }
   ]);
   modal.body.appendChild(actions);
+
+  if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
 // ========================================
@@ -1710,4 +1670,4 @@ window.renderProgramDetail = renderProgramDetail;
 window.startSession = startSession;
 window.openSessionModal = openSessionModal;
 
-console.log("✅ Program v2.2 loaded successfully!");
+console.log("✅ Program v2.3 loaded successfully! (No Rating/Learning)");

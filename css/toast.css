@@ -155,7 +155,6 @@
     padding: 12px 16px;
     min-width: auto;
     border-radius: 10px;
-    /* ✅ تقليل blur على الجوال للأداء */
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
   }
@@ -215,17 +214,7 @@
 }
 
 /* ========================================
-   7. DARK MODE SUPPORT
-   ======================================== */
-
-body.dark-mode .toast {
-  border-color: var(--border-color);
-}
-
-/* الألوان تبقى كما هي لأنها gradient - تعمل في الوضعين */
-
-/* ========================================
-   8. RTL SUPPORT - دعم العربية
+   7. RTL SUPPORT - دعم العربية
    ======================================== */
 
 [dir="rtl"] .toast {
@@ -233,7 +222,7 @@ body.dark-mode .toast {
 }
 
 /* ========================================
-   9. ACCESSIBILITY - إمكانية الوصول
+   8. ACCESSIBILITY - إمكانية الوصول
    ======================================== */
 
 @media (prefers-reduced-motion: reduce) {

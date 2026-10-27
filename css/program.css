@@ -1,5 +1,6 @@
 /* ========================================
    MY LIFE HUB - PROGRAM (Learning Only)
+   (Cleaned: No Rating Stars + No Learning field)
    ======================================== */
 
 /* ========================================
@@ -531,7 +532,7 @@
   padding: 18px 20px;
   box-shadow: var(--shadow-sm);
   cursor: grab;
-  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease; /* ✅ تم التعديل من 'all' */
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
 }
 
 .program-phase:active {
@@ -578,7 +579,7 @@
   font-size: 14px;
   cursor: pointer;
   color: var(--text-muted);
-  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease; /* ✅ تم التعديل من 'all' */
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
 .program-phase-btn:hover {
@@ -616,7 +617,10 @@
   background: var(--primary-light);
 }
 
-/* ===== SESSION MODAL ===== */
+/* ========================================
+   SESSION MODAL
+   ======================================== */
+
 .program-session-steps {
   display: flex;
   flex-direction: column;
@@ -701,6 +705,7 @@
   border-color: var(--primary);
 }
 
+/* ===== Difficulty Grid (لاختيار الصعوبة في الجلسة) ===== */
 .program-session-complete-form .difficulty-grid {
   display: flex;
   gap: 8px;
@@ -729,47 +734,6 @@
   border-color: var(--primary);
 }
 
-/* ===== Rating Stars ===== */
-#rating-stars {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-#rating-stars .difficulty-btn {
-  font-size: 24px;
-  padding: 8px 12px;
-  border: 1px solid var(--border-input);
-  border-radius: 6px;
-  background: var(--bg-input);
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-#rating-stars .difficulty-btn:hover {
-  background: var(--bg-hover);
-  transform: scale(1.05);
-}
-
-#rating-stars .difficulty-btn.active {
-  background: var(--primary-light);
-  border-color: var(--primary);
-  color: var(--text-primary);
-}
-
-.program-session-complete-form .confidence-slider {
-  width: 100%;
-  margin-bottom: 12px;
-}
-
-.program-session-complete-form .confidence-value {
-  text-align: center;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--primary);
-}
-
 /* ========================================
    PROGRAM BUILDER MODAL
    ======================================== */
@@ -784,118 +748,6 @@
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 12px;
-}
-
-/* ========================================
-   DARK MODE
-   ======================================== */
-
-body.dark-mode .program-card {
-  background: var(--bg-card);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .program-card-name {
-  color: var(--text-light);
-}
-
-body.dark-mode .program-card-description {
-  color: var(--text-secondary);
-}
-
-body.dark-mode .program-card-goal {
-  color: var(--text-secondary);
-}
-
-body.dark-mode .program-empty-state {
-  color: var(--text-muted);
-}
-
-body.dark-mode .program-empty-title {
-  color: var(--text-light);
-}
-
-body.dark-mode .program-empty-icon {
-  background: var(--primary-light);
-}
-
-body.dark-mode .program-phase {
-  background: var(--bg-card);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .program-overview {
-  background: var(--bg-card);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .program-detail-back-btn {
-  background: var(--bg-surface);
-  color: var(--text-light);
-  border-color: var(--border-input);
-}
-
-body.dark-mode .program-detail-back-btn:hover {
-  background: var(--bg-hover);
-}
-
-body.dark-mode .program-add-phase-btn,
-body.dark-mode .program-add-topic-btn {
-  background: var(--bg-surface);
-  border-color: var(--border-color);
-  color: var(--text-muted);
-}
-
-body.dark-mode .program-add-phase-btn:hover,
-body.dark-mode .program-add-topic-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--primary-light);
-}
-
-body.dark-mode .program-session-step {
-  background: var(--bg-surface);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .program-session-step:hover {
-  background: var(--bg-hover);
-}
-
-body.dark-mode .program-session-complete-form .difficulty-btn {
-  background: var(--bg-input);
-  border-color: var(--border-input);
-  color: var(--text-light);
-}
-
-body.dark-mode .program-session-complete-form .difficulty-btn:hover {
-  background: var(--bg-hover);
-}
-
-body.dark-mode .program-session-complete-form .difficulty-btn.active {
-  background: var(--primary);
-  color: #ffffff;
-  border-color: var(--primary);
-}
-
-body.dark-mode #rating-stars .difficulty-btn {
-  background: var(--bg-input);
-  border-color: var(--border-input);
-  color: var(--text-muted);
-}
-
-body.dark-mode #rating-stars .difficulty-btn:hover {
-  background: var(--bg-hover);
-}
-
-body.dark-mode #rating-stars .difficulty-btn.active {
-  background: var(--primary-light);
-  border-color: var(--primary);
-  color: var(--text-light);
-}
-
-body.dark-mode .program-detail-goal {
-  color: var(--text-secondary);
 }
 
 /* ========================================
@@ -958,15 +810,6 @@ body.dark-mode .program-detail-goal {
   .program-card-stats {
     gap: 10px;
     font-size: 12px;
-  }
-
-  #rating-stars .difficulty-btn {
-    font-size: 20px;
-    padding: 6px 10px;
-  }
-
-  #rating-stars {
-    gap: 4px;
   }
 }
 

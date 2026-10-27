@@ -60,10 +60,7 @@ function showToast(message, type = 'info', duration = 3000) {
     toast.classList.add('toast-hiding');
     setTimeout(() => {
       toast.remove();
-      // إزالة الحاوية إن أصبحت فارغة
-      if (container && container.children.length === 0) {
-        container.remove();
-      }
+      // ✅ لا نحذف الحاوية - نتركها موجودة للأداء الأفضل
     }, 300);
   }, duration);
 
@@ -74,9 +71,7 @@ function showToast(message, type = 'info', duration = 3000) {
       toast.classList.add('toast-hiding');
       setTimeout(() => {
         toast.remove();
-        if (container && container.children.length === 0) {
-          container.remove();
-        }
+        // ✅ لا نحذف الحاوية - نتركها موجودة للأداء الأفضل
       }, 300);
     }
   };

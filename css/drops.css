@@ -97,7 +97,7 @@
 }
 
 /* ========================================
-   ✅ SECTION HEADER + COUNTER BADGE (جديد)
+   ✅ SECTION HEADER + COUNTER BADGE
    ======================================== */
 
 .drops-section-header {
@@ -407,57 +407,6 @@ iconify-icon {
   margin: 0;
   font-size: 14px;
   color: var(--text-secondary);
-}
-
-/* ========================================
-   DARK MODE
-   ======================================== */
-
-body.dark-mode .drops-counter-card {
-  background: linear-gradient(135deg, rgba(79, 142, 219, 0.15), rgba(109, 168, 232, 0.08));
-  border-color: rgba(79, 142, 219, 0.4);
-}
-
-body.dark-mode .drops-items-row {
-  background: var(--bg-card);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .drops-item {
-  background: var(--bg-surface);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .drops-next-card {
-  background: var(--bg-card);
-  border-color: var(--border-color);
-}
-
-/* ===== Dark Mode - Counter Badge ===== */
-body.dark-mode .drops-counter-badge {
-  background: linear-gradient(135deg, rgba(79, 142, 219, 0.20), rgba(109, 168, 232, 0.10));
-  border-color: rgba(79, 142, 219, 0.50);
-}
-
-body.dark-mode .drops-counter-badge:hover {
-  background: linear-gradient(135deg, rgba(79, 142, 219, 0.30), rgba(109, 168, 232, 0.20));
-}
-
-body.dark-mode .drops-counter-badge-number {
-  color: #93c5fd;
-}
-
-body.dark-mode .drops-counter-badge-label {
-  color: var(--text-light);
-}
-
-body.dark-mode .drops-counter-badge-icon {
-  color: #93c5fd;
-}
-
-body.dark-mode .drops-counter-badge-icon svg {
-  fill: rgba(147, 197, 253, 0.25);
-  filter: drop-shadow(0 0 3px rgba(147, 197, 253, 0.4));
 }
 
 /* ========================================

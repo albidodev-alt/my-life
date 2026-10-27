@@ -61,6 +61,7 @@ const translationsFR = {
     "reset": "Réinitialiser",
     "all": "Tous",
     "today": "Aujourd'hui",
+    "tomorrow": "Demain",
     "yesterday": "Hier",
     "days_ago": "jours",
     "drops": "Gouttes",
@@ -77,7 +78,7 @@ const translationsFR = {
     "select_json": "Veuillez sélectionner un fichier JSON",
     "backup_unavailable": "Section de sauvegarde temporairement indisponible",
 
-    // ✅ Achievements جديد
+    // ✅ Achievements
     "total_completed": "Total",
     "recent_completions": "Réalisations récentes",
 
@@ -198,6 +199,10 @@ const translationsFR = {
     "no_tasks_found": "Aucune tâche trouvée correspondant à votre recherche",
     "no_tasks_priority": "Aucune tâche avec cette priorité",
     "delete_task": "Supprimer la tâche",
+
+    // ✅ Date format (NEW)
+    "date_format_hint": "Format : YYYY-MM-DD",
+    "invalid_date": "Date invalide. Utilisez le format YYYY-MM-DD (ex : 2020-05-31)",
 
     // ========================================
     // الإنجازات - Achievements

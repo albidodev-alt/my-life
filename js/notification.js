@@ -1,7 +1,7 @@
 // ========================================
-// MY LIFE HUB - NOTIFICATIONS v2.1
+// MY LIFE HUB - NOTIFICATIONS v2.3
 // نظام الإشعارات المتكامل
-// (Cached Language + Smart Refresh + No Duplicate Work)
+// (Cached Language + Smart Refresh + No Duplicate Work + Single Badge Update + Fast Signature + Single Write)
 // ========================================
 
 const NOTIFICATIONS_STORAGE_KEY = "myLifeHub_notifications";
@@ -58,7 +58,8 @@ function addNotification(type, title, message, relatedId = null) {
   };
   notifications.unshift(newNotification);
   saveAllNotifications(notifications);
-  updateNotificationBadge();
+  // ✅ لا نستدعي updateNotificationBadge هنا
+  // refreshNotifications ستستدعيها مرة واحدة في النهاية
   return newNotification;
 }
 
@@ -155,22 +156,29 @@ function formatTime12Notif(hour, minute = 0) {
 
 // ========================================
 // ✅ إنشاء بصمة للتغييرات (لتجنب refresh غير ضروري)
+// ✅ FIXED: يستخدم الدوال السريعة بدون deepClone
 // ========================================
 function _getDataSignature() {
   try {
-    const tasksCount = (typeof getAllTasks === 'function')
-      ? getAllTasks().length
+    // ✅ استخدام getTasksCount() السريعة (بدون deepClone)
+    const tasksCount = (typeof getTasksCount === 'function')
+      ? getTasksCount()
       : 0;
-    const tasksCompleted = (typeof getAllTasks === 'function')
-      ? getAllTasks().filter(t => t.completed).length
+
+    // ✅ استخدام getCompletedTasksCount() السريعة (بدون deepClone)
+    const tasksCompleted = (typeof getCompletedTasksCount === 'function')
+      ? getCompletedTasksCount()
       : 0;
+
     const eventsCount = (typeof getAllEvents === 'function')
       ? getAllEvents().length
       : 0;
+
     const todayName = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()];
     const dayData = (typeof getDayData === 'function')
       ? getDayData(todayName)
       : {};
+
     const sleepHour = dayData.sleepHour ?? -1;
     const wakeHour = dayData.wakeHour ?? -1;
     const currentHour = new Date().getHours();
@@ -343,7 +351,8 @@ function generateNotifications() {
 }
 
 // ========================================
-// ✅ تحديث الإشعارات (مع فحص التغييرات)
+// ✅ تحديث الإشعارات (مع فحص التغييرات + كتابة واحدة)
+// ✅ FIXED: كتابة واحدة في localStorage بدل N كتابة
 // ========================================
 
 function refreshNotifications() {
@@ -360,23 +369,39 @@ function refreshNotifications() {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+  // ✅ تصفية الإشعارات القديمة (أكثر من 7 أيام)
   const filtered = allNotifications.filter(n => {
     const createdAt = new Date(n.createdAt);
     return createdAt > sevenDaysAgo;
   });
 
-  saveAllNotifications(filtered);
-
+  // ✅ إنشاء الإشعارات الجديدة
   const newNotifications = generateNotifications();
   const existingIds = new Set(filtered.map(n => n.relatedId + n.type + n.message));
 
+  // ✅ جمع الإشعارات الجديدة في مصفوفة مؤقتة
+  const toAdd = [];
   newNotifications.forEach(newNotif => {
     const key = newNotif.relatedId + newNotif.type + newNotif.message;
     if (!existingIds.has(key)) {
-      addNotification(newNotif.type, newNotif.title, newNotif.message, newNotif.relatedId);
+      toAdd.push({
+        id: Date.now() + Math.random() * 1000,
+        type: newNotif.type,
+        title: newNotif.title,
+        message: newNotif.message,
+        date: new Date().toISOString(),
+        read: false,
+        createdAt: new Date().toISOString(),
+        relatedId: newNotif.relatedId
+      });
     }
   });
 
+  // ✅ كتابة واحدة فقط (بدل N كتابة)
+  const finalList = [...toAdd, ...filtered];
+  saveAllNotifications(finalList);
+
+  // ✅ استدعاء واحد لـ updateNotificationBadge
   updateNotificationBadge();
 }
 
@@ -825,4 +850,4 @@ window.updateNotificationBadge = updateNotificationBadge;
 window.resetNotificationSignature = resetNotificationSignature;
 window.invalidateNotificationsCache = invalidateNotificationsCache;
 
-console.log("✅ Notifications v2.1 loaded successfully!");
+console.log("✅ Notifications v2.3 loaded successfully! (Fast Signature + Single Write)");

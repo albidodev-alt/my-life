@@ -1,6 +1,6 @@
 // ========================================
-// MY LIFE HUB - DAY VIEW v2.2
-// (Fixed: Removed formatHourRange conflict)
+// MY LIFE HUB - DAY VIEW v2.6
+// (Full Dark Mode Support - Clean Inline Styles - No Background Injection)
 // ========================================
 
 const activitySuggestions = [
@@ -19,7 +19,7 @@ const activitySuggestions = [
 ];
 
 // ========================================
-// ✅ دوال مساعدة (مع كاش)
+// ✅ دوال مساعدة
 // ========================================
 
 function _getDayLanguage() {
@@ -32,15 +32,6 @@ function _getDayLanguage() {
   } catch (e) {
     return 'en';
   }
-}
-
-// ✅ ملاحظة: formatHourRange موجودة في hour.js
-// لا نعرّفها هنا لتجنب التعارض
-
-function getHourColor() { return '#dbeafe'; }
-
-function getTextStyle() {
-  return { color: '#1e293b', textShadow: 'none', labelColor: 'rgba(30,41,59,0.5)' };
 }
 
 function getActivityIcon(name) {
@@ -67,7 +58,7 @@ function getCurrentDisplayedActivity(hourData) {
 }
 
 // ========================================
-// تنسيق الوقت (خاص بـ day.js فقط)
+// تنسيق الوقت
 // ========================================
 
 function formatTime12(hour, minute = 0) {
@@ -81,12 +72,10 @@ function formatTime12(hour, minute = 0) {
   return h12 + ':' + m + ' ' + ampm;
 }
 
-// ✅ Helper: استخدام formatHourRange من hour.js
 function _getFormattedHourRange(hour) {
   if (typeof window.formatHourRange === 'function') {
     return window.formatHourRange(hour);
   }
-  // Fallback
   if (typeof getHourSystem === 'function' && getHourSystem() === '24h') {
     return String(hour).padStart(2, '0') + ':00 - ' + String(hour + 1).padStart(2, '0') + ':00';
   }
@@ -115,132 +104,89 @@ function getLabel(key, fallback) {
   return typeof t === 'function' ? t(key, fallback) : fallback;
 }
 
-function formatSleepDisplay(label, time, label2, time2) {
-  return `
-    <span class="sleep-info-item">
-      <span data-lucide="moon" class="sleep-info-icon sleep-icon"></span>
-      <span class="sleep-info-label">${label}</span>
-      <span class="sleep-info-time">${time}</span>
-    </span>
-    <span class="sleep-info-divider"></span>
-    <span class="sleep-info-item">
-      <span data-lucide="sun" class="sleep-info-icon wake-icon"></span>
-      <span class="sleep-info-label">${label2}</span>
-      <span class="sleep-info-time">${time2}</span>
-    </span>
-  `;
-}
-
 // ========================================
-// مودال النوم
+// نافذة النوم
 // ========================================
 
 function openSleepModal(dayName) {
-  const data = getDayData(dayName);
-  const sH = data.sleepHour ?? 23, sM = data.sleepMinute ?? 0;
-  const wH = data.wakeHour ?? 6, wM = data.wakeMinute ?? 0;
-
   const t = (k, fb) => typeof window.t === 'function' ? window.t(k, fb) : fb;
+  const data = getDayData(dayName);
+
+  let sleepH = data.sleepHour ?? 23;
+  let sleepM = data.sleepMinute ?? 0;
+  let wakeH = data.wakeHour ?? 6;
+  let wakeM = data.wakeMinute ?? 0;
 
   const modal = createModal({
     id: 'sleep-modal',
     title: `<span data-lucide="moon"></span> ${t('sleep_settings', 'Sleep Settings')}`,
-    size: 'small'
+    size: 'medium'
   });
 
-  const subtitle = document.createElement('p');
-  subtitle.className = 'modal-base-message';
-  subtitle.style.marginBottom = '16px';
-  subtitle.textContent = t('set_sleep_wake', 'Set your sleep and wake-up times');
-  modal.body.appendChild(subtitle);
+  const container = document.createElement('div');
+  container.className = 'sleep-modal-content';
 
-  // ===== وقت النوم =====
-  const sleepLabel = document.createElement('label');
-  sleepLabel.className = 'modal-base-label';
-  sleepLabel.innerHTML = '<span data-lucide="moon" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;color:#6366f1;"></span> ' + t('sleep_time', 'Sleep Time');
-  modal.body.appendChild(sleepLabel);
+  const sleepCard = createSleepTimeCard({
+    type: 'sleep', iconName: 'moon', label: t('sleep_time', 'Bedtime'),
+    initialH: sleepH, initialM: sleepM, presets: [22, 23, 0, 1], t: t,
+    onUpdate: (h, m) => { sleepH = h; sleepM = m; updateDuration(); }
+  });
 
-  const sleepRow = document.createElement('div');
-  sleepRow.style.cssText = 'display:flex;gap:12px;margin-bottom:16px;';
+  const wakeCard = createSleepTimeCard({
+    type: 'wake', iconName: 'sun', label: t('wake_time', 'Wake Up'),
+    initialH: wakeH, initialM: wakeM, presets: [5, 6, 7, 8], t: t,
+    onUpdate: (h, m) => { wakeH = h; wakeM = m; updateDuration(); }
+  });
 
-  const sleepHourSelect = document.createElement('select');
-  sleepHourSelect.className = 'modal-base-select';
-  sleepHourSelect.style.flex = '1';
-  for (let i = 0; i < 24; i++) {
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = String(i).padStart(2, '0') + ':00';
-    if (i === sH) opt.selected = true;
-    sleepHourSelect.appendChild(opt);
+  const durationCard = document.createElement('div');
+  durationCard.className = 'sleep-duration-card';
+  durationCard.innerHTML = `
+    <div class="sleep-duration-info">
+      <span data-lucide="clock"></span>
+      <span class="sleep-duration-label">${t('total_sleep', 'Total Sleep')}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span class="sleep-duration-value" id="sleep-duration-value">--</span>
+      <span class="sleep-quality-badge" id="sleep-quality-badge">--</span>
+    </div>
+  `;
+
+  function updateDuration() {
+    const dur = calcSleep(sleepH, sleepM, wakeH, wakeM);
+    const q = getSleepQuality(dur.hours);
+    const isArabic = _getDayLanguage() === 'ar';
+
+    const durStr = isArabic
+      ? `${dur.hours} س${dur.minutes > 0 ? ' ' + dur.minutes + ' د' : ''}`
+      : `${dur.hours}h${dur.minutes > 0 ? ' ' + dur.minutes + 'm' : ''}`;
+
+    const valueEl = document.getElementById('sleep-duration-value');
+    const badgeEl = document.getElementById('sleep-quality-badge');
+
+    if (valueEl) valueEl.textContent = durStr;
+    if (badgeEl) {
+      badgeEl.className = `sleep-quality-badge ${q.label}`;
+      const qLabel = t(q.label, q.label.charAt(0).toUpperCase() + q.label.slice(1));
+      badgeEl.textContent = `${q.emoji} ${qLabel}`;
+    }
   }
 
-  const sleepMinuteSelect = document.createElement('select');
-  sleepMinuteSelect.className = 'modal-base-select';
-  sleepMinuteSelect.style.flex = '1';
-  for (let i = 0; i < 12; i++) {
-    const m = i * 5;
-    const opt = document.createElement('option');
-    opt.value = m;
-    opt.textContent = ':' + String(m).padStart(2, '0');
-    if (m === sM) opt.selected = true;
-    sleepMinuteSelect.appendChild(opt);
-  }
+  container.appendChild(sleepCard);
+  container.appendChild(wakeCard);
+  container.appendChild(durationCard);
+  modal.body.appendChild(container);
 
-  sleepRow.appendChild(sleepHourSelect);
-  sleepRow.appendChild(sleepMinuteSelect);
-  modal.body.appendChild(sleepRow);
-
-  // ===== وقت الاستيقاظ =====
-  const wakeLabel = document.createElement('label');
-  wakeLabel.className = 'modal-base-label';
-  wakeLabel.innerHTML = '<span data-lucide="sun" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;color:#f59e0b;"></span> ' + t('wake_time', 'Wake Time');
-  modal.body.appendChild(wakeLabel);
-
-  const wakeRow = document.createElement('div');
-  wakeRow.style.cssText = 'display:flex;gap:12px;margin-bottom:16px;';
-
-  const wakeHourSelect = document.createElement('select');
-  wakeHourSelect.className = 'modal-base-select';
-  wakeHourSelect.style.flex = '1';
-  for (let i = 0; i < 24; i++) {
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = String(i).padStart(2, '0') + ':00';
-    if (i === wH) opt.selected = true;
-    wakeHourSelect.appendChild(opt);
-  }
-
-  const wakeMinuteSelect = document.createElement('select');
-  wakeMinuteSelect.className = 'modal-base-select';
-  wakeMinuteSelect.style.flex = '1';
-  for (let i = 0; i < 12; i++) {
-    const m = i * 5;
-    const opt = document.createElement('option');
-    opt.value = m;
-    opt.textContent = ':' + String(m).padStart(2, '0');
-    if (m === wM) opt.selected = true;
-    wakeMinuteSelect.appendChild(opt);
-  }
-
-  wakeRow.appendChild(wakeHourSelect);
-  wakeRow.appendChild(wakeMinuteSelect);
-  modal.body.appendChild(wakeRow);
+  updateDuration();
 
   const actions = createModalActions([
-    {
-      label: t('cancel', 'Cancel'),
-      type: 'secondary',
-      onClick: () => modal.close()
-    },
+    { label: t('cancel', 'Cancel'), type: 'secondary', onClick: () => modal.close() },
     {
       label: `<span data-lucide="check"></span> ${t('save', 'Save')}`,
       type: 'primary',
       onClick: () => {
         const d = getDayData(dayName);
-        d.sleepHour = +sleepHourSelect.value;
-        d.sleepMinute = +sleepMinuteSelect.value;
-        d.wakeHour = +wakeHourSelect.value;
-        d.wakeMinute = +wakeMinuteSelect.value;
+        d.sleepHour = sleepH; d.sleepMinute = sleepM;
+        d.wakeHour = wakeH; d.wakeMinute = wakeM;
         saveDayData(dayName, d);
         modal.close();
         setTimeout(() => openDay(dayName), 250);
@@ -250,6 +196,90 @@ function openSleepModal(dayName) {
   modal.body.appendChild(actions);
 
   if (typeof debouncedLucide === 'function') debouncedLucide(50);
+}
+
+function createSleepTimeCard(options) {
+  const { type, iconName, label, initialH, initialM, presets, t, onUpdate } = options;
+
+  let currentH = initialH;
+  let currentM = initialM;
+
+  const card = document.createElement('div');
+  card.className = `sleep-time-card ${type}-card`;
+
+  const header = document.createElement('div');
+  header.className = 'sleep-time-header';
+  header.innerHTML = `<span data-lucide="${iconName}"></span><span>${label}</span>`;
+  card.appendChild(header);
+
+  const picker = document.createElement('div');
+  picker.className = 'sleep-picker';
+
+  const hourDown = document.createElement('button');
+  hourDown.type = 'button'; hourDown.className = 'sleep-picker-arrow';
+  hourDown.innerHTML = '<span data-lucide="chevron-left"></span>';
+  hourDown.addEventListener('click', () => {
+    currentH = (currentH - 1 + 24) % 24;
+    render(); if (onUpdate) onUpdate(currentH, currentM);
+  });
+
+  const display = document.createElement('div');
+  display.className = 'sleep-picker-display';
+  display.innerHTML = `<span class="sleep-picker-time" data-time>--:--</span><span class="sleep-picker-period" data-period>--</span>`;
+
+  const hourUp = document.createElement('button');
+  hourUp.type = 'button'; hourUp.className = 'sleep-picker-arrow';
+  hourUp.innerHTML = '<span data-lucide="chevron-right"></span>';
+  hourUp.addEventListener('click', () => {
+    currentH = (currentH + 1) % 24;
+    render(); if (onUpdate) onUpdate(currentH, currentM);
+  });
+
+  picker.appendChild(hourDown); picker.appendChild(display); picker.appendChild(hourUp);
+  card.appendChild(picker);
+
+  const minuteRow = document.createElement('div');
+  minuteRow.className = 'sleep-minute-row';
+  [0, 15, 30, 45].forEach(m => {
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'sleep-preset-btn'; btn.dataset.minute = m;
+    btn.textContent = ':' + String(m).padStart(2, '0');
+    btn.addEventListener('click', () => {
+      currentM = m; render(); if (onUpdate) onUpdate(currentH, currentM);
+    });
+    minuteRow.appendChild(btn);
+  });
+  card.appendChild(minuteRow);
+
+  const presetsRow = document.createElement('div');
+  presetsRow.className = 'sleep-presets';
+  presets.forEach(h => {
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'sleep-preset-btn'; btn.dataset.hour = h;
+    btn.textContent = `${h % 12 || 12} ${h >= 12 ? 'PM' : 'AM'}`;
+    btn.addEventListener('click', () => {
+      currentH = h; render(); if (onUpdate) onUpdate(currentH, currentM);
+    });
+    presetsRow.appendChild(btn);
+  });
+  card.appendChild(presetsRow);
+
+  function render() {
+    const period = currentH >= 12 ? 'PM' : 'AM';
+    const displayH = currentH % 12 || 12;
+    const timeEl = display.querySelector('[data-time]');
+    const periodEl = display.querySelector('[data-period]');
+    if (timeEl) timeEl.textContent = `${displayH}:${String(currentM).padStart(2, '0')}`;
+    if (periodEl) periodEl.textContent = period;
+
+    card.querySelectorAll('.sleep-preset-btn').forEach(b => {
+      const bh = b.dataset.hour; const bm = b.dataset.minute;
+      b.classList.toggle('active', (bh !== undefined && +bh === currentH) || (bm !== undefined && +bm === currentM));
+    });
+  }
+
+  render();
+  return card;
 }
 
 // ========================================
@@ -287,43 +317,31 @@ function openDay(dayName) {
     box.className = 'hour-box' + (isToday && i === currentHour ? ' current-hour' : '');
     box.dataset.hour = i;
     box.dataset.label = _getFormattedHourRange(i);
-    
+
     const hourData = data.hours[i];
     const displayedActivity = getCurrentDisplayedActivity(hourData);
     const hasAlternative = getAlternativeName(hourData) !== '';
-    
+
     box.dataset.activity = displayedActivity || '';
     box.dataset.hasAlternative = hasAlternative ? 'true' : 'false';
-    
-    box.style.cssText = 'background:#dbeafe;color:#1e293b;border-color:rgba(79,142,219,0.2);overflow:hidden;min-width:0;position:relative;';
+
+    // ✅ لا نضع أي background أو color أو border مضمّن — التحكم بالكامل لـ CSS
+    box.style.cssText = 'overflow:hidden;min-width:0;position:relative;';
 
     const label = document.createElement('span');
     label.className = 'hour-label';
     label.textContent = _getFormattedHourRange(i);
-    label.style.color = 'rgba(30,41,59,0.5)';
     box.appendChild(label);
 
     const act = document.createElement('div');
     act.className = 'hour-activity';
-    act.style.cssText = `
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: #1e293b;
-      font-family: var(--font-handwritten);
-      font-size: var(--font-sm);
-      font-weight: 600;
-      overflow: hidden;
-      max-width: 100%;
-      min-width: 0;
-    `;
 
     if (displayedActivity) {
       const icon = document.createElement('span');
       icon.setAttribute('data-lucide', getActivityIcon(displayedActivity));
       icon.style.cssText = 'width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;';
       act.appendChild(icon);
-      
+
       const txt = document.createElement('span');
       const translatedText = typeof t === 'function' ? t(displayedActivity, displayedActivity) : displayedActivity;
       txt.textContent = translatedText;
@@ -355,7 +373,7 @@ function openDay(dayName) {
       swapActivity(dayName, hourIndex);
       return;
     }
-    
+
     const box = e.target.closest('.hour-box');
     if (!box) return;
     const day = box.closest('#hours-grid')?.dataset.dayName;
@@ -371,31 +389,31 @@ function openDay(dayName) {
   const dfBox = document.createElement('div');
   dfBox.id = 'day-for-box';
   dfBox.className = 'day-for-card';
-  
+
   const dfIcon = document.createElement('div');
   dfIcon.className = 'day-for-icon';
   dfIcon.innerHTML = '<span data-lucide="target"></span>';
-  
+
   const dfContent = document.createElement('div');
   dfContent.className = 'day-for-content';
-  
+
   const dfLabel = document.createElement('div');
   dfLabel.className = 'day-for-title';
-  dfLabel.innerHTML = '<span data-lucide="sparkles" class="day-for-title-icon"></span>' + 
+  dfLabel.innerHTML = '<span data-lucide="sparkles" class="day-for-title-icon"></span>' +
     (typeof t === 'function' ? t('day_for', 'Day For') : 'Day For');
-  
+
   const dfValue = document.createElement('div');
   dfValue.id = 'day-for-value';
   dfValue.className = 'day-for-value' + (data.dayFor ? '' : ' empty');
   dfValue.textContent = data.dayFor || (typeof t === 'function' ? t('click_to_set', 'Click to set your focus for today') : 'Click to set your focus for today');
-  
+
   const dfEdit = document.createElement('div');
   dfEdit.className = 'day-for-edit';
   dfEdit.innerHTML = '<span data-lucide="pencil"></span>';
-  
+
   dfContent.append(dfLabel, dfValue);
   dfBox.append(dfIcon, dfContent, dfEdit);
-  
+
   dfBox.onclick = () => {
     promptModal({
       title: typeof t === 'function' ? t('day_for', 'Day For') : 'Day For',
@@ -424,28 +442,14 @@ function openDay(dayName) {
 
   const card = document.createElement('div');
   card.className = 'sleep-card';
-  card.style.cssText = `
-    background:var(--bg-card);
-    border:1px solid var(--border-color);
-    border-radius:12px;
-    padding:16px 20px;
-    margin-top:16px;
-    box-shadow:var(--shadow-sm);
-    transition:all 0.2s ease;
-    cursor:pointer;
-    overflow: hidden;
-    word-break: break-word;
-  `;
-  card.onmouseenter = function() { this.style.boxShadow = 'var(--shadow-md)'; this.style.transform = 'translateY(-2px)'; };
-  card.onmouseleave = function() { this.style.boxShadow = 'var(--shadow-sm)'; this.style.transform = 'translateY(0)'; };
   card.onclick = () => openSleepModal(dayName);
 
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
-  
+
   const info = document.createElement('div');
   info.style.cssText = 'display:flex;align-items:center;gap:12px;font-family:var(--font-handwritten);font-size:16px;color:var(--text-primary);flex:1;min-width:0;flex-wrap:wrap;';
-  
+
   const txt = document.createElement('span');
   txt.style.cssText = 'font-weight:600;direction:ltr;word-break: break-word;overflow: hidden;text-overflow: ellipsis;display: flex;align-items: center; gap: 8px; flex-wrap: wrap;';
 
@@ -454,7 +458,19 @@ function openDay(dayName) {
   const ns = getLabel('not_set', 'Not set');
 
   if (hasSleep && hasWake) {
-    txt.innerHTML = formatSleepDisplay(sl, formatTime12(sH, sM), wl, formatTime12(wH, wM));
+    txt.innerHTML = `
+      <span class="sleep-info-item">
+        <span data-lucide="moon" class="sleep-info-icon sleep-icon"></span>
+        <span class="sleep-info-label">${sl}</span>
+        <span class="sleep-info-time">${formatTime12(sH, sM)}</span>
+      </span>
+      <span class="sleep-info-divider"></span>
+      <span class="sleep-info-item">
+        <span data-lucide="sun" class="sleep-info-icon wake-icon"></span>
+        <span class="sleep-info-label">${wl}</span>
+        <span class="sleep-info-time">${formatTime12(wH, wM)}</span>
+      </span>
+    `;
   } else if (hasSleep) {
     txt.innerHTML = `
       <span class="sleep-info-item">
@@ -509,10 +525,10 @@ function openDay(dayName) {
     const q = getSleepQuality(dur.hours);
     const qLabel = typeof t === 'function' && t(q.label) ? t(q.label) : q.label.charAt(0).toUpperCase() + q.label.slice(1);
     const isArabic = _getDayLanguage() === 'ar';
-    const durStr = isArabic 
+    const durStr = isArabic
       ? `${dur.hours} ساعة${dur.hours > 1 ? 'ات' : ''}${dur.minutes > 0 ? ' و ' + dur.minutes + ' دقيقة' : ''}`
       : `${dur.hours}h${dur.minutes > 0 ? ' ' + dur.minutes + 'm' : ''}`;
-    
+
     const dText = document.createElement('span');
     dText.textContent = '⏱️ ' + (typeof t === 'function' ? t('total_sleep', 'Total Sleep') : 'Total Sleep') + ': ' + durStr;
     dText.style.fontWeight = '600';
@@ -548,35 +564,35 @@ function openDay(dayName) {
 function swapActivity(dayName, hourIndex) {
   const data = getDayData(dayName);
   const hourData = data.hours[hourIndex];
-  
+
   if (!hourData || typeof hourData !== 'object') return;
   if (!hourData.alternative) return;
-  
+
   hourData.showingAlternative = !hourData.showingAlternative;
   saveDayData(dayName, data);
-  
+
   const box = document.querySelector(`#hours-grid .hour-box[data-hour="${hourIndex}"]`);
   if (!box) return;
-  
+
   const newActivity = hourData.showingAlternative ? hourData.alternative : hourData.activity;
   box.dataset.activity = newActivity;
-  
+
   const act = box.querySelector('.hour-activity');
   if (act) {
     act.replaceChildren();
-    
+
     const icon = document.createElement('span');
     icon.setAttribute('data-lucide', getActivityIcon(newActivity));
     icon.style.cssText = 'width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;';
     act.appendChild(icon);
-    
+
     const txt = document.createElement('span');
     const translatedText = typeof t === 'function' ? t(newActivity, newActivity) : newActivity;
     txt.textContent = translatedText;
     txt.style.cssText = 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;min-width:0;display:block;';
     act.appendChild(txt);
   }
-  
+
   requestAnimationFrame(() => {
     if (typeof lucide !== 'undefined' && lucide.createIcons) {
       lucide.createIcons();
@@ -592,10 +608,10 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
   const t = (k, fb) => typeof window.t === 'function' ? window.t(k, fb) : fb;
   const data = getDayData(dayName);
   const hourData = data.hours[hourIndex];
-  
+
   const primaryActivity = getActivityName(hourData) || currentActivity;
   const alternativeActivity = getAlternativeName(hourData);
-  
+
   const translatedCurrentActivity = primaryActivity ? t(primaryActivity, primaryActivity) : '';
   const translatedAlternative = alternativeActivity ? t(alternativeActivity, alternativeActivity) : '';
 
@@ -608,7 +624,7 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
   // ===== القسم الأساسي =====
   const primarySection = document.createElement('div');
   primarySection.className = 'activity-section';
-  
+
   const primaryLabel = document.createElement('div');
   primaryLabel.className = 'activity-section-label';
   primaryLabel.innerHTML = `
@@ -640,7 +656,7 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
   if (primaryActivity) {
     const altSection = document.createElement('div');
     altSection.className = 'activity-section';
-    
+
     const altLabel = document.createElement('div');
     altLabel.className = 'activity-section-label';
     altLabel.innerHTML = `
@@ -676,7 +692,7 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
         <span data-lucide="${getActivityIcon(alternativeActivity)}" class="activity-display-icon"></span>
         <span class="activity-display-name">${translatedAlternative}</span>
       `;
-      
+
       const changeBtn = document.createElement('button');
       changeBtn.type = 'button';
       changeBtn.className = 'activity-change-btn';
@@ -688,7 +704,7 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
         setTimeout(() => openAlternativeModal(dayName, hourIndex), 250);
       };
       altCard.appendChild(changeBtn);
-      
+
       altSection.appendChild(altCard);
     } else {
       const addAltBtn = document.createElement('button');
@@ -731,7 +747,7 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
     btn.onclick = () => {
       const d = getDayData(dayName);
       const existing = d.hours[hourIndex];
-      
+
       if (typeof existing === 'object' && existing.alternative) {
         d.hours[hourIndex] = {
           activity: item.name,
@@ -741,7 +757,7 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
       } else {
         d.hours[hourIndex] = item.name;
       }
-      
+
       saveDayData(dayName, d);
       modal.close();
       setTimeout(() => openDay(dayName), 250);
@@ -785,10 +801,10 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
         setTimeout(() => customInput.classList.remove('modal-base-input-error'), 500);
         return;
       }
-      
+
       const d = getDayData(dayName);
       const existing = d.hours[hourIndex];
-      
+
       if (typeof existing === 'object' && existing.alternative) {
         d.hours[hourIndex] = {
           activity: value,
@@ -798,7 +814,7 @@ function openHourModal(dayName, hourIndex, label, currentActivity) {
       } else {
         d.hours[hourIndex] = value;
       }
-      
+
       saveDayData(dayName, d);
       modal.close();
       setTimeout(() => openDay(dayName), 250);
@@ -874,13 +890,13 @@ function openAlternativeModal(dayName, hourIndex) {
 
   // ===== حقل الإدخال المخصص =====
   const isCustomValue = selectedAlternative && !activitySuggestions.find(s => s.name === selectedAlternative);
-  
+
   const customInput = document.createElement('input');
   customInput.type = 'text';
   customInput.className = 'activity-custom-input';
   customInput.placeholder = t('type_own_activity', 'Or type your own...');
   customInput.value = isCustomValue ? selectedAlternative : '';
-  
+
   customInput.addEventListener('input', function() {
     if (this.value.trim()) {
       grid.querySelectorAll('.alternative-option-btn').forEach(b => b.classList.remove('selected'));
@@ -897,9 +913,9 @@ function openAlternativeModal(dayName, hourIndex) {
       onClick: () => {
         modal.close();
         setTimeout(() => openHourModal(
-          dayName, 
-          hourIndex, 
-          _getFormattedHourRange(hourIndex), 
+          dayName,
+          hourIndex,
+          _getFormattedHourRange(hourIndex),
           primaryActivity
         ), 250);
       }
@@ -910,24 +926,24 @@ function openAlternativeModal(dayName, hourIndex) {
       onClick: () => {
         const custom = customInput.value.trim();
         const finalAlternative = custom || selectedAlternative;
-        
+
         if (!finalAlternative) {
           customInput.classList.add('modal-base-input-error');
           customInput.focus();
           setTimeout(() => customInput.classList.remove('modal-base-input-error'), 500);
           return;
         }
-        
+
         const d = getDayData(dayName);
         const hd = d.hours[hourIndex];
         const primary = getActivityName(hd) || '';
-        
+
         d.hours[hourIndex] = {
           activity: primary,
           alternative: finalAlternative,
           showingAlternative: false
         };
-        
+
         saveDayData(dayName, d);
         modal.close();
         setTimeout(() => openDay(dayName), 250);
@@ -961,5 +977,6 @@ window.swapActivity = swapActivity;
 window.saveHourActivity = saveHourActivity;
 window.closeModal = closeModal;
 window.openSleepModal = openSleepModal;
+window.createSleepTimeCard = createSleepTimeCard;
 
-console.log('✅ Day.js v2.2 loaded successfully! (formatHourRange conflict fixed)');
+console.log('✅ Day.js v2.6 loaded successfully! (Clean Inline Styles - No Background Injection)');

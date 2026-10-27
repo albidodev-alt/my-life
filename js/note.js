@@ -1,9 +1,44 @@
 // ========================================
-// MY LIFE HUB - NOTES v2.2
-// (replaceChildren + Debounced Search + Safe Save + Better UX)
+// MY LIFE HUB - NOTES v3.2
+// (Inline Editor + Save/Back Buttons + Fixed Title Editing + Notes Cache)
 // ========================================
 
 const NOTES_STORAGE_KEY = "myLifeHub_notes_v2";
+
+// ===== ✅ كاش في الذاكرة =====
+let notesCache = null;
+
+// ========================================
+// ✅ إبطال الكاش
+// ========================================
+function invalidateNotesCache() {
+  notesCache = null;
+}
+
+// ========================================
+// ✅ مزامنة بين Tabs
+// ========================================
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', function (e) {
+    if (e.key === NOTES_STORAGE_KEY) {
+      console.log('🔄 Notes changed in another tab. Invalidating cache.');
+      notesCache = null;
+    }
+  });
+}
+
+// ========================================
+// ✅ حالة المحرر (Editor State)
+// ========================================
+let _noteEditorState = {
+  noteId: null,
+  isNew: false,
+  originalTitle: '',
+  originalContent: '',
+  autoSaveTimer: null,
+  hasUnsavedChanges: false,
+  isSaving: false
+};
 
 // ========================================
 // ✅ دوال التخزين الآمنة
@@ -33,24 +68,29 @@ function safeSetNotes(key, value) {
 }
 
 // ========================================
-// ✅ دوال التخزين الأساسية
+// ✅ دوال التخزين الأساسية (مع كاش)
 // ========================================
 
 function getAllNotes() {
+  // ✅ قراءة من الكاش أولاً
+  if (notesCache !== null) return notesCache;
+
   try {
     const raw = localStorage.getItem(NOTES_STORAGE_KEY);
-    if (!raw) return [];
+    if (!raw) {
+      notesCache = [];
+      return notesCache;
+    }
     const notes = JSON.parse(raw);
-    return Array.isArray(notes) ? notes : [];
+    notesCache = Array.isArray(notes) ? notes : [];
+    return notesCache;
   } catch (error) {
     console.error("Error loading notes:", error);
-    return [];
+    notesCache = [];
+    return notesCache;
   }
 }
 
-/**
- * ✅ نسخة من الملاحظات (للاستخدام عند التعديل)
- */
 function getNotesCopy() {
   if (typeof deepClone === 'function') {
     return deepClone(getAllNotes());
@@ -68,8 +108,14 @@ function saveAllNotes(notes) {
     console.error("saveAllNotes: notes must be an array");
     return false;
   }
-  
+
   const result = safeSetNotes(NOTES_STORAGE_KEY, JSON.stringify(notes));
+
+  // ✅ تحديث الكاش عند النجاح
+  if (result.success) {
+    notesCache = notes;
+  }
+
   return result.success;
 }
 
@@ -81,15 +127,14 @@ function addNote(title, content) {
   const trimmedTitle = (title || '').trim();
   const trimmedContent = (content || '').trim();
 
-  if (!trimmedTitle || !trimmedContent) {
+  if (!trimmedTitle && !trimmedContent) {
     return null;
   }
 
-  // ✅ نسخة من الكاش
   const notes = getNotesCopy();
   const newNote = {
     id: (typeof generateId === "function") ? generateId() : Date.now() + Math.random(),
-    title: trimmedTitle,
+    title: trimmedTitle || (typeof t === 'function' ? t('untitled', 'Untitled') : 'Untitled'),
     content: trimmedContent,
     pinned: false,
     createdAt: new Date().toISOString(),
@@ -105,17 +150,16 @@ function updateNote(noteId, newTitle, newContent) {
   const trimmedTitle = (newTitle || '').trim();
   const trimmedContent = (newContent || '').trim();
 
-  if (!trimmedTitle || !trimmedContent) {
+  if (!trimmedTitle && !trimmedContent) {
     return false;
   }
 
-  // ✅ نسخة من الكاش
   const notes = getNotesCopy();
   const noteIndex = notes.findIndex(n => n.id === noteId);
 
   if (noteIndex === -1) return false;
 
-  notes[noteIndex].title = trimmedTitle;
+  notes[noteIndex].title = trimmedTitle || (typeof t === 'function' ? t('untitled', 'Untitled') : 'Untitled');
   notes[noteIndex].content = trimmedContent;
   notes[noteIndex].updatedAt = new Date().toISOString();
 
@@ -123,14 +167,12 @@ function updateNote(noteId, newTitle, newContent) {
 }
 
 function deleteNote(noteId) {
-  // ✅ نسخة من الكاش
   const notes = getNotesCopy();
   const filteredNotes = notes.filter(n => n.id !== noteId);
   return saveAllNotes(filteredNotes);
 }
 
 function togglePinNote(noteId) {
-  // ✅ نسخة من الكاش
   const notes = getNotesCopy();
   const note = notes.find(n => n.id === noteId);
 
@@ -207,14 +249,13 @@ const debouncedSearchRender = (typeof debounce === 'function')
   : (searchTerm) => renderNotesList(searchTerm);
 
 // ========================================
-// عرض صفحة الملاحظات
+// ✨ عرض صفحة الملاحظات (القائمة الرئيسية)
 // ========================================
 
 function renderNotesPageV2() {
   const app = document.getElementById("app");
   if (!app) return;
 
-  // ✅ استخدام replaceChildren
   app.replaceChildren();
 
   const container = document.createElement("div");
@@ -310,16 +351,14 @@ function renderNotesPageV2() {
   });
 
   addBtn.addEventListener("click", function() {
-    openNoteModal(null);
+    openNoteEditor(null);
   });
 
   renderNotesList("");
-
-  // ✅ Lucide يُدار من main.js بعد navigateTo
 }
 
 // ========================================
-// عرض قائمة الملاحظات (مع replaceChildren)
+// عرض قائمة الملاحظات
 // ========================================
 
 function renderNotesList(searchTerm = "") {
@@ -327,7 +366,6 @@ function renderNotesList(searchTerm = "") {
   const countEl = document.getElementById("notes-count");
   if (!grid) return;
 
-  // ✅ قراءة من localStorage (بدون كاش - الملاحظات صغيرة)
   const allNotes = getAllNotes();
   const filteredNotes = searchNotes(allNotes, searchTerm);
 
@@ -336,7 +374,6 @@ function renderNotesList(searchTerm = "") {
     countEl.textContent = `${count} ${tr('notes', 'notes')}`;
   }
 
-  // ✅ استخدام DocumentFragment
   const fragment = document.createDocumentFragment();
 
   if (filteredNotes.length === 0) {
@@ -372,10 +409,8 @@ function renderNotesList(searchTerm = "") {
     });
   }
 
-  // ✅ استخدام replaceChildren
   grid.replaceChildren(fragment);
 
-  // ✅ Lucide يُدار من main.js أو من الدوال المستدعية
   if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
@@ -417,8 +452,8 @@ function createNoteCard(note) {
   pinBtn.className = "notes-card-action-btn";
   pinBtn.type = "button";
   pinBtn.innerHTML = note.pinned 
-    ? '<span data-lucide="pin" style="width: 16px; height: 16px; fill: var(--primary); stroke: var(--primary);"></span>'
-    : '<span data-lucide="pin" style="width: 16px; height: 16px;"></span>';
+    ? '<span data-lucide="pin" style="width: 16px; height: 16px; fill: var(--primary); stroke: var(--primary); pointer-events:none;"></span>'
+    : '<span data-lucide="pin" style="width: 16px; height: 16px; pointer-events:none;"></span>';
   pinBtn.title = note.pinned ? tr('unpin', 'Unpin note') : tr('pin', 'Pin note');
   pinBtn.setAttribute("aria-label", pinBtn.title);
 
@@ -428,24 +463,11 @@ function createNoteCard(note) {
     renderNotesList(document.getElementById("notes-search-input")?.value || "");
   });
 
-  // ===== زر التعديل =====
-  const editBtn = document.createElement("button");
-  editBtn.className = "notes-card-action-btn";
-  editBtn.type = "button";
-  editBtn.innerHTML = '<span data-lucide="pencil" style="width: 16px; height: 16px;"></span>';
-  editBtn.title = tr('edit', 'Edit note');
-  editBtn.setAttribute("aria-label", "Edit note");
-
-  editBtn.addEventListener("click", function(e) {
-    e.stopPropagation();
-    openNoteModal(note);
-  });
-
   // ===== زر الحذف =====
   const deleteBtn = document.createElement("button");
   deleteBtn.className = "notes-card-action-btn notes-delete-btn";
   deleteBtn.type = "button";
-  deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 16px; height: 16px;"></span>';
+  deleteBtn.innerHTML = '<span data-lucide="trash-2" style="width: 16px; height: 16px; pointer-events:none;"></span>';
   deleteBtn.title = tr('delete', 'Delete note');
   deleteBtn.setAttribute("aria-label", "Delete note");
 
@@ -462,7 +484,6 @@ function createNoteCard(note) {
   });
 
   actions.appendChild(pinBtn);
-  actions.appendChild(editBtn);
   actions.appendChild(deleteBtn);
 
   header.appendChild(titleArea);
@@ -494,153 +515,569 @@ function createNoteCard(note) {
   card.appendChild(content);
   card.appendChild(footer);
 
-  // ===== فتح الملاحظة عند النقر على البطاقة =====
   card.addEventListener("click", function(e) {
     if (e.target.closest("button")) return;
-    openNoteModal(note);
+    openNoteEditor(note.id);
   });
 
   return card;
 }
 
 // ========================================
-// نافذة إضافة/تعديل ملاحظة
+// ✨ NOTE EDITOR - المحرر المدمج
 // ========================================
 
-function openNoteModal(editNote = null) {
-  const isEditing = editNote !== null;
+function openNoteEditor(noteId = null) {
+  const app = document.getElementById("app");
+  if (!app) return;
 
-  const modal = createModal({
-    id: 'note-modal',
-    title: isEditing 
-      ? '<span data-lucide="pencil"></span> ' + tr('edit_note', 'Edit Note')
-      : '<span data-lucide="plus"></span> ' + tr('new_note', 'New Note'),
-    size: 'medium'
-  });
-
-  // ===== حقل العنوان =====
-  const titleField = createModalField({
-    id: 'notes-modal-title-input',
-    label: tr('title', 'Title'),
-    type: 'text',
-    value: isEditing ? editNote.title : '',
-    placeholder: tr('enter_note_title', 'Enter note title...'),
-    maxLength: 120
-  });
-
-  // ===== حقل المحتوى =====
-  const contentField = createModalField({
-    id: 'notes-modal-content-input',
-    label: tr('content', 'Content'),
-    type: 'textarea',
-    rows: 6,
-    value: isEditing ? editNote.content : '',
-    placeholder: tr('write_note_here', 'Write your note here...'),
-    maxLength: 5000
-  });
-
-  modal.body.appendChild(titleField.field);
-  modal.body.appendChild(contentField.field);
-
-  // ===== حفظ =====
-  function handleSave() {
-    const newTitle = titleField.input.value.trim();
-    const newContent = contentField.input.value.trim();
-
-    if (!newTitle) {
-      titleField.input.classList.add("modal-base-input-error");
-      titleField.input.focus();
-      setTimeout(() => titleField.input.classList.remove("modal-base-input-error"), 500);
+  let note = null;
+  if (noteId) {
+    const allNotes = getAllNotes();
+    note = allNotes.find(n => n.id === noteId);
+    if (!note) {
+      console.warn('Note not found:', noteId);
       return;
-    }
-
-    if (!newContent) {
-      contentField.input.classList.add("modal-base-input-error");
-      contentField.input.focus();
-      setTimeout(() => contentField.input.classList.remove("modal-base-input-error"), 500);
-      return;
-    }
-
-    let success = false;
-    if (isEditing) {
-      success = updateNote(editNote.id, newTitle, newContent);
-    } else {
-      const newNote = addNote(newTitle, newContent);
-      success = newNote !== null;
-    }
-
-    if (success) {
-      modal.close();
-      setTimeout(() => {
-        renderNotesList(document.getElementById("notes-search-input")?.value || "");
-      }, 250);
-    } else {
-      if (typeof showToast === 'function') {
-        showToast('❌ ' + tr('save_failed', 'Failed to save note'), 'error');
-      }
     }
   }
 
-  // ===== الأزرار =====
-  const actions = createModalActions([
-    {
-      label: tr('cancel', 'Cancel'),
-      type: 'secondary',
-      onClick: () => modal.close()
-    },
-    {
-      label: isEditing 
-        ? '<span data-lucide="check"></span> ' + tr('update_note', 'Update')
-        : '<span data-lucide="plus"></span> ' + tr('add_note_btn', 'Add Note'),
-      type: 'primary',
-      onClick: handleSave
-    }
-  ]);
+  _noteEditorState = {
+    noteId: noteId,
+    isNew: !noteId,
+    originalTitle: note ? (note.title || '') : '',
+    originalContent: note ? (note.content || '') : '',
+    autoSaveTimer: null,
+    hasUnsavedChanges: false,
+    isSaving: false
+  };
 
-  modal.body.appendChild(actions);
+  app.replaceChildren();
+  renderNoteEditor(note);
 
-  // ===== اختصارات لوحة المفاتيح =====
-  titleField.input.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      contentField.input.focus();
-    }
-  });
-
-  contentField.input.addEventListener("keydown", function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-      e.preventDefault();
-      handleSave();
-    }
-  });
-
-  // ===== Focus تلقائي =====
-  setTimeout(() => titleField.input.focus(), 100);
+  if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
 // ========================================
-// ✅ دوال إضافية مفيدة
+// ✨ بناء واجهة المحرر
 // ========================================
 
-/**
- * عدد الملاحظات
- */
+function renderNoteEditor(note) {
+  const app = document.getElementById("app");
+  if (!app) return;
+
+  const editor = document.createElement("div");
+  editor.className = "note-editor";
+  editor.id = "note-editor";
+
+  // ========================================
+  // Header (Back + Delete + Save)
+  // ========================================
+  const header = document.createElement("div");
+  header.className = "note-editor-header";
+
+  // ===== يسار: زر Back =====
+  const headerLeft = document.createElement("div");
+  headerLeft.className = "note-editor-header-left";
+
+  const backBtn = document.createElement("button");
+  backBtn.type = "button";
+  backBtn.className = "note-editor-btn back";
+  backBtn.setAttribute("aria-label", "Back");
+  backBtn.title = tr('back', 'Back');
+  backBtn.innerHTML = `
+    <span data-lucide="arrow-left"></span>
+    <span>${tr('back', 'Back')}</span>
+  `;
+  backBtn.addEventListener("click", () => closeNoteEditor());
+
+  headerLeft.appendChild(backBtn);
+
+  // ===== يمين: Delete + Save =====
+  const headerRight = document.createElement("div");
+  headerRight.className = "note-editor-header-right";
+
+  // ✅ زر الحذف
+  const deleteBtn = document.createElement("button");
+  deleteBtn.type = "button";
+  deleteBtn.className = "note-editor-btn danger";
+  deleteBtn.setAttribute("aria-label", "Delete");
+  deleteBtn.title = tr('delete', 'Delete');
+  deleteBtn.innerHTML = '<span data-lucide="trash-2"></span>';
+  deleteBtn.addEventListener("click", () => handleEditorDelete());
+
+  // ✅ زر الحفظ
+  const saveBtn = document.createElement("button");
+  saveBtn.type = "button";
+  saveBtn.className = "note-editor-btn save";
+  saveBtn.id = "note-editor-save-btn";
+  saveBtn.setAttribute("aria-label", "Save");
+  saveBtn.title = tr('save', 'Save');
+  saveBtn.innerHTML = `
+    <span data-lucide="check"></span>
+    <span>${tr('save', 'Save')}</span>
+  `;
+
+  headerRight.appendChild(deleteBtn);
+  headerRight.appendChild(saveBtn);
+
+  header.appendChild(headerLeft);
+  header.appendChild(headerRight);
+  editor.appendChild(header);
+
+  // ========================================
+  // Body (Title + Divider + Content)
+  // ========================================
+  const body = document.createElement("div");
+  body.className = "note-editor-body";
+
+  // ===== Title Input =====
+  const titleInput = document.createElement("textarea");
+  titleInput.className = "note-editor-title";
+  titleInput.id = "note-editor-title";
+  titleInput.rows = 1;
+  titleInput.placeholder = tr('enter_note_title', 'Note title...');
+  titleInput.value = note ? (note.title || '') : '';
+  titleInput.setAttribute("aria-label", "Note title");
+  titleInput.spellcheck = false;
+  titleInput.autocomplete = "off";
+  titleInput.setAttribute("autocorrect", "off");
+  titleInput.setAttribute("autocapitalize", "sentences");
+
+  // ✅ إصلاح مشكلة تعديل العنوان
+  titleInput.style.webkitUserSelect = 'text';
+  titleInput.style.userSelect = 'text';
+  titleInput.style.cursor = 'text';
+
+  // Auto-resize للعنوان
+  const autoResizeTitle = () => {
+    titleInput.style.height = 'auto';
+    titleInput.style.height = Math.min(Math.max(titleInput.scrollHeight, 42), 120) + 'px';
+  };
+  titleInput.addEventListener('input', autoResizeTitle);
+
+  // ===== Divider =====
+  const divider = document.createElement("div");
+  divider.className = "note-editor-divider";
+
+  // ===== Content Textarea =====
+  const contentInput = document.createElement("textarea");
+  contentInput.className = "note-editor-content";
+  contentInput.id = "note-editor-content";
+  contentInput.placeholder = tr('write_note_here', 'Start writing...');
+  contentInput.value = note ? (note.content || '') : '';
+  contentInput.setAttribute("aria-label", "Note content");
+  contentInput.spellcheck = true;
+  contentInput.autocomplete = "off";
+
+  // ✅ إصلاح مشكلة تعديل المحتوى
+  contentInput.style.webkitUserSelect = 'text';
+  contentInput.style.userSelect = 'text';
+  contentInput.style.cursor = 'text';
+
+  body.appendChild(titleInput);
+  body.appendChild(divider);
+  body.appendChild(contentInput);
+  editor.appendChild(body);
+
+  // ========================================
+  // Footer (Stats + Status)
+  // ========================================
+  const footer = document.createElement("div");
+  footer.className = "note-editor-footer";
+
+  const statsEl = document.createElement("div");
+  statsEl.className = "note-editor-stats";
+  statsEl.id = "note-editor-stats";
+
+  const statusEl = document.createElement("div");
+  statusEl.className = "note-editor-status";
+  statusEl.id = "note-editor-status";
+  statusEl.innerHTML = '';
+
+  footer.appendChild(statsEl);
+  footer.appendChild(statusEl);
+  editor.appendChild(footer);
+
+  app.appendChild(editor);
+
+  // ========================================
+  // ربط الأحداث
+  // ========================================
+
+  autoResizeTitle();
+
+  // ===== تحديث الإحصائيات =====
+  const updateStats = () => {
+    const content = contentInput.value || '';
+    const charCount = content.length;
+    const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+
+    statsEl.innerHTML = `
+      <span><span data-lucide="type" style="width:12px;height:12px;vertical-align:middle;margin-right:3px;pointer-events:none;"></span>${charCount} ${tr('characters', 'characters')}</span>
+      <span class="note-editor-stats-divider"></span>
+      <span><span data-lucide="align-left" style="width:12px;height:12px;vertical-align:middle;margin-right:3px;pointer-events:none;"></span>${wordCount} ${tr('words', 'words')}</span>
+    `;
+
+    if (typeof debouncedLucide === 'function') debouncedLucide(30);
+  };
+
+  // ===== مؤشر الحالة =====
+  const setStatus = (status, message) => {
+    const icons = {
+      saving: 'loader-circle',
+      saved: 'check-circle-2',
+      error: 'alert-circle'
+    };
+
+    statusEl.className = 'note-editor-status ' + status;
+    statusEl.innerHTML = `
+      <span data-lucide="${icons[status] || 'info'}" style="width:12px;height:12px;pointer-events:none;"></span>
+      <span>${message}</span>
+    `;
+
+    if (typeof debouncedLucide === 'function') debouncedLucide(30);
+  };
+
+  // ===== مؤشر "غير محفوظ" =====
+  const setUnsavedIndicator = (show) => {
+    const existingDot = backBtn.querySelector('.note-editor-unsaved-dot');
+    if (show && !existingDot) {
+      const dot = document.createElement('span');
+      dot.className = 'note-editor-unsaved-dot';
+      dot.title = tr('unsaved_changes', 'Unsaved changes');
+      backBtn.appendChild(dot);
+    } else if (!show && existingDot) {
+      existingDot.remove();
+    }
+  };
+
+  // ========================================
+  // Auto-Save Logic
+  // ========================================
+
+  const checkChanges = () => {
+    const currentTitle = titleInput.value;
+    const currentContent = contentInput.value;
+    return currentTitle !== _noteEditorState.originalTitle ||
+           currentContent !== _noteEditorState.originalContent;
+  };
+
+  const performSave = (silent = false) => {
+    if (_noteEditorState.isSaving) return false;
+
+    const title = titleInput.value.trim();
+    const content = contentInput.value.trim();
+
+    // ✅ إذا كانت فارغة تماماً
+    if (!title && !content) {
+      if (_noteEditorState.isNew) {
+        return false;
+      } else {
+        deleteNote(_noteEditorState.noteId);
+        _noteEditorState.originalTitle = '';
+        _noteEditorState.originalContent = '';
+        setUnsavedIndicator(false);
+        return true;
+      }
+    }
+
+    // ✅ إذا لم تكن هناك تغييرات
+    if (!checkChanges()) {
+      if (!silent) {
+        setStatus('saved', tr('saved', 'Saved'));
+        setTimeout(() => {
+          if (statusEl.classList.contains('saved')) {
+            statusEl.className = 'note-editor-status';
+            statusEl.innerHTML = '';
+          }
+        }, 2000);
+      }
+      return true;
+    }
+
+    _noteEditorState.isSaving = true;
+    if (!silent) setStatus('saving', tr('saving', 'Saving...'));
+
+    let success;
+    if (_noteEditorState.isNew) {
+      const newNote = addNote(title, content);
+      if (newNote) {
+        _noteEditorState.noteId = newNote.id;
+        _noteEditorState.isNew = false;
+        success = true;
+      } else {
+        success = false;
+      }
+    } else {
+      success = updateNote(_noteEditorState.noteId, title, content);
+    }
+
+    _noteEditorState.isSaving = false;
+
+    if (success) {
+      _noteEditorState.originalTitle = titleInput.value;
+      _noteEditorState.originalContent = contentInput.value;
+      _noteEditorState.hasUnsavedChanges = false;
+      setUnsavedIndicator(false);
+
+      if (!silent) {
+        setStatus('saved', tr('saved', 'Saved'));
+        setTimeout(() => {
+          if (statusEl.classList.contains('saved')) {
+            statusEl.className = 'note-editor-status';
+            statusEl.innerHTML = '';
+          }
+        }, 2000);
+      }
+    } else {
+      setStatus('error', tr('save_failed', 'Save failed'));
+    }
+
+    return success;
+  };
+
+  const scheduleAutoSave = () => {
+    if (_noteEditorState.autoSaveTimer) {
+      clearTimeout(_noteEditorState.autoSaveTimer);
+    }
+
+    // ✅ إظهار مؤشر "غير محفوظ" فوراً
+    setUnsavedIndicator(true);
+
+    _noteEditorState.autoSaveTimer = setTimeout(() => {
+      if (checkChanges()) {
+        performSave(false);
+      }
+    }, 800);
+  };
+
+  // ===== ربط الأحداث بالحقول =====
+  titleInput.addEventListener('input', () => {
+    autoResizeTitle();
+    updateStats();
+    scheduleAutoSave();
+  });
+
+  contentInput.addEventListener('input', () => {
+    updateStats();
+    scheduleAutoSave();
+  });
+
+  // ===== زر الحفظ اليدوي =====
+  saveBtn.addEventListener('click', () => {
+    // إلغاء أي حفظ مؤجل
+    if (_noteEditorState.autoSaveTimer) {
+      clearTimeout(_noteEditorState.autoSaveTimer);
+      _noteEditorState.autoSaveTimer = null;
+    }
+
+    const success = performSave(false);
+
+    if (success && typeof showToast === 'function') {
+      showToast('✅ ' + tr('note_saved', 'Note saved'), 'success', 1500);
+    }
+  });
+
+  // ===== اختصارات لوحة المفاتيح =====
+  const handleKeydown = (e) => {
+    // Ctrl+S أو Cmd+S → حفظ فوري
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      saveBtn.click();
+      return;
+    }
+
+    // Escape → رجوع
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeNoteEditor();
+      return;
+    }
+
+    // Tab في العنوان → انتقل للمحتوى
+    if (e.key === 'Tab' && !e.shiftKey && e.target === titleInput) {
+      e.preventDefault();
+      contentInput.focus();
+      contentInput.setSelectionRange(contentInput.value.length, contentInput.value.length);
+      return;
+    }
+
+    // Enter في العنوان → انتقل للمحتوى
+    if (e.key === 'Enter' && !e.shiftKey && e.target === titleInput) {
+      e.preventDefault();
+      contentInput.focus();
+      contentInput.setSelectionRange(contentInput.value.length, contentInput.value.length);
+      return;
+    }
+  };
+
+  titleInput.addEventListener('keydown', handleKeydown);
+  contentInput.addEventListener('keydown', handleKeydown);
+
+  // ✅ عند التركيز على العنوان → اختر النص بالكامل (لسهولة الاستبدال)
+  titleInput.addEventListener('focus', function() {
+    if (this.value && !this.dataset.hasSelected) {
+      this.select();
+      this.dataset.hasSelected = 'true';
+    }
+  });
+
+  titleInput.addEventListener('blur', function() {
+    delete this.dataset.hasSelected;
+  });
+
+  // ===== تحديث الإحصائيات أول مرة =====
+  updateStats();
+
+  // ===== Auto-focus =====
+  setTimeout(() => {
+    if (_noteEditorState.isNew) {
+      titleInput.focus();
+    } else {
+      contentInput.focus();
+      contentInput.setSelectionRange(contentInput.value.length, contentInput.value.length);
+    }
+  }, 100);
+}
+
+// ========================================
+// ✨ إغلاق المحرر
+// ========================================
+
+function closeNoteEditor() {
+  const titleInput = document.getElementById('note-editor-title');
+  const contentInput = document.getElementById('note-editor-content');
+  if (!titleInput || !contentInput) {
+    renderNotesPageV2();
+    return;
+  }
+
+  const title = titleInput.value.trim();
+  const content = contentInput.value.trim();
+
+  if (_noteEditorState.autoSaveTimer) {
+    clearTimeout(_noteEditorState.autoSaveTimer);
+    _noteEditorState.autoSaveTimer = null;
+  }
+
+  const hasChanges = title !== _noteEditorState.originalTitle ||
+                     content !== _noteEditorState.originalContent;
+
+  // 1. ملاحظة جديدة + فارغة تماماً → رجوع بدون حفظ
+  if (_noteEditorState.isNew && !title && !content) {
+    renderNotesPageV2();
+    return;
+  }
+
+  // 2. ملاحظة جديدة + فيها بيانات → حفظ
+  if (_noteEditorState.isNew && (title || content)) {
+    const newNote = addNote(title, content);
+    if (newNote && typeof showToast === 'function') {
+      showToast('✅ ' + tr('note_saved', 'Note saved'), 'success', 1500);
+    }
+    renderNotesPageV2();
+    return;
+  }
+
+  // 3. ملاحظة موجودة + بدون تغييرات → رجوع مباشر
+  if (!_noteEditorState.isNew && !hasChanges) {
+    renderNotesPageV2();
+    return;
+  }
+
+  // 4. ملاحظة موجودة + أفرغت بالكامل → حذف
+  if (!_noteEditorState.isNew && !title && !content) {
+    deleteNote(_noteEditorState.noteId);
+    if (typeof showToast === 'function') {
+      showToast('🗑️ ' + tr('note_deleted', 'Note deleted'), 'info', 1500);
+    }
+    renderNotesPageV2();
+    return;
+  }
+
+  // 5. ملاحظة موجودة + تغييرات → حفظ
+  if (!_noteEditorState.isNew && hasChanges) {
+    updateNote(_noteEditorState.noteId, title, content);
+    if (typeof showToast === 'function') {
+      showToast('✅ ' + tr('note_saved', 'Note saved'), 'success', 1500);
+    }
+    renderNotesPageV2();
+    return;
+  }
+
+  // Fallback
+  renderNotesPageV2();
+}
+
+// ========================================
+// ✨ معالج حذف من داخل المحرر
+// ========================================
+
+function handleEditorDelete() {
+  const titleInput = document.getElementById('note-editor-title');
+  const title = titleInput ? titleInput.value.trim() : '';
+
+  // 1. ملاحظة جديدة غير محفوظة → رجوع فقط
+  if (_noteEditorState.isNew) {
+    renderNotesPageV2();
+    if (typeof showToast === 'function') {
+      showToast('🗑️ ' + tr('note_discarded', 'Discarded'), 'info', 1500);
+    }
+    return;
+  }
+
+  // 2. ملاحظة موجودة → تأكيد الحذف
+  deleteModal({
+    itemName: title || tr('untitled', 'Untitled'),
+    itemType: 'note',
+    onConfirm: () => {
+      deleteNote(_noteEditorState.noteId);
+      renderNotesPageV2();
+      if (typeof showToast === 'function') {
+        showToast('🗑️ ' + tr('note_deleted', 'Note deleted'), 'info', 1500);
+      }
+    }
+  });
+}
+
+// ========================================
+// ✅ دوال إضافية
+// ========================================
+
+function resetNoteEditorState() {
+  if (_noteEditorState.autoSaveTimer) {
+    clearTimeout(_noteEditorState.autoSaveTimer);
+  }
+  _noteEditorState = {
+    noteId: null,
+    isNew: false,
+    originalTitle: '',
+    originalContent: '',
+    autoSaveTimer: null,
+    hasUnsavedChanges: false,
+    isSaving: false
+  };
+}
+
 function getNotesCount() {
   return getAllNotes().length;
 }
 
-/**
- * عدد الملاحظات المثبتة
- */
 function getPinnedNotesCount() {
   return getAllNotes().filter(n => n.pinned).length;
 }
 
-/**
- * بحث سريع
- */
 function findNotes(query) {
   return searchNotes(getAllNotes(), query);
+}
+
+// ========================================
+// ⚠️ Legacy: openNoteModal (deprecated)
+// ========================================
+
+function openNoteModal(editNote = null) {
+  console.warn('openNoteModal is deprecated. Use openNoteEditor instead.');
+  openNoteEditor(editNote ? editNote.id : null);
 }
 
 // ========================================
@@ -659,4 +1096,17 @@ window.getNotesCount = getNotesCount;
 window.getPinnedNotesCount = getPinnedNotesCount;
 window.findNotes = findNotes;
 
-console.log("✅ Notes v2.2 loaded successfully!");
+// ✨ دوال المحرر
+window.openNoteEditor = openNoteEditor;
+window.renderNoteEditor = renderNoteEditor;
+window.closeNoteEditor = closeNoteEditor;
+window.resetNoteEditorState = resetNoteEditorState;
+window.handleEditorDelete = handleEditorDelete;
+
+// ✅ دوال الكاش الجديدة
+window.invalidateNotesCache = invalidateNotesCache;
+
+// ⚠️ Legacy
+window.openNoteModal = openNoteModal;
+
+console.log("✅ Notes v3.2 loaded successfully! (With Notes Cache + Cross-Tab Sync)");

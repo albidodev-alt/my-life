@@ -1,7 +1,7 @@
 /* ========================================
-   NOTES V2.0 - STYLES
-   نظام الملاحظات الجديد والمستقل
-   (Mobile Fixes + Touch + Safe Areas)
+   NOTES V3.1 - STYLES
+   نظام الملاحظات + محرر بأسلوب Samsung Notes
+   (Inline Editor + Save/Back Buttons + Fixed Title Editing)
    ======================================== */
 
 /* ========================================
@@ -144,7 +144,6 @@
   box-shadow: 0 0 0 3px rgba(79, 142, 219, 0.12);
 }
 
-/* ✅ إصلاح أيقونة البحث في RTL */
 [dir="rtl"] .notes-search-icon {
   left: auto;
   right: 14px;
@@ -196,10 +195,6 @@
   border-color: rgba(79, 142, 219, 0.35);
 }
 
-/* ========================================
-   PINNED NOTE CARD
-   ======================================== */
-
 .notes-card-pinned {
   border-color: rgba(79, 142, 219, 0.45);
   box-shadow: 3px 5px 14px rgba(79, 142, 219, 0.10);
@@ -216,10 +211,6 @@
   background: var(--primary-gradient);
   border-radius: 0 0 4px 4px;
 }
-
-/* ========================================
-   CARD HEADER
-   ======================================== */
 
 .notes-card-header {
   display: flex;
@@ -257,10 +248,6 @@
   font-size: 11px;
   font-weight: 600;
 }
-
-/* ========================================
-   CARD ACTIONS
-   ======================================== */
 
 .notes-card-actions {
   display: flex;
@@ -300,10 +287,6 @@
   color: var(--danger);
 }
 
-/* ========================================
-   CARD CONTENT
-   ======================================== */
-
 .notes-card-content {
   margin: 0;
   color: var(--text-secondary);
@@ -319,10 +302,6 @@
   line-clamp: 5;
   overflow: hidden;
 }
-
-/* ========================================
-   CARD FOOTER
-   ======================================== */
 
 .notes-card-footer {
   display: flex;
@@ -390,7 +369,478 @@
 }
 
 /* ========================================
-   MODAL
+   ✨ NOTE EDITOR - محرر بأسلوب Samsung/Apple Notes
+   ======================================== */
+
+.note-editor {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: calc(100vh - var(--header-height) - 48px);
+  min-height: calc(var(--vh-unit) - var(--header-height) - 48px);
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* ===== Header ===== */
+.note-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+  background: var(--bg-card);
+}
+
+.note-editor-header-left,
+.note-editor-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.note-editor-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.note-editor-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.2;
+  pointer-events: none;
+}
+
+.note-editor-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.note-editor-btn:active {
+  transform: scale(0.92);
+}
+
+.note-editor-btn.danger {
+  color: var(--danger);
+}
+
+.note-editor-btn.danger:hover {
+  background: rgba(231, 76, 94, 0.10);
+  color: var(--danger);
+}
+
+/* ✅ زر Save مميّز */
+.note-editor-btn.save {
+  background: var(--primary-gradient);
+  color: #ffffff;
+  width: auto;
+  padding: 0 16px;
+  gap: 8px;
+  font-family: var(--font-handwritten);
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 80px;
+  box-shadow: var(--shadow-sm);
+}
+
+.note-editor-btn.save:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  background: var(--primary-gradient);
+  color: #ffffff;
+}
+
+.note-editor-btn.save:active {
+  transform: translateY(0);
+}
+
+.note-editor-btn.save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.note-editor-btn.save svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ✅ زر Back واضح */
+.note-editor-btn.back {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  width: auto;
+  padding: 0 14px;
+  gap: 6px;
+  font-family: var(--font-handwritten);
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 80px;
+}
+
+.note-editor-btn.back:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.note-editor-btn.back svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ✅ مؤشر "غير محفوظ" */
+.note-editor-unsaved-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #f5a623;
+  border-radius: 50%;
+  margin-left: 6px;
+  animation: unsavedPulse 1.5s ease-in-out infinite;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+@keyframes unsavedPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* ===== Body ===== */
+.note-editor-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 20px 24px 12px;
+  overflow: hidden;
+}
+
+/* ===== Title Input ===== */
+.note-editor-title {
+  width: 100%;
+  padding: 0;
+  margin: 0 0 12px 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-handwritten);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  letter-spacing: 0.2px;
+  resize: none;
+  overflow: hidden;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  cursor: text;
+  min-height: 42px;
+}
+
+.note-editor-title::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+  font-weight: 600;
+}
+
+.note-editor-title:focus {
+  outline: none;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+/* ===== Divider ===== */
+.note-editor-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin-bottom: 12px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+/* ===== Content Textarea ===== */
+.note-editor-content {
+  width: 100%;
+  flex: 1;
+  min-height: 200px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text-primary);
+  line-height: 1.75;
+  resize: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  cursor: text;
+}
+
+.note-editor-content::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.note-editor-content:focus {
+  outline: none;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+/* ===== Footer ===== */
+.note-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-card);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.note-editor-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.note-editor-stats-divider {
+  display: inline-block;
+  width: 1px;
+  height: 12px;
+  background: var(--border-color);
+  opacity: 0.6;
+}
+
+.note-editor-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-handwritten);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--bg-surface);
+  transition: color 0.2s ease, background-color 0.2s ease;
+  white-space: nowrap;
+  min-height: 24px;
+}
+
+.note-editor-status.saving {
+  color: #b7791f;
+  background: rgba(245, 166, 35, 0.10);
+}
+
+.note-editor-status.saved {
+  color: #2e7d5e;
+  background: rgba(76, 175, 132, 0.10);
+}
+
+.note-editor-status.error {
+  color: #c0392b;
+  background: rgba(231, 76, 94, 0.10);
+}
+
+.note-editor-status svg {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2.5;
+  pointer-events: none;
+}
+
+/* ========================================
+   NOTE EDITOR - Responsive
+   ======================================== */
+
+@media (max-width: 768px) {
+  .note-editor {
+    min-height: calc(100vh - var(--header-height-mobile) - 24px);
+    min-height: calc(var(--vh-unit) - var(--header-height-mobile) - 24px);
+    border-radius: 12px;
+    margin: 0 -4px;
+  }
+
+  .note-editor-header {
+    padding: 10px 12px;
+  }
+
+  .note-editor-body {
+    padding: 16px 18px 8px;
+  }
+
+  .note-editor-title {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  .note-editor-content {
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .note-editor-footer {
+    padding: 8px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .note-editor {
+    min-height: calc(100vh - var(--header-height-small) - 16px);
+    min-height: calc(var(--vh-unit) - var(--header-height-small) - 16px);
+    border-radius: 10px;
+    margin: 0 -8px;
+    border-left: none;
+    border-right: none;
+  }
+
+  .note-editor-header {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .note-editor-header-left,
+  .note-editor-header-right {
+    gap: 4px;
+  }
+
+  .note-editor-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .note-editor-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .note-editor-btn.save,
+  .note-editor-btn.back {
+    min-width: 70px;
+    padding: 0 10px;
+    font-size: 13px;
+    gap: 4px;
+  }
+
+  .note-editor-btn.save svg,
+  .note-editor-btn.back svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .note-editor-body {
+    padding: 14px 14px 6px;
+  }
+
+  .note-editor-title {
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+
+  .note-editor-content {
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  .note-editor-footer {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .note-editor-stats {
+    font-size: 11px;
+    gap: 6px;
+  }
+
+  .note-editor-status {
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+}
+
+/* ✅ على الشاشات الصغيرة جداً → أخفِ نص الأزرار */
+@media (max-width: 380px) {
+  .note-editor-btn.save span:not([data-lucide]),
+  .note-editor-btn.back span:not([data-lucide]) {
+    display: none;
+  }
+
+  .note-editor-btn.save,
+  .note-editor-btn.back {
+    min-width: 40px;
+    padding: 0;
+    width: 40px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .note-editor {
+    min-height: calc(100vh - 44px - 16px);
+    min-height: calc(var(--vh-unit) - 44px - 16px);
+    border-radius: 10px;
+  }
+
+  .note-editor-header {
+    padding: 6px 12px;
+  }
+
+  .note-editor-body {
+    padding: 10px 16px 6px;
+  }
+
+  .note-editor-title {
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+
+  .note-editor-footer {
+    padding: 6px 12px;
+  }
+}
+
+/* ========================================
+   LEGACY MODAL (Kept for backward compatibility)
    ======================================== */
 
 .notes-modal-overlay {
@@ -413,12 +863,8 @@
 }
 
 @keyframes notesFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes notesSlideUp {
@@ -524,16 +970,9 @@
 }
 
 @keyframes notesShake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-5px);
-  }
-  75% {
-    transform: translateX(5px);
-  }
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }
 
 .notes-modal-textarea {
@@ -589,53 +1028,9 @@
 }
 
 /* ========================================
-   DARK MODE COMPATIBILITY
-   ======================================== */
-
-body.dark-mode .notes-card {
-  background: var(--bg-card);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .notes-card-title {
-  color: var(--text-light);
-}
-
-body.dark-mode .notes-card-content {
-  color: var(--text-secondary);
-}
-
-body.dark-mode .notes-modal {
-  background: var(--bg-modal);
-  border-color: var(--border-color);
-}
-
-body.dark-mode .notes-modal-input,
-body.dark-mode .notes-modal-textarea {
-  background: var(--bg-input);
-  color: var(--text-light);
-  border-color: var(--border-input);
-}
-
-body.dark-mode .notes-search-input {
-  background: var(--bg-input);
-  color: var(--text-light);
-  border-color: var(--border-input);
-}
-
-body.dark-mode .notes-modal-cancel-btn {
-  background: var(--bg-input);
-  color: var(--text-light);
-  border-color: var(--border-input);
-}
-
-body.dark-mode .notes-modal-cancel-btn:hover {
-  background: var(--bg-hover);
-}
-
-/* ========================================
    ✅ HOVER ONLY ON TOUCH-FREE DEVICES
    ======================================== */
+
 @media (hover: none) {
   .notes-card:hover,
   .notes-add-main-btn:hover,
@@ -646,31 +1041,52 @@ body.dark-mode .notes-modal-cancel-btn:hover {
     transform: none !important;
     box-shadow: var(--shadow-sm) !important;
   }
-  
+
   .notes-card:hover {
     border-color: var(--border-color) !important;
   }
-  
+
   .notes-card-pinned:hover {
     border-color: rgba(79, 142, 219, 0.45) !important;
   }
-  
+
   .notes-modal-close-btn:hover {
     background-color: transparent !important;
     color: var(--text-muted) !important;
   }
-  
+
   .notes-modal-save-btn:hover {
     box-shadow: var(--shadow-sm) !important;
   }
-  
+
   .notes-modal-cancel-btn:hover {
     background: var(--bg-input) !important;
+  }
+
+  .note-editor-btn:hover {
+    background: transparent !important;
+    color: var(--text-secondary) !important;
+  }
+
+  .note-editor-btn.danger:hover {
+    background: transparent !important;
+    color: var(--danger) !important;
+  }
+
+  .note-editor-btn.save:hover {
+    transform: none !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+
+  .note-editor-btn.back:hover {
+    background: var(--bg-surface) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
   }
 }
 
 /* ========================================
-   RESPONSIVE
+   RESPONSIVE (للقائمة الرئيسية)
    ======================================== */
 
 @media (max-width: 768px) {
@@ -705,7 +1121,6 @@ body.dark-mode .notes-modal-cancel-btn:hover {
     text-align: right;
   }
 
-  /* ✅ حقول بحجم 16px لمنع التكبير على iOS */
   .notes-search-input,
   .notes-modal-input,
   .notes-modal-textarea {
@@ -716,7 +1131,6 @@ body.dark-mode .notes-modal-cancel-btn:hover {
     height: 50px;
   }
 
-  /* ✅ أزرار لمس أكبر */
   .notes-card-action-btn {
     width: 42px;
     height: 42px;
@@ -746,7 +1160,6 @@ body.dark-mode .notes-modal-cancel-btn:hover {
     width: 100%;
   }
 
-  /* ✅ أزرار لمس أكبر على الشاشات الصغيرة */
   .notes-card-action-btn {
     width: 40px;
     height: 40px;
@@ -759,9 +1172,6 @@ body.dark-mode .notes-modal-cancel-btn:hover {
   }
 }
 
-/* ========================================
-   ✅ LANDSCAPE MODE (Mobile)
-   ======================================== */
 @media (orientation: landscape) and (max-height: 500px) {
   .notes-modal {
     max-height: 95vh;
@@ -790,7 +1200,9 @@ body.dark-mode .notes-modal-cancel-btn:hover {
   .notes-add-main-btn,
   .notes-search-container,
   .notes-card-actions,
-  .notes-modal-overlay {
+  .notes-modal-overlay,
+  .note-editor-header,
+  .note-editor-footer {
     display: none !important;
   }
 
@@ -804,6 +1216,12 @@ body.dark-mode .notes-modal-cancel-btn:hover {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
+
+  .note-editor {
+    box-shadow: none !important;
+    border: none !important;
+    min-height: auto;
+  }
 }
 
 /* ========================================
@@ -814,9 +1232,15 @@ body.dark-mode .notes-modal-cancel-btn:hover {
 .notes-add-main-btn:focus-visible,
 .notes-modal-save-btn:focus-visible,
 .notes-modal-cancel-btn:focus-visible,
-.notes-modal-close-btn:focus-visible {
+.notes-modal-close-btn:focus-visible,
+.note-editor-btn:focus-visible {
   outline: 3px solid rgba(79, 142, 219, 0.3);
   outline-offset: 2px;
+}
+
+.note-editor-title:focus-visible,
+.note-editor-content:focus-visible {
+  outline: none;
 }
 
 /* ========================================
@@ -830,7 +1254,9 @@ body.dark-mode .notes-modal-cancel-btn:hover {
   .notes-card-action-btn,
   .notes-modal-close-btn,
   .notes-modal-save-btn,
-  .notes-modal-cancel-btn {
+  .notes-modal-cancel-btn,
+  .note-editor-btn,
+  .note-editor-unsaved-dot {
     transition: none !important;
     animation: none !important;
   }

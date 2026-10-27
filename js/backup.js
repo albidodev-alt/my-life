@@ -1,6 +1,7 @@
 // ========================================
-// MY LIFE - BACKUP & RESTORE SYSTEM v2.2
+// MY LIFE - BACKUP & RESTORE SYSTEM v2.3
 // (Safe Export + Strong Validation + Achievement Stats)
+// (Lucide Icons - No Emojis)
 // ========================================
 
 // ========================================
@@ -15,7 +16,7 @@ const BACKUP_KEYS = {
     PROGRAMS: "myLifeHub_programs",
     PROFILE: "myLifeHub_profile",
     NOTIFICATIONS: "myLifeHub_notifications",
-    STATS: "myLifeHub_achievement_stats"  // ✅ جديد
+    STATS: "myLifeHub_achievement_stats"
 };
 
 const BACKUP_VERSION = 1;
@@ -36,7 +37,7 @@ function collectAllData() {
             events: getData(BACKUP_KEYS.EVENTS),
             programs: getData(BACKUP_KEYS.PROGRAMS),
             notifications: getData(BACKUP_KEYS.NOTIFICATIONS),
-            achievementStats: getData(BACKUP_KEYS.STATS)  // ✅ جديد
+            achievementStats: getData(BACKUP_KEYS.STATS)
         };
 
         return data;
@@ -84,10 +85,9 @@ function calculateMetadata(data) {
         totalPrograms: Array.isArray(data.programs) ? data.programs.length : 0,
         totalNotifications: Array.isArray(data.notifications) ? data.notifications.length : 0,
         daysWithRoutine: 0,
-        totalAchievements: 0  // ✅ جديد
+        totalAchievements: 0
     };
 
-    // ✅ إحصائيات الإنجازات
     if (data.achievementStats && typeof data.achievementStats === 'object') {
         metadata.totalAchievements = data.achievementStats.totalCompleted || 0;
     }
@@ -266,7 +266,6 @@ function validateBackup(backup) {
         return { valid: false, error: "Backup data is missing or invalid" };
     }
 
-    // ✅ نتحقق من المفاتيح الأساسية فقط (بدون achievementStats — لأنه قديم)
     const requiredKeys = ['profile', 'routine', 'tasks', 'notes', 'events', 'programs', 'notifications'];
     const missingKeys = requiredKeys.filter(key => !(key in backup.data));
 
@@ -276,7 +275,6 @@ function validateBackup(backup) {
 
     const data = backup.data;
 
-    // ✅ التحقق من الأنواع
     if (data.tasks !== null && !Array.isArray(data.tasks)) {
         return { valid: false, error: "Invalid 'tasks' section: must be an array or null" };
     }
@@ -305,14 +303,12 @@ function validateBackup(backup) {
         return { valid: false, error: "Invalid 'profile' section: must be an object or null" };
     }
 
-    // ✅ التحقق من achievementStats (اختياري — قديم قد لا يحتويها)
     if (data.achievementStats !== undefined && data.achievementStats !== null) {
         if (typeof data.achievementStats !== 'object' || Array.isArray(data.achievementStats)) {
             return { valid: false, error: "Invalid 'achievementStats' section: must be an object or null" };
         }
     }
 
-    // ✅ التحقق من كل عنصر في المصفوفات
     if (Array.isArray(data.tasks)) {
         for (let i = 0; i < data.tasks.length; i++) {
             const task = data.tasks[i];
@@ -360,7 +356,6 @@ function restoreBackup(backupData) {
     try {
         const data = backupData.data;
 
-        // ✅ حفظ القيم القديمة (للتراجع عند الفشل)
         const oldValues = {};
         Object.values(BACKUP_KEYS).forEach(key => {
             oldValues[key] = localStorage.getItem(key);
@@ -395,15 +390,12 @@ function restoreBackup(backupData) {
                 localStorage.setItem(BACKUP_KEYS.NOTIFICATIONS, JSON.stringify(data.notifications));
             }
 
-            // ✅ استعادة إحصائيات الإنجازات
             if (data.achievementStats) {
                 localStorage.setItem(BACKUP_KEYS.STATS, JSON.stringify(data.achievementStats));
             } else {
-                // ✅ Backup قديم بدون إحصائيات → احذفها ليعاد حسابها
                 localStorage.removeItem(BACKUP_KEYS.STATS);
             }
 
-            // ✅ إبطال الكاش
             if (typeof invalidateAllCaches === 'function') {
                 invalidateAllCaches();
             }
@@ -417,7 +409,6 @@ function restoreBackup(backupData) {
             return true;
 
         } catch (innerError) {
-            // ❌ فشل الحفظ → استرجع القيم القديمة
             console.error("Restore failed, rolling back...", innerError);
 
             Object.entries(oldValues).forEach(([key, value]) => {
@@ -450,11 +441,10 @@ function showBackupPreview(preview) {
 
     const modal = createModal({
         id: 'backup-preview-modal',
-        title: '📋 ' + (typeof t === 'function' ? t('restore_backup', 'Restore Backup') : 'Restore Backup'),
+        title: '<span data-lucide="file-json"></span> ' + (typeof t === 'function' ? t('restore_backup', 'Restore Backup') : 'Restore Backup'),
         size: 'medium'
     });
 
-    // ===== معلومات الملف =====
     const infoBox = document.createElement('div');
     infoBox.style.cssText = `
         margin: 0 0 16px 0;
@@ -473,7 +463,6 @@ function showBackupPreview(preview) {
     `;
     modal.body.appendChild(infoBox);
 
-    // ===== محتويات النسخة =====
     const contentsBox = document.createElement('div');
     contentsBox.style.cssText = `
         margin: 0 0 16px 0;
@@ -488,31 +477,37 @@ function showBackupPreview(preview) {
         </h4>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
             <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
-                📋 ${typeof t === 'function' ? t('tasks', 'Tasks') : 'Tasks'}: ${metadata.totalTasks || 0}
+                <span data-lucide="list-checks" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span>
+                ${typeof t === 'function' ? t('tasks', 'Tasks') : 'Tasks'}: ${metadata.totalTasks || 0}
             </div>
             <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
-                📝 ${typeof t === 'function' ? t('notes', 'Notes') : 'Notes'}: ${metadata.totalNotes || 0}
+                <span data-lucide="file-text" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span>
+                ${typeof t === 'function' ? t('notes', 'Notes') : 'Notes'}: ${metadata.totalNotes || 0}
             </div>
             <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
-                📅 ${typeof t === 'function' ? t('events', 'Events') : 'Events'}: ${metadata.totalEvents || 0}
+                <span data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span>
+                ${typeof t === 'function' ? t('events', 'Events') : 'Events'}: ${metadata.totalEvents || 0}
             </div>
             <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
-                🎓 ${typeof t === 'function' ? t('program', 'Programs') : 'Programs'}: ${metadata.totalPrograms || 0}
+                <span data-lucide="graduation-cap" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span>
+                ${typeof t === 'function' ? t('program', 'Programs') : 'Programs'}: ${metadata.totalPrograms || 0}
             </div>
             <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
-                🔔 ${typeof t === 'function' ? t('notifications', 'Notifications') : 'Notifications'}: ${metadata.totalNotifications || 0}
+                <span data-lucide="bell" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span>
+                ${typeof t === 'function' ? t('notifications', 'Notifications') : 'Notifications'}: ${metadata.totalNotifications || 0}
             </div>
             <div style="padding: 6px 10px; background: var(--bg-surface); border-radius: 4px; font-size: 14px; color: var(--text-primary);">
-                📆 ${typeof t === 'function' ? t('routine', 'Routine Days') : 'Routine Days'}: ${metadata.daysWithRoutine || 0}
+                <span data-lucide="calendar-days" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span>
+                ${typeof t === 'function' ? t('routine', 'Routine Days') : 'Routine Days'}: ${metadata.daysWithRoutine || 0}
             </div>
             <div style="padding: 6px 10px; background: linear-gradient(135deg, rgba(79,142,219,0.10), rgba(109,168,232,0.05)); border-radius: 4px; font-size: 14px; color: var(--primary-dark); font-weight: 600;">
-                🏆 ${typeof t === 'function' ? t('achievements', 'Achievements') : 'Achievements'}: ${metadata.totalAchievements || 0}
+                <span data-lucide="trophy" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></span>
+                ${typeof t === 'function' ? t('achievements', 'Achievements') : 'Achievements'}: ${metadata.totalAchievements || 0}
             </div>
         </div>
     `;
     modal.body.appendChild(contentsBox);
 
-    // ===== تحذير =====
     const warningBox = document.createElement('div');
     warningBox.className = 'modal-base-warning';
     warningBox.innerHTML = `
@@ -521,7 +516,6 @@ function showBackupPreview(preview) {
     `;
     modal.body.appendChild(warningBox);
 
-    // ===== الأزرار =====
     const actions = createModalActions([
         {
             label: typeof t === 'function' ? t('cancel', 'Cancel') : 'Cancel',
@@ -529,12 +523,12 @@ function showBackupPreview(preview) {
             onClick: () => modal.close()
         },
         {
-            label: '🔄 ' + (typeof t === 'function' ? t('restore_backup', 'Restore Backup') : 'Restore Backup'),
+            label: '<span data-lucide="rotate-ccw"></span> ' + (typeof t === 'function' ? t('restore_backup', 'Restore Backup') : 'Restore Backup'),
             type: 'danger',
             onClick: () => {
                 modal.close();
                 confirmModal({
-                    title: '⚠️ ' + (typeof t === 'function' ? t('confirm_restore', 'Confirm Restore') : 'Confirm Restore'),
+                    title: '<span data-lucide="alert-octagon"></span> ' + (typeof t === 'function' ? t('confirm_restore', 'Confirm Restore') : 'Confirm Restore'),
                     message: typeof t === 'function'
                         ? 'سيتم استبدال جميع بياناتك الحالية ببيانات النسخة الاحتياطية. هل أنت متأكد؟'
                         : 'This will REPLACE all your current data with the backup data. Are you sure?',
@@ -547,13 +541,13 @@ function showBackupPreview(preview) {
                             const success = restoreBackup(preview);
                             if (success) {
                                 if (typeof showToast === 'function') {
-                                    showToast("✅ " + (typeof t === 'function' ? t('backup_restored', 'Backup restored successfully!') : 'Backup restored successfully!'), "success");
+                                    showToast('✅ ' + (typeof t === 'function' ? t('backup_restored', 'Backup restored successfully!') : 'Backup restored successfully!'), "success");
                                 }
                                 setTimeout(() => location.reload(), 1500);
                             }
                         } catch (error) {
                             if (typeof showToast === 'function') {
-                                showToast("❌ Restore failed: " + error.message, "error");
+                                showToast('❌ Restore failed: ' + error.message, "error");
                             }
                         }
                     }
@@ -562,6 +556,8 @@ function showBackupPreview(preview) {
         }
     ]);
     modal.body.appendChild(actions);
+
+    if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
 
 // ========================================
@@ -663,7 +659,10 @@ function renderBackupSection() {
             font-size: 13px;
             color: var(--text-secondary);
         `;
-        infoText.textContent = `📦 ${typeof t === 'function' ? t('last_backup', 'Last backup') : 'Last backup'}: ${new Date(metadata.lastExport).toLocaleString()}`;
+        infoText.innerHTML = `
+            <span data-lucide="package" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: var(--text-muted);"></span>
+            ${typeof t === 'function' ? t('last_backup', 'Last backup') : 'Last backup'}: ${new Date(metadata.lastExport).toLocaleString()}
+        `;
 
         const sizeText = document.createElement("span");
         sizeText.style.cssText = `
@@ -695,8 +694,15 @@ function renderBackupSection() {
         margin-bottom: 10px;
         min-height: 48px;
         -webkit-tap-highlight-color: transparent;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
     `;
-    exportBtn.textContent = "📤 " + (typeof t === 'function' ? t('export_backup', 'Export Backup') : 'Export Backup');
+    exportBtn.innerHTML = `
+        <span data-lucide="upload" style="width: 18px; height: 18px; pointer-events: none;"></span>
+        <span>${typeof t === 'function' ? t('export_backup', 'Export Backup') : 'Export Backup'}</span>
+    `;
 
     exportBtn.addEventListener("mouseenter", function() {
         this.style.transform = "translateY(-2px)";
@@ -729,8 +735,15 @@ function renderBackupSection() {
         transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
         min-height: 48px;
         -webkit-tap-highlight-color: transparent;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
     `;
-    importBtn.textContent = "📥 " + (typeof t === 'function' ? t('import_backup', 'Import Backup') : 'Import Backup');
+    importBtn.innerHTML = `
+        <span data-lucide="download" style="width: 18px; height: 18px; pointer-events: none;"></span>
+        <span>${typeof t === 'function' ? t('import_backup', 'Import Backup') : 'Import Backup'}</span>
+    `;
 
     importBtn.addEventListener("mouseenter", function() {
         this.style.borderColor = "var(--primary)";
@@ -785,10 +798,21 @@ function renderBackupSection() {
         color: var(--text-muted);
         text-align: center;
         font-style: italic;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        width: 100%;
     `;
-    note.textContent = typeof t === 'function'
-        ? t('backup_note', '🔒 Your data never leaves your device. Backups are stored locally.')
-        : '🔒 Your data never leaves your device. Backups are stored locally.';
+
+    const noteText = typeof t === 'function'
+        ? t('backup_note', 'Your data never leaves your device. Backups are stored locally.')
+        : 'Your data never leaves your device. Backups are stored locally.';
+
+    note.innerHTML = `
+        <span data-lucide="shield-check" style="width: 14px; height: 14px; color: var(--success); pointer-events: none; flex-shrink: 0;"></span>
+        <span>${noteText}</span>
+    `;
     section.appendChild(note);
 
     return section;
@@ -831,4 +855,4 @@ window.getBackupSize = getBackupSize;
 window.hasPreviousBackup = hasPreviousBackup;
 window.validateBackup = validateBackup;
 
-console.log("✅ Backup & Restore v2.2 loaded successfully!");
+console.log("✅ Backup & Restore v2.3 loaded successfully! (Lucide Icons)");
