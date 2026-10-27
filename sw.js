@@ -1,38 +1,43 @@
 // ========================================
-// MY LIFE - SERVICE WORKER v19.0
-// (Splash screen added to cache)
+// MY LIFE - SERVICE WORKER v20.0
+// (Network-First for JS + Cache-First for CSS + Mobile Optimized)
 // ========================================
 
-const CACHE_NAME = 'my-life-v19';
-const RUNTIME_CACHE = 'runtime-v19';
+const CACHE_VERSION = 'v20';
+const CACHE_NAME = `my-life-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 
 // ========================================
-// ✅ قائمة الملفات المطلوب تخزينها مسبقاً
+// الملفات المطلوب تخزينها مسبقاً
 // ========================================
 const ASSETS_TO_CACHE = [
-  // ===== HTML =====
+  // HTML
   './',
   'index.html',
 
-  // ===== CSS =====
+  // CSS
   'css/fonts.css',
   'css/splash.css',
   'css/modal-base.css',
   'css/toast.css',
   'css/style.css',
+  'css/dark-mode.css',
   'css/notes.css',
   'css/events.css',
   'css/program.css',
   'css/drops.css',
 
-  // ===== JS (Core) =====
+  // JS (Core)
   'js/utils.js',
   'js/theme.js',
   'js/splash.js',
   'js/toast.js',
   'js/modal-helper.js',
   'js/storage.js',
+  'js/hour.js',
   'js/week.js',
+
+  // JS (Features - Lazy Loaded)
   'js/day.js',
   'js/task.js',
   'js/achievements.js',
@@ -40,17 +45,16 @@ const ASSETS_TO_CACHE = [
   'js/events.js',
   'js/program.js',
   'js/drops.js',
+
+  // JS (Secondary)
   'js/backup.js',
   'js/profile.js',
-
-  // ===== JS (Secondary) =====
   'js/notification.js',
   'js/translations.js',
   'js/update.js',
-  'js/hour.js',
   'js/main.js',
 
-  // ===== Fonts (محلية) =====
+  // Fonts
   'fonts/inter-v20-latin-regular.woff2',
   'fonts/inter-v20-latin-500.woff2',
   'fonts/inter-v20-latin-600.woff2',
@@ -60,15 +64,15 @@ const ASSETS_TO_CACHE = [
   'fonts/quicksand-v37-latin-600.woff2',
   'fonts/quicksand-v37-latin-700.woff2',
 
-  // ===== Vendor (Lucide محلي) =====
+  // Vendor
   'vendor/lucide.min.js',
 
-  // ===== Languages =====
+  // Languages
   'lang/en.js',
   'lang/ar.js',
   'lang/fr.js',
 
-  // ===== PWA =====
+  // PWA
   'manifest.json',
   'icons/icon-512.png',
   'icons/icon-192.png',
@@ -76,7 +80,7 @@ const ASSETS_TO_CACHE = [
 ];
 
 // ========================================
-// ✅ دالة تخزين آمنة (معالجة QuotaExceededError)
+// ✅ تخزين آمن (معالجة QuotaExceededError)
 // ========================================
 async function safeCachePut(cache, request, response) {
   try {
@@ -85,13 +89,11 @@ async function safeCachePut(cache, request, response) {
   } catch (err) {
     if (err.name === 'QuotaExceededError') {
       console.warn('[SW] Quota exceeded. Cleaning old entries...');
-
       const keys = await cache.keys();
       const deleteCount = Math.max(1, Math.floor(keys.length * 0.2));
       for (let i = 0; i < deleteCount; i++) {
         await cache.delete(keys[i]);
       }
-
       try {
         await cache.put(request, response);
         return true;
@@ -100,7 +102,6 @@ async function safeCachePut(cache, request, response) {
         return false;
       }
     }
-
     console.error('[SW] Cache put error:', err);
     return false;
   }
@@ -118,32 +119,34 @@ function backgroundCachePut(cacheName, request, response) {
 // INSTALL
 // ========================================
 self.addEventListener('install', function (event) {
-  console.log('[SW v19] Installing...');
+  console.log(`[SW ${CACHE_VERSION}] Installing...`);
+
+  // ✅ تفعيل فوري — لا انتظار
+  self.skipWaiting();
 
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(function (cache) {
-        console.log('[SW v19] Caching all assets...');
+        console.log(`[SW ${CACHE_VERSION}] Caching all assets...`);
         return Promise.allSettled(
           ASSETS_TO_CACHE.map(function (url) {
             return cache.add(url).catch(function (err) {
-              console.warn('[SW v19] Failed to cache:', url, err);
+              console.warn(`[SW ${CACHE_VERSION}] Failed to cache:`, url, err);
             });
           })
         );
       })
       .then(function () {
-        console.log('[SW v19] Installation complete!');
-        return self.skipWaiting();
+        console.log(`[SW ${CACHE_VERSION}] Installation complete!`);
       })
   );
 });
 
 // ========================================
-// ACTIVATE
+// ACTIVATE — حذف الكاش القديم + سيطرة فورية
 // ========================================
 self.addEventListener('activate', function (event) {
-  console.log('[SW v19] Activating...');
+  console.log(`[SW ${CACHE_VERSION}] Activating...`);
 
   event.waitUntil(
     caches.keys()
@@ -151,52 +154,88 @@ self.addEventListener('activate', function (event) {
         return Promise.all(
           cacheNames.map(function (cacheName) {
             if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
-              console.log('[SW v19] Deleting old cache:', cacheName);
+              console.log(`[SW ${CACHE_VERSION}] Deleting old cache:`, cacheName);
               return caches.delete(cacheName);
             }
           })
         );
       })
       .then(function () {
-        console.log('[SW v19] Activation complete!');
+        console.log(`[SW ${CACHE_VERSION}] Activation complete!`);
+        // ✅ السيطرة على كل الصفحات المفتوحة فوراً
         return self.clients.claim();
       })
   );
 });
 
 // ========================================
-// FETCH
+// FETCH — استراتيجيات مخصصة لكل نوع ملف
 // ========================================
 self.addEventListener('fetch', function (event) {
   const requestUrl = new URL(event.request.url);
 
+  // تجاهل الطلبات غير GET
   if (event.request.method !== 'GET') return;
+
+  // تجاهل البروتوكولات غير HTTP(S)
   if (!requestUrl.protocol.startsWith('http')) return;
 
-  // ✅ 1. HTML: Stale-While-Revalidate
+  // ========================================
+  // ✅ 1. HTML → Network-First (مع Cache Fallback)
+  // ========================================
   if (event.request.mode === 'navigate' ||
       (event.request.headers.get('accept') || '').includes('text/html')) {
 
     event.respondWith(
-      caches.match(event.request).then(function (cachedResponse) {
-        const fetchPromise = fetch(event.request)
-          .then(function (networkResponse) {
-            if (networkResponse && networkResponse.status === 200) {
-              backgroundCachePut(CACHE_NAME, event.request, networkResponse);
-            }
-            return networkResponse;
-          })
-          .catch(function () {
-            return caches.match('index.html');
-          });
-
-        return cachedResponse || fetchPromise;
-      })
+      fetch(event.request)
+        .then(function (response) {
+          if (response && response.status === 200) {
+            backgroundCachePut(CACHE_NAME, event.request, response);
+          }
+          return response;
+        })
+        .catch(function () {
+          // Offline → استخدم الكاش
+          return caches.match(event.request)
+            .then(function (cached) {
+              return cached || caches.match('index.html');
+            });
+        })
     );
     return;
   }
 
-  // ✅ 2. CDN: Cache-First
+  // ========================================
+  // ✅ 2. JS Modules → Network-First (مهم جداً للـ dynamic imports)
+  // ========================================
+  if (requestUrl.pathname.endsWith('.js')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(function (response) {
+          if (response && response.status === 200) {
+            backgroundCachePut(CACHE_NAME, event.request, response);
+          }
+          return response;
+        })
+        .catch(function () {
+          // Offline → استخدم الكاش
+          return caches.match(event.request)
+            .then(function (cached) {
+              if (cached) return cached;
+              console.warn(`[SW] JS not in cache (offline): ${event.request.url}`);
+              return new Response('', {
+                status: 503,
+                statusText: 'Offline - Module not cached'
+              });
+            });
+        })
+    );
+    return;
+  }
+
+  // ========================================
+  // ✅ 3. CDN → Cache-First
+  // ========================================
   if (requestUrl.hostname.includes('unpkg.com') ||
       requestUrl.hostname.includes('fonts.googleapis.com') ||
       requestUrl.hostname.includes('fonts.gstatic.com') ||
@@ -224,13 +263,16 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // ✅ 3. الملفات المحلية: Cache-First + تحديث خلفي
+  // ========================================
+  // ✅ 4. CSS / Fonts / Images → Cache-First
+  // ========================================
   event.respondWith(
     caches.open(CACHE_NAME)
       .then(function (cache) {
         return cache.match(event.request)
           .then(function (cachedResponse) {
             if (cachedResponse) {
+              // تحديث خلفي (لا يحجب الاستجابة)
               fetch(event.request)
                 .then(function (networkResponse) {
                   if (networkResponse && networkResponse.status === 200) {
@@ -242,6 +284,7 @@ self.addEventListener('fetch', function (event) {
               return cachedResponse;
             }
 
+            // غير موجود في الكاش → جرب الشبكة
             return fetch(event.request)
               .then(function (networkResponse) {
                 if (networkResponse && networkResponse.status === 200) {
@@ -281,12 +324,8 @@ self.addEventListener('push', function (event) {
   );
 });
 
-// ========================================
-// NOTIFICATION CLICK
-// ========================================
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
-
   const urlToOpen = event.notification.data?.url || 'index.html';
 
   event.waitUntil(
@@ -349,4 +388,4 @@ self.addEventListener('message', function (event) {
   }
 });
 
-console.log('✅ Service Worker v19.0 loaded successfully! (Splash screen cached)');
+console.log(`✅ Service Worker ${CACHE_VERSION} loaded successfully! (Network-First JS + Cache-First CSS)`);

@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 
   <title>My Life</title>
 
-  <!-- ✅ SEO: Meta description -->
+  <!-- SEO -->
   <meta name="description" content="My Life - Your personal life management hub. Organize your daily routine, tasks, notes, events, and learning programs in one beautiful place.">
 
-  <!-- ===== PWA Meta Tags ===== -->
+  <!-- PWA Meta Tags -->
   <meta name="theme-color" content="#4f8edb">
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#4f8edb">
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1a2d4a">
@@ -18,13 +18,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="My Life">
   <meta name="application-name" content="My Life">
+  <meta name="format-detection" content="telephone=no">
 
-  <!-- ===== PWA Icons ===== -->
+  <!-- PWA Icons -->
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 
-  <!-- ===== ✅ Theme Init (منع FOUC) ===== -->
+  <!-- Theme Init (منع FOUC) -->
   <script>
     (function() {
       try {
@@ -44,43 +45,59 @@
     })();
   </script>
 
-  <!-- ===== PWA Service Worker ===== -->
+  <!-- PWA Service Worker — تسجيل مبكر -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('sw.js')
           .then(function(registration) {
-            console.log('✅ ServiceWorker registered successfully with scope: ', registration.scope);
+            console.log('✅ SW registered. Scope:', registration.scope);
+
+            // ✅ إجبار التحديث
+            registration.update().catch(function(){});
+
+            // ✅ عند توفر تحديث — أبلغ المستخدم
+            registration.addEventListener('updatefound', function() {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', function() {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  if (confirm('🔄 New version available! Reload now?')) {
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                    window.location.reload();
+                  }
+                }
+              });
+            });
           })
           .catch(function(err) {
-            console.log('❌ ServiceWorker registration failed: ', err);
+            console.log('❌ SW registration failed:', err);
           });
       });
     }
   </script>
 
-  <!-- ===== ✅ Preconnect للخطوط ===== -->
+  <!-- Preconnect -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  <!-- ===== ✅ Preload الخطوط الحرجة ===== -->
+  <!-- Preload Fonts -->
   <link rel="preload" href="fonts/quicksand-v37-latin-700.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/quicksand-v37-latin-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/inter-v20-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
 
-  <!-- ===== ✅ Preload صورة الـ Splash ===== -->
+  <!-- Preload Splash Image -->
   <link rel="preload" href="icons/icon-512.png" as="image">
 
-  <!-- ===== ✅ Preload الملفات الحرجة ===== -->
+  <!-- Preload Critical Files -->
   <link rel="preload" href="js/storage.js" as="script">
   <link rel="preload" href="js/main.js" as="script">
   <link rel="preload" href="js/week.js" as="script">
 
-  <!-- ===== ✅ Preload للـ CSS الأساسي ===== -->
+  <!-- Preload Critical CSS -->
   <link rel="preload" href="css/style.css" as="style">
   <link rel="preload" href="css/fonts.css" as="style">
 
-  <!-- ===== Styles ===== -->
+  <!-- Styles -->
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/splash.css">
   <link rel="stylesheet" href="css/modal-base.css">
@@ -92,7 +109,7 @@
   <link rel="stylesheet" href="css/program.css">
   <link rel="stylesheet" href="css/drops.css">
 
-  <!-- ===== ✅ Lucide Icons — Async ===== -->
+  <!-- Lucide Icons — Async -->
   <script>
     window.addEventListener('load', function() {
       var script = document.createElement('script');
@@ -117,10 +134,8 @@
 
 <body>
 
-  <!-- ================= SPLASH SCREEN ================= -->
+  <!-- SPLASH SCREEN -->
   <div id="splash-screen" role="status" aria-label="Loading My Life">
-
-    <!-- الشعار (صورة التطبيق) -->
     <div class="splash-logo">
       <img id="splash-image"
            src="icons/icon-512.png"
@@ -130,25 +145,18 @@
            loading="eager"
            decoding="sync">
     </div>
-
-    <!-- العنوان -->
     <h1 class="splash-title">My Life</h1>
     <p class="splash-subtitle">Make Your Life Special</p>
     <p class="splash-credit">Created by: <strong>JAWAD</strong></p>
-
-    <!-- نقاط التحميل -->
     <div class="splash-loader">
       <span></span>
       <span></span>
       <span></span>
     </div>
-
   </div>
 
-
-  <!-- ================= HEADER ================= -->
+  <!-- HEADER -->
   <header id="main-header">
-
     <div class="header-left">
       <button class="menu-toggle" id="menu-toggle" aria-label="Toggle sidebar">
         <span class="menu-icon"></span>
@@ -161,92 +169,47 @@
       <span class="title-border">My Life</span>
     </div>
 
-    <button
-      id="user-profile-btn"
-      type="button"
-      aria-label="Open profile"
-    >
-      <img
-        id="user-avatar-icon"
-        src=""
-        alt="User avatar"
-        width="34"
-        height="34"
-        loading="eager"
-      >
-
+    <button id="user-profile-btn" type="button" aria-label="Open profile">
+      <img id="user-avatar-icon" src="" alt="User avatar" width="34" height="34" loading="eager">
       <span id="user-name-icon">User 1</span>
     </button>
-
   </header>
 
-
-  <!-- ================= MAIN LAYOUT ================= -->
+  <!-- MAIN LAYOUT -->
   <div id="layout">
-
-    <!-- ================= SIDEBAR ================= -->
     <nav id="sidebar" aria-label="Main navigation">
-
-      <button class="nav-btn active" data-target="routine" type="button">
-        Routine
-      </button>
-
-      <button class="nav-btn" data-target="task" type="button">
-        Tasks
-      </button>
-
-      <button class="nav-btn" data-target="completed" type="button">
-        Completed
-      </button>
-
-      <button class="nav-btn" data-target="notes" type="button">
-        Notes
-      </button>
-
-      <button class="nav-btn" data-target="events" type="button">
-        Events
-      </button>
-
-      <button class="nav-btn" data-target="program" type="button">
-        Program
-      </button>
-
+      <button class="nav-btn active" data-target="routine" type="button">Routine</button>
+      <button class="nav-btn" data-target="task" type="button">Tasks</button>
+      <button class="nav-btn" data-target="completed" type="button">Completed</button>
+      <button class="nav-btn" data-target="notes" type="button">Notes</button>
+      <button class="nav-btn" data-target="events" type="button">Events</button>
+      <button class="nav-btn" data-target="program" type="button">Program</button>
     </nav>
 
-
-    <!-- ================= APPLICATION ================= -->
     <main id="app" aria-live="polite"></main>
-
   </div>
 
-
-  <!-- ================= BOTTOM NAVIGATION (Mobile) ================= -->
+  <!-- BOTTOM NAVIGATION -->
   <nav id="bottom-nav" aria-label="Mobile navigation">
-
     <button class="bottom-nav-btn active" data-target="routine" type="button">
       <span class="bn-icon" data-lucide="clock"></span>
       <span class="bn-label">Routine</span>
     </button>
-
     <button class="bottom-nav-btn" data-target="task" type="button">
       <span class="bn-icon" data-lucide="check-circle"></span>
       <span class="bn-label">Tasks</span>
     </button>
-
     <button class="bottom-nav-btn" data-target="events" type="button">
       <span class="bn-icon" data-lucide="calendar"></span>
       <span class="bn-label">Events</span>
     </button>
-
     <button class="bottom-nav-btn" data-target="program" type="button">
       <span class="bn-icon" data-lucide="graduation-cap"></span>
       <span class="bn-label">Programs</span>
     </button>
-
   </nav>
 
-
-  <!-- ================= NOTES FAB ================= -->
+  <!-- NOTES FAB -->
   <div id="notes-fab" aria-label="Open notes">
     <button class="fab-btn" id="notes-fab-btn" type="button" aria-label="Notes">
       <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -256,40 +219,39 @@
     </button>
   </div>
 
+  <!-- JAVASCRIPT -->
 
-  <!-- ================= JAVASCRIPT ================= -->
-
-  <!-- ===== 1. الترجمات أولاً ===== -->
+  <!-- 1. Translations -->
   <script src="lang/en.js" defer></script>
   <script src="lang/ar.js" defer></script>
   <script src="lang/fr.js" defer></script>
   <script src="js/translations.js" defer></script>
 
-  <!-- ===== 2. الأدوات الأساسية ===== -->
+  <!-- 2. Core -->
   <script src="js/utils.js" defer></script>
   <script src="js/theme.js" defer></script>
   <script src="js/splash.js" defer></script>
   <script src="js/toast.js" defer></script>
   <script src="js/modal-helper.js" defer></script>
 
-  <!-- ===== 3. التخزين ===== -->
+  <!-- 3. Storage -->
   <script src="js/storage.js" defer></script>
 
-  <!-- ===== 4. hour.js قبل day.js ===== -->
+  <!-- 4. Core features -->
   <script src="js/hour.js" defer></script>
   <script src="js/week.js" defer></script>
 
-  <!-- ===== 5. الميزات (تُحمّل عند الحاجة) ===== -->
+  <!-- 5. Lazy features (dynamic import from main.js) -->
 
-  <!-- ===== 6. النسخ الاحتياطي والبروفايل ===== -->
+  <!-- 6. Backup + Profile -->
   <script src="js/backup.js" defer></script>
   <script src="js/profile.js" defer></script>
 
-  <!-- ===== 7. الملفات الثانوية ===== -->
+  <!-- 7. Secondary -->
   <script src="js/notification.js" defer></script>
   <script src="js/update.js" defer></script>
 
-  <!-- ===== 8. الملف الرئيسي ===== -->
+  <!-- 8. Main -->
   <script src="js/main.js" defer></script>
 
 </body>
