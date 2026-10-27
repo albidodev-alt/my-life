@@ -1,9 +1,9 @@
 // ========================================
-// MY LIFE - SERVICE WORKER v20.0
-// (Network-First for JS + Cache-First for CSS + Mobile Optimized)
+// MY LIFE - SERVICE WORKER v2.0.1
+// (Fixed: Response.clone() race condition)
 // ========================================
 
-const CACHE_VERSION = 'v20';
+const CACHE_VERSION = 'v2.0.1';
 const CACHE_NAME = `my-life-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 
@@ -80,7 +80,7 @@ const ASSETS_TO_CACHE = [
 ];
 
 // ========================================
-// ✅ تخزين آمن (معالجة QuotaExceededError)
+// ✅ تخزين آمن — يستقبل Response جاهزاً (لا يستنسخ)
 // ========================================
 async function safeCachePut(cache, request, response) {
   try {
@@ -107,9 +107,12 @@ async function safeCachePut(cache, request, response) {
   }
 }
 
+// ========================================
+// ✅ backgroundCachePut — يستقبل Response (clone جاهز من المستدعي)
+// ========================================
 function backgroundCachePut(cacheName, request, response) {
   caches.open(cacheName).then(function (cache) {
-    safeCachePut(cache, request, response.clone());
+    return safeCachePut(cache, request, response);
   }).catch(function (err) {
     console.warn('[SW] Background cache error:', err);
   });
@@ -120,8 +123,6 @@ function backgroundCachePut(cacheName, request, response) {
 // ========================================
 self.addEventListener('install', function (event) {
   console.log(`[SW ${CACHE_VERSION}] Installing...`);
-
-  // ✅ تفعيل فوري — لا انتظار
   self.skipWaiting();
 
   event.waitUntil(
@@ -143,7 +144,7 @@ self.addEventListener('install', function (event) {
 });
 
 // ========================================
-// ACTIVATE — حذف الكاش القديم + سيطرة فورية
+// ACTIVATE
 // ========================================
 self.addEventListener('activate', function (event) {
   console.log(`[SW ${CACHE_VERSION}] Activating...`);
@@ -162,26 +163,22 @@ self.addEventListener('activate', function (event) {
       })
       .then(function () {
         console.log(`[SW ${CACHE_VERSION}] Activation complete!`);
-        // ✅ السيطرة على كل الصفحات المفتوحة فوراً
         return self.clients.claim();
       })
   );
 });
 
 // ========================================
-// FETCH — استراتيجيات مخصصة لكل نوع ملف
+// FETCH — استراتيجيات مخصصة
 // ========================================
 self.addEventListener('fetch', function (event) {
   const requestUrl = new URL(event.request.url);
 
-  // تجاهل الطلبات غير GET
   if (event.request.method !== 'GET') return;
-
-  // تجاهل البروتوكولات غير HTTP(S)
   if (!requestUrl.protocol.startsWith('http')) return;
 
   // ========================================
-  // ✅ 1. HTML → Network-First (مع Cache Fallback)
+  // ✅ 1. HTML → Network-First
   // ========================================
   if (event.request.mode === 'navigate' ||
       (event.request.headers.get('accept') || '').includes('text/html')) {
@@ -190,12 +187,11 @@ self.addEventListener('fetch', function (event) {
       fetch(event.request)
         .then(function (response) {
           if (response && response.status === 200) {
-            backgroundCachePut(CACHE_NAME, event.request, response);
+            backgroundCachePut(CACHE_NAME, event.request, response.clone());
           }
           return response;
         })
         .catch(function () {
-          // Offline → استخدم الكاش
           return caches.match(event.request)
             .then(function (cached) {
               return cached || caches.match('index.html');
@@ -206,19 +202,18 @@ self.addEventListener('fetch', function (event) {
   }
 
   // ========================================
-  // ✅ 2. JS Modules → Network-First (مهم جداً للـ dynamic imports)
+  // ✅ 2. JS Modules → Network-First
   // ========================================
   if (requestUrl.pathname.endsWith('.js')) {
     event.respondWith(
       fetch(event.request)
         .then(function (response) {
           if (response && response.status === 200) {
-            backgroundCachePut(CACHE_NAME, event.request, response);
+            backgroundCachePut(CACHE_NAME, event.request, response.clone());
           }
           return response;
         })
         .catch(function () {
-          // Offline → استخدم الكاش
           return caches.match(event.request)
             .then(function (cached) {
               if (cached) return cached;
@@ -272,7 +267,6 @@ self.addEventListener('fetch', function (event) {
         return cache.match(event.request)
           .then(function (cachedResponse) {
             if (cachedResponse) {
-              // تحديث خلفي (لا يحجب الاستجابة)
               fetch(event.request)
                 .then(function (networkResponse) {
                   if (networkResponse && networkResponse.status === 200) {
@@ -284,7 +278,6 @@ self.addEventListener('fetch', function (event) {
               return cachedResponse;
             }
 
-            // غير موجود في الكاش → جرب الشبكة
             return fetch(event.request)
               .then(function (networkResponse) {
                 if (networkResponse && networkResponse.status === 200) {
@@ -314,9 +307,7 @@ self.addEventListener('push', function (event) {
     icon: data.icon || 'icons/icon-192.png',
     badge: 'icons/icon-96.png',
     vibrate: [200, 100, 200],
-    data: {
-      url: data.url || 'index.html'
-    }
+    data: { url: data.url || 'index.html' }
   };
 
   event.waitUntil(
@@ -329,10 +320,7 @@ self.addEventListener('notificationclick', function (event) {
   const urlToOpen = event.notification.data?.url || 'index.html';
 
   event.waitUntil(
-    clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true
-    })
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(function (clientList) {
         for (let i = 0; i < clientList.length; i++) {
           const client = clientList[i];
@@ -388,4 +376,4 @@ self.addEventListener('message', function (event) {
   }
 });
 
-console.log(`✅ Service Worker ${CACHE_VERSION} loaded successfully! (Network-First JS + Cache-First CSS)`);
+console.log(`✅ Service Worker ${CACHE_VERSION} loaded successfully! (clone fix applied)`);
