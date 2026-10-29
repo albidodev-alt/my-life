@@ -1,6 +1,7 @@
 // ========================================
-// MY LIFE HUB - MAIN v5.1
-// (Retry + Timeout + Loading UI + Mobile Optimized + Global Password Protection)
+// MY LIFE HUB - MAIN v5.2
+// (Retry + Timeout + Loading UI + Mobile Optimized
+//  + Global Password Protection + Gboard Fix v4.1)
 // ========================================
 
 let mainAbortController = null;
@@ -151,30 +152,50 @@ function showPageLoading(pageName) {
 }
 
 // ========================================
-// ✅ Global Password Manager Protection
+// ✅ Global Password Manager Protection v3.0
+// (Gboard Fix - type="search" + Radical Cleanup)
 // ========================================
 let globalPMObserver = null;
 
 function setupGlobalPasswordManagerProtection() {
   if (globalPMObserver) return;
 
-  // ✅ حماية أولية لأي حقول موجودة
+  // ✅ إزالة أي password موجود فوراً
+  if (typeof window._neutralizePasswordFields === 'function') {
+    window._neutralizePasswordFields();
+  }
+
   protectAllExistingInputs();
 
-  // ✅ مراقبة أي حقول جديدة تُضاف
   globalPMObserver = new MutationObserver((mutations) => {
     let needsProtection = false;
     const candidates = [];
+    let needsPasswordCleanup = false;
 
     mutations.forEach((mutation) => {
+      // ✅ مراقبة تغيير type إلى password
+      if (mutation.type === 'attributes' &&
+          mutation.attributeName === 'type' &&
+          mutation.target &&
+          mutation.target.type === 'password') {
+        needsPasswordCleanup = true;
+      }
+
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType === 1) {
-          // العنصر نفسه
+          // ✅ أي password جديد يُعطّل فوراً
+          if (node.matches?.('input[type="password"]')) {
+            needsPasswordCleanup = true;
+          }
+          // ✅ أي password داخل عنصر مضاف
+          if (node.querySelector?.('input[type="password"]')) {
+            needsPasswordCleanup = true;
+          }
+
           if (node.matches?.('input:not([type="hidden"]), textarea, select')) {
             candidates.push(node);
             needsProtection = true;
           }
-          // أبناء العنصر
           const children = node.querySelectorAll?.('input:not([type="hidden"]), textarea, select');
           if (children && children.length > 0) {
             children.forEach(c => candidates.push(c));
@@ -184,10 +205,13 @@ function setupGlobalPasswordManagerProtection() {
       });
     });
 
+    if (needsPasswordCleanup && typeof window._neutralizePasswordFields === 'function') {
+      window._neutralizePasswordFields();
+    }
+
     if (needsProtection && typeof window._applyInputProtection === 'function') {
       candidates.forEach(input => {
-        if (input.dataset.pmProtected === 'true') return;
-        input.dataset.pmProtected = 'true';
+        if (input.dataset.pmProtectedV4 === 'true') return;
 
         let mode = 'text';
         if (input.tagName === 'TEXTAREA') mode = 'content';
@@ -204,22 +228,32 @@ function setupGlobalPasswordManagerProtection() {
 
   globalPMObserver.observe(document.body, {
     childList: true,
-    subtree: true
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['type']
   });
 
-  console.log('✅ Global Password Manager Protection enabled');
+  console.log('✅ Global Password Manager Protection v3.0 enabled (Gboard Fix)');
 }
 
 function protectAllExistingInputs() {
   if (typeof window._applyInputProtection !== 'function') return;
 
+  // ✅ إزالة أي password
+  if (typeof window._neutralizePasswordFields === 'function') {
+    window._neutralizePasswordFields();
+  }
+
+  // ✅ استهداف كل الحقول بما فيها المحمية سابقاً (لتحديثها إلى v4.1)
   const inputs = document.querySelectorAll(
-    'input:not([type="hidden"]), textarea, select'
+    'input:not([type="hidden"]):not([data-pm-neutralized="true"]), ' +
+    'textarea:not([data-pm-neutralized="true"]), ' +
+    'select:not([data-pm-neutralized="true"])'
   );
 
   inputs.forEach(input => {
-    if (input.dataset.pmProtected === 'true') return;
-    input.dataset.pmProtected = 'true';
+    // ✅ v4.1: نتخطى فقط الحقول المحمية بالنسخة الجديدة
+    if (input.dataset.pmProtectedV4 === 'true') return;
 
     let mode = 'text';
     if (input.tagName === 'TEXTAREA') mode = 'content';
@@ -490,7 +524,7 @@ function setupServiceWorkerUpdates() {
 document.addEventListener("DOMContentLoaded", function () {
   perfMark("app-start");
 
-  // ✅ تفعيل الحماية العالمية أولاً
+  // ✅ تفعيل الحماية العالمية أولاً (v3.0 - Gboard Fix)
   if (typeof window.setupGlobalPasswordManagerProtection === 'function') {
     window.setupGlobalPasswordManagerProtection();
   }
@@ -535,6 +569,10 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       if (typeof setupVisibilityAwareTimers === "function") {
         setupVisibilityAwareTimers();
+      }
+      // ✅ حماية إضافية بعد التحميل الكامل
+      if (typeof window.protectAllExistingInputs === 'function') {
+        window.protectAllExistingInputs();
       }
     }, 2000);
   });
@@ -961,7 +999,8 @@ window.getAppState = function () {
     language: cachedLanguage,
     hourSystem: cachedHourSystem,
     loadedModules: Object.keys(moduleCache).filter(k => moduleCache[k] !== null),
-    pmProtectionActive: !!globalPMObserver
+    pmProtectionActive: !!globalPMObserver,
+    pmVersion: 'v3.0 (Gboard Fix)'
   };
 };
 
@@ -984,6 +1023,18 @@ window.forceAppUpdate = async function () {
     window.location.reload();
   } catch (err) {
     console.error('❌ Force update failed:', err);
+  }
+};
+
+// ========================================
+// ✅ Manual Protection Trigger (للتشخيص)
+// ========================================
+window.applyInputProtectionNow = function () {
+  if (typeof window.protectAllExistingInputs === 'function') {
+    window.protectAllExistingInputs();
+    console.log('✅ Protection applied to all inputs');
+  } else {
+    console.warn('⚠️ protectAllExistingInputs not available');
   }
 };
 
@@ -1022,10 +1073,11 @@ window.showInstallButtons = showInstallButtons;
 window.handleInstallClick = handleInstallClick;
 window.loadModule = loadModule;
 
-console.log("📌 Main.js v5.1 loaded successfully!");
+console.log("📌 Main.js v5.2 loaded successfully!");
 console.log("   - Lazy Loading: with retry + timeout");
 console.log("   - Loading UI: spinner for lazy pages");
 console.log("   - SW Update: auto-reload on new version");
 console.log("   - Force Update: window.forceAppUpdate()");
-console.log("   - ✅ Global Password Manager Protection: ACTIVE");
+console.log("   - ✅ Global Password Manager Protection: ACTIVE (v3.0 - Gboard Fix)");
 console.log("   - Try: getAppState() to inspect app state");
+console.log("   - Try: applyInputProtectionNow() to manually re-apply protection");

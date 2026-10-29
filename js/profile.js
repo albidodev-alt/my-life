@@ -1,6 +1,7 @@
 // ========================================
-// MY LIFE HUB - PROFILE v2.8
-// (Performance Optimized + Lazy Load drops.js + Local DOM refs + Theme Support + PM Protection)
+// MY LIFE HUB - PROFILE v2.9
+// (Performance Optimized + Lazy Load drops.js + Local DOM refs
+//  + Theme Support + PM Protection + Gboard Fix: type="search")
 // ========================================
 
 // ========================================
@@ -469,12 +470,17 @@ function renderProfile() {
           ${typeof t === 'function' ? t('name', 'Name') : 'Name'}
         </label>
         <input
-          type="text"
+          type="search"
           id="profile-name-input"
           class="profile-field-input"
           value="${escapeHtmlProfile(profile.name || 'User 1')}"
           placeholder="${typeof t === 'function' ? t('name', 'Your name') : 'Your name'}"
           maxlength="20"
+          autocomplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          spellcheck="false"
         />
         <div class="profile-char-counter" id="name-counter">
           ${(profile.name || 'User 1').length} / 20
@@ -491,6 +497,11 @@ function renderProfile() {
           rows="3"
           maxlength="100"
           placeholder="${typeof t === 'function' ? t('bio', 'Tell us about yourself...') : 'Tell us about yourself...'}"
+          autocomplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          spellcheck="true"
         >${escapeHtmlProfile(profile.bio || '')}</textarea>
         <div class="profile-char-counter" id="bio-counter">
           ${(profile.bio || 'Building my life one day at a time.').length} / 100
@@ -604,7 +615,7 @@ function renderProfile() {
   `;
 
   // ========================================
-  // ✅ تطبيق حماية Password Manager فوراً (بدون setTimeout)
+  // ✅ تطبيق حماية Password Manager فوراً
   // ========================================
   const nameInput = document.getElementById('profile-name-input');
   const bioInput = document.getElementById('profile-bio-input');
@@ -1106,4 +1117,4 @@ window.getLanguageDisplayName = getLanguageDisplayName;
 window.getHourSystemDisplayName = getHourSystemDisplayName;
 window.getThemeModeDisplayName = getThemeModeDisplayName;
 
-console.log("✅ Profile.js v2.8 loaded successfully! (Enhanced PM Protection)");
+console.log("✅ Profile.js v2.9 loaded successfully! (Gboard Fix: type=search)");

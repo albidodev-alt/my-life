@@ -1,6 +1,7 @@
 // ========================================
-// MY LIFE HUB - MODAL HELPER v3.0
-// نظام النوافذ الموحدة + Swipe to Close + Anti-Password-Manager Fields (Enhanced)
+// MY LIFE HUB - MODAL HELPER v4.1
+// نظام النوافذ الموحدة + Swipe to Close
+// + Anti-Gboard (type="search" Trick)
 // ========================================
 
 /**
@@ -137,123 +138,107 @@ function setupSwipeToClose(modal, overlay, closeFn) {
 }
 
 // ========================================
-// ✅ _applyInputProtection v3.0 - حماية متعددة الطبقات
+// ✅ إزالة أي حقل password (حتى المخفي)
+// ========================================
+function _neutralizePasswordFields() {
+  const passwordFields = document.querySelectorAll('input[type="password"]');
+  passwordFields.forEach(field => {
+    field.type = 'search';
+    field.setAttribute('autocomplete', 'off');
+    field.setAttribute('data-pm-neutralized', 'true');
+    field.style.display = 'none';
+  });
+}
+
+// ========================================
+// ✅ _applyInputProtection v4.1 - الحل الجذري للهواتف
+// (type="search" يمنع Gboard من عرض أيقونات الباسورد)
 // ========================================
 function _applyInputProtection(input, mode = 'text') {
-  if (!input) return null;
+  if (!input) return input;
+  if (input.dataset.pmProtectedV4 === 'true') return input;
 
-  const isTextarea = input.tagName === 'TEXTAREA';
-  const isSelect = input.tagName === 'SELECT';
-  const isDate = input.type === 'date';
-  const isNumber = input.type === 'number';
-  const isEmail = input.type === 'email';
-  const isPassword = input.type === 'password';
+  input.dataset.pmProtectedV4 = 'true';
+
+  const tag = input.tagName;
+  const type = (input.type || '').toLowerCase();
+  const isTextarea = tag === 'TEXTAREA';
+  const isSelect = tag === 'SELECT';
+  const isDate = type === 'date';
+  const isNumber = type === 'number';
+  const isEmail = type === 'email';
+  const isPassword = type === 'password';
+  const isSearch = type === 'search';
 
   // ========================================
-  // 🔒 الطبقة 1: منع Chrome Autofill
+  // 🔒 الطبقة 1: autocomplete + data-*ignore
   // ========================================
-  if (isPassword) {
-    input.setAttribute('autocomplete', 'new-password');
-  } else if (isEmail) {
+  input.setAttribute('autocomplete', 'off');
+
+  const ignoreAttrs = [
+    'data-lpignore', 'data-1p-ignore', 'data-bwignore',
+    'data-protonpass-ignore', 'data-dashlane-ignore',
+    'data-keeper-ignore', 'data-nordpass-ignore',
+    'data-roboform-skip', 'data-lastpass-icon',
+    'data-lastpass-fill', 'data-bitwarden-ignore',
+    'data-password-manager-ignore'
+  ];
+  ignoreAttrs.forEach(attr => input.setAttribute(attr, 'true'));
+
+  // ========================================
+  // 🔒 الطبقة 2: خدعة Gboard - type="search"
+  // ========================================
+  if (!isTextarea && !isSelect && !isDate && !isNumber) {
+    // تغيير النوع إلى search (Gboard لا يعرض password icons لحقول البحث)
+    input.setAttribute('type', 'search');
+    input.setAttribute('inputmode', 'search');
+    
+    // إزالة أي name/id قديم
+    input.removeAttribute('name');
+    input.removeAttribute('id');
+    
+    // name عشوائي محايد (بدون أي دلالة)
+    input.setAttribute('name', 'q_' + Math.random().toString(36).substring(2, 12));
+    input.setAttribute('id', 'q_' + Math.random().toString(36).substring(2, 12));
+  } else if (isTextarea) {
+    // textarea لا يكتشفه Gboard كـ password، لكن للتأمين
+    input.setAttribute('autocorrect', 'on');
+    input.setAttribute('spellcheck', 'true');
+    input.setAttribute('autocapitalize', 'sentences');
+    input.removeAttribute('name');
+    input.removeAttribute('id');
+    input.setAttribute('name', 'content_' + Math.random().toString(36).substring(2, 12));
+    input.setAttribute('id', 'content_' + Math.random().toString(36).substring(2, 12));
+  } else if (isDate) {
     input.setAttribute('autocomplete', 'off');
-  } else {
-    // ✅ القيمة السحرية: one-time-code يمنع Chrome من عرض أيقونة Password Manager
-    input.setAttribute('autocomplete', 'one-time-code');
+    input.removeAttribute('name');
+    input.setAttribute('name', 'd_' + Math.random().toString(36).substring(2, 12));
+  } else if (isNumber) {
+    input.setAttribute('inputmode', 'numeric');
+    input.setAttribute('autocomplete', 'off');
+    input.removeAttribute('name');
+    input.setAttribute('name', 'n_' + Math.random().toString(36).substring(2, 12));
+  } else if (isSelect) {
+    input.setAttribute('autocomplete', 'off');
+    input.removeAttribute('name');
+    input.setAttribute('name', 's_' + Math.random().toString(36).substring(2, 12));
+  }
+
+  // ربط label بالـ id الجديد
+  const label = input.previousElementSibling;
+  if (label && label.tagName === 'LABEL' && input.id) {
+    label.setAttribute('for', input.id);
   }
 
   // ========================================
-  // 🔒 الطبقة 2: إخفاء الحقل عن Password Managers
-  // ========================================
-  input.setAttribute('data-lpignore', 'true');
-  input.setAttribute('data-1p-ignore', 'true');
-  input.setAttribute('data-bwignore', 'true');
-  input.setAttribute('data-protonpass-ignore', 'true');
-  input.setAttribute('data-dashlane-ignore', 'true');
-  input.setAttribute('data-keeper-ignore', 'true');
-  input.setAttribute('data-nordpass-ignore', 'true');
-  input.setAttribute('data-roboform-skip', 'true');
-  input.setAttribute('data-lastpass-icon', 'false');
-  input.setAttribute('data-lastpass-fill', 'false');
-
-  // ========================================
-  // 🔒 الطبقة 3: منع Chrome Smart Autofill
-  // ========================================
-  // ✅ name عشوائي في كل مرة
-  if (!input.hasAttribute('data-original-name')) {
-    input.setAttribute('data-original-name', input.name || '');
-  }
-  input.name = 'field_' + Math.random().toString(36).substring(2, 15);
-
-  // ✅ id عشوائي إذا لم يكن موجوداً
-  if (!input.hasAttribute('data-original-id')) {
-    input.setAttribute('data-original-id', input.id || '');
-  }
-  if (!input.id || input.id.startsWith('field_')) {
-    const newId = 'field_' + Math.random().toString(36).substring(2, 10);
-    input.id = newId;
-    // ✅ ربط label بالـ id الجديد
-    const label = input.previousElementSibling;
-    if (label && label.tagName === 'LABEL') {
-      label.setAttribute('for', newId);
-    }
-  }
-
-  // ========================================
-  // 🔒 الطبقة 4: منع Address/Contact Autofill
+  // 🔒 الطبقة 3: منع address autofill
   // ========================================
   input.setAttribute('data-address-autofill', 'off');
   input.setAttribute('x-autocompletetype', 'off');
   input.setAttribute('autocompletetype', 'off');
   input.setAttribute('aria-autocomplete', 'none');
   input.setAttribute('data-form-type', 'other');
-
-  // ========================================
-  // 🔒 الطبقة 5: خصائص حسب النوع
-  // ========================================
-  if (isTextarea) {
-    input.setAttribute('autocorrect', 'on');
-    input.setAttribute('spellcheck', 'true');
-    input.setAttribute('autocapitalize', 'sentences');
-  } else if (isDate) {
-    input.setAttribute('autocomplete', 'off');
-  } else if (isNumber) {
-    input.setAttribute('inputmode', 'numeric');
-    input.setAttribute('autocapitalize', 'off');
-  } else if (isSelect) {
-    input.setAttribute('autocomplete', 'off');
-  } else {
-    switch (mode) {
-      case 'name':
-        input.setAttribute('autocapitalize', 'words');
-        input.setAttribute('inputmode', 'text');
-        break;
-      case 'email':
-        input.setAttribute('autocapitalize', 'off');
-        input.setAttribute('inputmode', 'email');
-        break;
-      case 'url':
-        input.setAttribute('autocapitalize', 'off');
-        input.setAttribute('inputmode', 'url');
-        break;
-      case 'search':
-        input.setAttribute('autocapitalize', 'off');
-        input.setAttribute('inputmode', 'search');
-        break;
-      case 'content':
-        input.setAttribute('autocorrect', 'on');
-        input.setAttribute('spellcheck', 'true');
-        input.setAttribute('autocapitalize', 'sentences');
-        break;
-      default:
-        input.setAttribute('autocapitalize', 'sentences');
-        input.setAttribute('inputmode', 'text');
-    }
-  }
-
-  // ========================================
-  // 🔒 الطبقة 6: إزالة أي خصائص قد تكشف الحقل
-  // ========================================
-  input.removeAttribute('form');
+  input.setAttribute('spellcheck', 'false');
 
   return input;
 }
@@ -264,26 +249,21 @@ function _applyInputProtection(input, mode = 'text') {
 function _reapplyProtection(rootElement) {
   if (!rootElement) return;
 
+  _neutralizePasswordFields();
+
   const inputs = rootElement.querySelectorAll(
-    'input:not([type="hidden"]), textarea, select'
+    'input:not([type="hidden"]):not([data-pm-neutralized="true"]), textarea, select'
   );
 
   inputs.forEach(input => {
-    // تحديد mode المناسب
+    if (input.dataset.pmProtectedV4 === 'true') return;
     let mode = 'text';
-    if (input.tagName === 'TEXTAREA') {
-      mode = 'content';
-    } else if (input.type === 'email') {
-      mode = 'email';
-    } else if (input.type === 'url') {
-      mode = 'url';
-    } else if (input.type === 'search') {
-      mode = 'search';
-    } else if (input.type === 'date') {
-      mode = 'date';
-    } else if (input.type === 'number') {
-      mode = 'number';
-    }
+    if (input.tagName === 'TEXTAREA') mode = 'content';
+    else if (input.type === 'email') mode = 'email';
+    else if (input.type === 'url') mode = 'url';
+    else if (input.type === 'search') mode = 'search';
+    else if (input.type === 'date') mode = 'date';
+    else if (input.type === 'number') mode = 'number';
 
     _applyInputProtection(input, mode);
   });
@@ -308,13 +288,11 @@ function createModal(options = {}) {
   const existing = document.getElementById(`${id}-overlay`);
   if (existing) existing.remove();
 
-  // ===== Overlay =====
   const overlay = document.createElement('div');
   overlay.className = 'modal-base-overlay';
   overlay.id = `${id}-overlay`;
   overlay.setAttribute('role', 'presentation');
 
-  // ===== Modal =====
   const modal = document.createElement('div');
   modal.className = `modal-base modal-base-${size}`;
   modal.id = id;
@@ -322,7 +300,6 @@ function createModal(options = {}) {
   modal.setAttribute('aria-modal', 'true');
   if (title) modal.setAttribute('aria-labelledby', `${id}-title`);
 
-  // ===== Header =====
   const header = document.createElement('div');
   header.className = 'modal-base-header';
 
@@ -333,7 +310,6 @@ function createModal(options = {}) {
 
   header.appendChild(titleEl);
 
-  // ===== زر الإغلاق =====
   let closeBtn = null;
   if (showCloseButton) {
     closeBtn = document.createElement('button');
@@ -344,7 +320,6 @@ function createModal(options = {}) {
     header.appendChild(closeBtn);
   }
 
-  // ===== Body =====
   const body = document.createElement('div');
   body.className = 'modal-base-body';
 
@@ -413,17 +388,14 @@ function createModal(options = {}) {
 
   if (typeof debouncedLucide === 'function') debouncedLucide(30);
 
-  // ✅ إعادة تطبيق الحماية على الحقول الموجودة داخل content في البداية
   setTimeout(() => {
     _reapplyProtection(modal);
   }, 30);
 
-  // ✅ إعادة تطبيق الحماية مرة أخرى بعد أي إضافة جديدة
   setTimeout(() => {
     _reapplyProtection(modal);
   }, 150);
 
-  // ✅ مراقبة أي حقول جديدة تُضاف للمودال لاحقاً
   const modalObserver = new MutationObserver((mutations) => {
     let needsReapply = false;
     mutations.forEach((mutation) => {
@@ -500,6 +472,7 @@ function createModalActions(actions = []) {
 
 /**
  * إنشاء حقل إدخال
+ * ✅ مهم: نستخدم type="search" للحقول النصية افتراضياً
  */
 function createModalField(options = {}) {
   const {
@@ -547,8 +520,11 @@ function createModalField(options = {}) {
       input.appendChild(optionEl);
     });
   } else {
+    // ✅ هنا التغيير الأساسي: type="search" بدل type="text"
+    // (Gboard لا يعرض password icons لحقول البحث)
+    const effectiveType = (type === 'text') ? 'search' : type;
     input = document.createElement('input');
-    input.type = type;
+    input.type = effectiveType;
     input.className = 'modal-base-input';
     input.value = value;
     if (maxLength) input.maxLength = maxLength;
@@ -558,9 +534,7 @@ function createModalField(options = {}) {
   if (placeholder) input.placeholder = placeholder;
   if (required) input.required = true;
 
-  // ========================================
   // ✅ تطبيق الحماية
-  // ========================================
   if (type === 'text' || type === 'textarea') {
     _applyInputProtection(input, inputMode);
   } else if (type === 'date' || type === 'number') {
@@ -569,9 +543,11 @@ function createModalField(options = {}) {
     _applyInputProtection(input, 'email');
   } else {
     input.setAttribute('autocomplete', 'off');
+    input.setAttribute('data-lpignore', 'true');
+    input.setAttribute('data-1p-ignore', 'true');
+    input.setAttribute('data-bwignore', 'true');
   }
 
-  // ✅ خصائص إضافية مخصصة
   Object.entries(inputAttributes).forEach(([key, val]) => {
     if (val === true) {
       input.setAttribute(key, '');
@@ -828,7 +804,7 @@ function infoModal(options = {}) {
 }
 
 // ========================================
-// ✅ DELETE MODAL - مقسمة لدوال صغيرة
+// ✅ DELETE MODAL
 // ========================================
 
 function getDeleteTypeConfig() {
@@ -1003,9 +979,6 @@ function createDeleteCloseBtn(closeFn) {
   return closeBtn;
 }
 
-/**
- * نافذة حذف موحدة
- */
 function deleteModal(options = {}) {
   const {
     itemName = '',
@@ -1055,5 +1028,6 @@ window.deleteModal = deleteModal;
 window.setupSwipeToClose = setupSwipeToClose;
 window._applyInputProtection = _applyInputProtection;
 window._reapplyProtection = _reapplyProtection;
+window._neutralizePasswordFields = _neutralizePasswordFields;
 
-console.log("✅ Modal Helper v3.0 loaded successfully! (Enhanced Anti-Password-Manager)");
+console.log("✅ Modal Helper v4.1 loaded successfully! (type=search Trick - Gboard Fix)");

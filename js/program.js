@@ -1,7 +1,8 @@
 // ========================================
-// MY LIFE HUB - PROGRAM (Learning Only) v2.3
+// MY LIFE HUB - PROGRAM (Learning Only) v2.4
 // (Removed: Learning field + Star Rating)
 // (Kept: Timer + Difficulty + Steps + Sessions)
+// (Gboard Fix: type="search" for resource inputs)
 // ========================================
 
 const PROGRAM_STORAGE_KEY = "myLifeHub_programs";
@@ -594,24 +595,34 @@ function openProgramBuilder() {
   const resourceRow = document.createElement("div");
   resourceRow.style.cssText = "display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;";
 
+  // ✅ Gboard Fix: type="search"
   const resourceNameInput = document.createElement("input");
-  resourceNameInput.type = "text";
+  resourceNameInput.type = "search";
   resourceNameInput.className = "modal-base-input";
   resourceNameInput.placeholder = tr('resource_name', 'Resource name...');
   resourceNameInput.style.cssText = "flex: 1; min-width: 120px;";
+  resourceNameInput.setAttribute('autocomplete', 'off');
+  resourceNameInput.setAttribute('data-lpignore', 'true');
+  resourceNameInput.setAttribute('data-1p-ignore', 'true');
+  resourceNameInput.setAttribute('data-bwignore', 'true');
+  resourceNameInput.setAttribute('spellcheck', 'false');
 
-  // ✅ حماية من Password Manager
   if (typeof window._applyInputProtection === 'function') {
     window._applyInputProtection(resourceNameInput, 'text');
   }
 
+  // ✅ Gboard Fix: type="search"
   const resourceUrlInput = document.createElement("input");
-  resourceUrlInput.type = "text";
+  resourceUrlInput.type = "search";
   resourceUrlInput.className = "modal-base-input";
   resourceUrlInput.placeholder = tr('url_optional', 'URL (optional)');
   resourceUrlInput.style.cssText = "flex: 1.5; min-width: 150px;";
+  resourceUrlInput.setAttribute('autocomplete', 'off');
+  resourceUrlInput.setAttribute('data-lpignore', 'true');
+  resourceUrlInput.setAttribute('data-1p-ignore', 'true');
+  resourceUrlInput.setAttribute('data-bwignore', 'true');
+  resourceUrlInput.setAttribute('spellcheck', 'false');
 
-  // ✅ حماية من Password Manager (وضع URL)
   if (typeof window._applyInputProtection === 'function') {
     window._applyInputProtection(resourceUrlInput, 'url');
   }
@@ -1016,7 +1027,6 @@ function renderSteps(container, program) {
         dateSpan.innerHTML = '<span data-lucide="calendar" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px; pointer-events: none;"></span>' + formatDate(step.completedAt);
         headerDiv.appendChild(dateSpan);
 
-        // ✅ تم حذف عرض difficulty (لأنه بقي فقط في badge الصعوبة)
         if (step.difficulty) {
           const diffSpan = document.createElement("span");
           diffSpan.style.cssText = "font-size: 12px; color: var(--text-muted);";
@@ -1046,8 +1056,6 @@ function renderSteps(container, program) {
 
       headerDiv.appendChild(actionsDiv);
       phaseDiv.appendChild(headerDiv);
-
-      // ✅ تم حذف عرض learning و rating
 
       // ===== Duration =====
       if (step.completed && step.duration) {
@@ -1208,24 +1216,34 @@ function renderResources(container, program) {
   const addRow = document.createElement("div");
   addRow.style.cssText = "display: flex; gap: 8px; flex-wrap: wrap;";
 
+  // ✅ Gboard Fix: type="search"
   const nameInput = document.createElement("input");
-  nameInput.type = "text";
+  nameInput.type = "search";
   nameInput.id = "program-add-resource-name";
   nameInput.placeholder = tr('resource_name', 'Resource name...');
   nameInput.style.cssText = "flex: 1; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);";
+  nameInput.setAttribute('autocomplete', 'off');
+  nameInput.setAttribute('data-lpignore', 'true');
+  nameInput.setAttribute('data-1p-ignore', 'true');
+  nameInput.setAttribute('data-bwignore', 'true');
+  nameInput.setAttribute('spellcheck', 'false');
 
-  // ✅ حماية من Password Manager
   if (typeof window._applyInputProtection === 'function') {
     window._applyInputProtection(nameInput, 'text');
   }
 
+  // ✅ Gboard Fix: type="search"
   const urlInput = document.createElement("input");
-  urlInput.type = "text";
+  urlInput.type = "search";
   urlInput.id = "program-add-resource-url";
   urlInput.placeholder = tr('url_optional', 'URL (optional)');
   urlInput.style.cssText = "flex: 1.5; min-width: 150px; padding: 8px 12px; border: 1px solid var(--border-input); border-radius: 6px; background: var(--bg-input); color: var(--text-primary);";
+  urlInput.setAttribute('autocomplete', 'off');
+  urlInput.setAttribute('data-lpignore', 'true');
+  urlInput.setAttribute('data-1p-ignore', 'true');
+  urlInput.setAttribute('data-bwignore', 'true');
+  urlInput.setAttribute('spellcheck', 'false');
 
-  // ✅ حماية من Password Manager (وضع URL)
   if (typeof window._applyInputProtection === 'function') {
     window._applyInputProtection(urlInput, 'url');
   }
@@ -1354,7 +1372,7 @@ function renderSessions(container, program) {
 
   overview.appendChild(header);
 
-  // ===== Sessions List (بدون learning و rating) =====
+  // ===== Sessions List =====
   sortedSessions.forEach(session => {
     const difficultyEmoji = session.difficulty === "Hard" ? "🔴" : session.difficulty === "Medium" ? "🟡" : "🟢";
     const difficultyLabel = tr(session.difficulty?.toLowerCase() || 'medium', session.difficulty || 'Medium');
@@ -1644,7 +1662,6 @@ function openSessionModal(programId, stepId, stepName) {
           type: 'primary',
           icon: 'check-circle',
           onConfirm: () => {
-            // ✅ completeStep بدون learning و rating
             completeStep(programId, stepId, duration, selectedDifficulty);
             modal.close();
             openProgramDetail(programId);
@@ -1683,4 +1700,4 @@ window.renderProgramDetail = renderProgramDetail;
 window.startSession = startSession;
 window.openSessionModal = openSessionModal;
 
-console.log("✅ Program v2.3 loaded successfully! (No Rating/Learning)");
+console.log("✅ Program v2.4 loaded successfully! (Gboard Fix: type=search for resources)");
