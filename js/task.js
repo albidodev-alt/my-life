@@ -637,9 +637,15 @@ function openAddTaskModal() {
     type: 'text',
     placeholder: typeof t === 'function' ? t('task_description', 'Task description') : 'Task description',
     required: true,
-    maxLength: 200
+    maxLength: 200,
+    inputMode: 'text'
   });
   modal.body.appendChild(textField.field);
+
+  // ✅ حماية من Password Managers
+  if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(textField.input, 'text');
+  }
 
   const priorityLabel = document.createElement("label");
   priorityLabel.className = "modal-base-label";
@@ -783,9 +789,15 @@ function openEditTaskModal(task) {
     value: task.text,
     placeholder: typeof t === 'function' ? t('task_description', 'Task description') : 'Task description',
     required: true,
-    maxLength: 200
+    maxLength: 200,
+    inputMode: 'text'
   });
   modal.body.appendChild(textField.field);
+
+  // ✅ حماية من Password Managers
+  if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(textField.input, 'text');
+  }
 
   const priorityLabel = document.createElement("label");
   priorityLabel.className = "modal-base-label";

@@ -1,6 +1,6 @@
 // ========================================
-// STORAGE.JS - Unified Storage Layer v2.4
-// (Fixed: getAllTasks returns copy + _getTasksRaw internal + Single Migration + Filter-then-Clone)
+// STORAGE.JS - Unified Storage Layer v3.0
+// (Fixed: Total completed counter + Last 20 display only)
 // ========================================
 
 const STORAGE_KEY = "myLifeHub_routine";
@@ -15,11 +15,11 @@ let statsCache = null;
 // ✅ flag لمنع إعادة محاولة Migration
 let statsMigrationAttempted = false;
 
-// ===== الحد الأقصى للمهام المكتملة =====
-const MAX_COMPLETED_TASKS = 20;
+// ✅ عدد المهام المعروضة في صفحة الإنجازات (للعرض فقط — لا حذف تلقائي)
+const DISPLAY_COMPLETED_LIMIT = 20;
 
 // ========================================
-// ✅ دالة حفظ آمنة (مع معالجة QuotaExceededError)
+// ✅ دالة حفظ آمنة
 // ========================================
 function safeSetItem(key, value) {
   try {
@@ -53,7 +53,7 @@ function safeSetItem(key, value) {
 }
 
 // ========================================
-// ✅ قراءة آمنة (مع حماية من JSON الفاسد)
+// ✅ قراءة آمنة
 // ========================================
 function safeGetItem(key, fallback = null) {
   try {
@@ -75,9 +75,7 @@ function deepClone(obj) {
   if (typeof structuredClone === 'function') {
     try {
       return structuredClone(obj);
-    } catch (e) {
-      // fallback
-    }
+    } catch (e) { /* fallback */ }
   }
 
   try {
@@ -94,15 +92,15 @@ function deepClone(obj) {
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', function (e) {
     if (e.key === STORAGE_KEY) {
-      console.log('🔄 Routine data changed in another tab. Invalidating cache.');
+      console.log('🔄 Routine data changed in another tab.');
       routineCache = null;
     }
     if (e.key === TASKS_KEY) {
-      console.log('🔄 Tasks data changed in another tab. Invalidating cache.');
+      console.log('🔄 Tasks data changed in another tab.');
       tasksCache = null;
     }
     if (e.key === STATS_KEY) {
-      console.log('🔄 Stats data changed in another tab. Invalidating cache.');
+      console.log('🔄 Stats data changed in another tab.');
       statsCache = null;
     }
   });
@@ -170,17 +168,9 @@ function saveDayData(dayName, dayData) {
 // ========================================
 // ✅ إبطال الكاش
 // ========================================
-function invalidateRoutineCache() {
-  routineCache = null;
-}
-
-function invalidateTasksCache() {
-  tasksCache = null;
-}
-
-function invalidateStatsCache() {
-  statsCache = null;
-}
+function invalidateRoutineCache() { routineCache = null; }
+function invalidateTasksCache() { tasksCache = null; }
+function invalidateStatsCache() { statsCache = null; }
 
 function invalidateAllCaches() {
   routineCache = null;
@@ -193,9 +183,8 @@ function invalidateAllCaches() {
 }
 
 // ========================================
-// ✅ ACHIEVEMENT STATS
+// ✅ ACHIEVEMENT STATS (العداد التراكمي)
 // ========================================
-
 function getAchievementStats() {
   if (statsCache !== null) return statsCache;
 
@@ -222,7 +211,6 @@ function getAchievementStats() {
     return statsCache;
   }
 
-  // ✅ إذا فشلت Migration سابقاً → أعد قيماً افتراضية
   statsCache = {
     totalCompleted: 0,
     easyCount: 0,
@@ -309,7 +297,7 @@ function decrementAchievementStats(difficulty) {
 
 function resetAchievementStats() {
   statsCache = null;
-  statsMigrationAttempted = false;  // ✅ إعادة تعيين flag
+  statsMigrationAttempted = false;
   try {
     localStorage.removeItem(STATS_KEY);
   } catch (e) {
@@ -320,7 +308,7 @@ function resetAchievementStats() {
 
 function clearAchievementStats() {
   statsCache = null;
-  statsMigrationAttempted = false;  // ✅ إعادة تعيين flag
+  statsMigrationAttempted = false;
   try {
     localStorage.removeItem(STATS_KEY);
   } catch (e) {
@@ -329,14 +317,11 @@ function clearAchievementStats() {
 }
 
 // ========================================
-// ✅ TASKS STORAGE - Unified CRUD
-// (مع نسخ آمن لمنع التعديل المباشر على الكاش)
+// ✅ TASKS STORAGE
 // ========================================
 
 /**
- * ✅ قراءة خام (للاستخدام الداخلي فقط)
- * ⚠️ لا تعيد نسخة — سريعة جداً
- * ⚠️ لا تستخدمها خارج هذا الملف
+ * قراءة خام (داخلي فقط)
  */
 function _getTasksRaw() {
   if (tasksCache === null) {
@@ -347,16 +332,12 @@ function _getTasksRaw() {
 }
 
 /**
- * ✅ قراءة آمنة (للاستخدام الخارجي)
- * تعيد نسخة عميقة — لا يمكن تعديل الكاش
+ * قراءة آمنة (نسخة عميقة)
  */
 function getAllTasks() {
   return deepClone(_getTasksRaw());
 }
 
-/**
- * ✅ نسخة من المهام (مرادف لـ getAllTasks)
- */
 function getTasksCopy() {
   return deepClone(_getTasksRaw());
 }
@@ -377,16 +358,12 @@ function saveAllTasks(tasks) {
   return false;
 }
 
-/**
- * إضافة مهمة جديدة
- */
 function addTask(task) {
   if (!task || typeof task !== 'object') {
     console.error('addTask: invalid task object');
     return null;
   }
 
-  // ✅ نسخة للعمل عليها
   const tasks = deepClone(_getTasksRaw());
 
   task.id = (typeof generateId === "function")
@@ -408,9 +385,6 @@ function addTask(task) {
   return success ? task : null;
 }
 
-/**
- * تحديث مهمة موجودة
- */
 function updateTask(taskId, updatedData) {
   if (!taskId || !updatedData) return false;
 
@@ -427,7 +401,7 @@ function updateTask(taskId, updatedData) {
 }
 
 /**
- * حذف مهمة
+ * ✅ حذف مهمة — يُنقص العداد إذا كانت مكتملة
  */
 function deleteTask(taskId) {
   if (!taskId) return false;
@@ -440,6 +414,7 @@ function deleteTask(taskId) {
     return false;
   }
 
+  // ✅ إذا كانت المهمة مكتملة → أنقص العداد
   if (taskToDelete.completed) {
     decrementAchievementStats(taskToDelete.difficulty);
   }
@@ -449,7 +424,7 @@ function deleteTask(taskId) {
 }
 
 /**
- * إكمال مهمة
+ * ✅ إكمال مهمة — يُزيد العداد (بدون حذف تلقائي)
  */
 function completeTask(taskId, difficulty, completionDate) {
   const tasks = deepClone(_getTasksRaw());
@@ -468,50 +443,31 @@ function completeTask(taskId, difficulty, completionDate) {
   task.completionDate = finalDate;
   task.completedAt = new Date().toISOString();
 
+  // ✅ زيادة العداد التراكمي
   incrementAchievementStats(finalDifficulty);
 
-  const completedTasks = tasks.filter(t => t.completed);
-
-  if (completedTasks.length > MAX_COMPLETED_TASKS) {
-    completedTasks.sort((a, b) => {
-      const dateA = new Date(a.completedAt || a.completionDate || 0);
-      const dateB = new Date(b.completedAt || b.completionDate || 0);
-      return dateA - dateB;
-    });
-
-    const toDelete = completedTasks.length - MAX_COMPLETED_TASKS;
-
-    for (let i = 0; i < toDelete; i++) {
-      const oldTask = completedTasks[i];
-      const idx = tasks.findIndex(t => t.id === oldTask.id);
-      if (idx !== -1) {
-        tasks.splice(idx, 1);
-      }
-    }
-
-    console.log(`📊 Auto-cleaned ${toDelete} old completed task(s) to maintain limit of ${MAX_COMPLETED_TASKS}`);
-  }
-
+  // ✅ لا حذف تلقائي — نحتفظ بجميع المهام
   return saveAllTasks(tasks);
 }
 
-/**
- * حذف نهائي (للتوافق)
- */
 function deleteTaskPermanently(taskId) {
   return deleteTask(taskId);
 }
 
 // ========================================
-// ✅ دوال إضافية
+// ✅ دوال إحصائية جديدة
 // ========================================
+
+/**
+ * ✅ العدد التراكمي للمهام المنجزة (لعدّاد القطرات والبروفايل)
+ */
+function getCompletedTasksCount() {
+  const stats = getAchievementStats();
+  return stats.totalCompleted;
+}
 
 function getTasksCount() {
   return _getTasksRaw().length;
-}
-
-function getCompletedTasksCount() {
-  return _getTasksRaw().filter(t => t.completed).length;
 }
 
 function getActiveTasksCount() {
@@ -519,29 +475,29 @@ function getActiveTasksCount() {
 }
 
 /**
- * الحصول على المهام المكتملة (مرتبة من الأحدث للأقدم)
- * ✅ فلترة أولاً ثم clone (أسرع)
+ * ✅ آخر N مهمة مكتملة (للعرض في صفحة الإنجازات)
+ * @param {number} limit - افتراضي 20
  */
-function getCompletedTasksSorted() {
-  // ✅ فلترة بدون clone أولاً
+function getCompletedTasksSorted(limit = DISPLAY_COMPLETED_LIMIT) {
   const completed = _getTasksRaw().filter(t => t.completed);
-  // ✅ ثم clone + sort
-  return deepClone(completed).sort((a, b) => {
+
+  // ترتيب من الأحدث للأقدم
+  const sorted = deepClone(completed).sort((a, b) => {
     const dateA = new Date(a.completedAt || a.completionDate || 0);
     const dateB = new Date(b.completedAt || b.completionDate || 0);
     return dateB - dateA;
   });
+
+  // ✅ عرض آخر N فقط
+  return sorted.slice(0, limit);
 }
 
 /**
- * الحصول على المهام النشطة (مرتبة حسب الأولوية)
- * ✅ فلترة أولاً ثم clone (أسرع)
+ * المهام النشطة (مرتبة حسب الأولوية)
  */
 function getActiveTasksSorted() {
   const priorityOrder = { high: 0, medium: 1, low: 2 };
-  // ✅ فلترة بدون clone أولاً
   const active = _getTasksRaw().filter(t => !t.completed);
-  // ✅ ثم clone + sort
   return deepClone(active).sort((a, b) => {
     const pa = priorityOrder[a.priority] ?? 3;
     const pb = priorityOrder[b.priority] ?? 3;
@@ -595,7 +551,7 @@ window.saveAllRoutineData = saveAllRoutineData;
 window.getDayData = getDayData;
 window.saveDayData = saveDayData;
 
-// ✅ TASKS (آمنة)
+// ✅ TASKS
 window.getAllTasks = getAllTasks;
 window.getTasksCopy = getTasksCopy;
 window.saveAllTasks = saveAllTasks;
@@ -629,28 +585,22 @@ window.decrementAchievementStats = decrementAchievementStats;
 window.resetAchievementStats = resetAchievementStats;
 window.clearAchievementStats = clearAchievementStats;
 window.calculateStatsFromTasks = calculateStatsFromTasks;
-window.MAX_COMPLETED_TASKS = MAX_COMPLETED_TASKS;
-
-// ⚠️ _getTasksRaw لا تُصدَّر — للاستخدام الداخلي فقط
+window.DISPLAY_COMPLETED_LIMIT = DISPLAY_COMPLETED_LIMIT;
 
 // ========================================
 // ✅ تأكيد التحميل
 // ========================================
-console.log("✅ Storage.js v2.4 loaded successfully!");
+console.log("✅ Storage.js v3.0 loaded successfully!");
 console.log("   - getAllTasks returns deep copy (safe)");
-console.log("   - _getTasksRaw: internal use only");
-console.log("   - Single migration attempt only");
-console.log("   - Filter-then-clone for sorted lists");
-console.log("   - MAX_COMPLETED_TASKS:", MAX_COMPLETED_TASKS);
+console.log("   - No auto-deletion of completed tasks");
+console.log("   - Total counter persisted in STATS_KEY");
+console.log("   - Display limit for achievements page:", DISPLAY_COMPLETED_LIMIT);
 
-// ✅ عرض استخدام التخزين في Console
 if (typeof window !== 'undefined') {
   setTimeout(() => {
     try {
       const usage = getStorageUsage();
       console.log(`📊 Storage: ${usage.totalKB} KB (${usage.percentage}% of ~5MB)`);
-    } catch (e) {
-      // تجاهل
-    }
+    } catch (e) { /* ignore */ }
   }, 1000);
 }

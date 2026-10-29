@@ -611,6 +611,20 @@ function renderProfile() {
   // 1. زر الرجوع
   document.getElementById('back-btn')?.addEventListener('click', () => renderWeek());
 
+    // ========================================
+  // ✅ حماية حقول البروفايل من Password Managers
+  // ========================================
+  setTimeout(() => {
+    const nameInput = document.getElementById('profile-name-input');
+    const bioInput = document.getElementById('profile-bio-input');
+    
+    if (nameInput && typeof window._applyInputProtection === 'function') {
+      window._applyInputProtection(nameInput, 'name');
+    }
+    if (bioInput && typeof window._applyInputProtection === 'function') {
+      window._applyInputProtection(bioInput, 'content');
+    }
+  }, 0);
   // ========================================
   // 2. شريط القطرات (✅ Lazy Load drops.js)
   // ========================================
@@ -997,12 +1011,19 @@ function escapeHtmlProfile(text) {
 // ========================================
 // دوال الإحصائيات
 // ========================================
+// ========================================
+// دوال الإحصائيات
+// ========================================
 function getProfileStats() {
   const tasks = typeof getAllTasks === 'function' ? getAllTasks() : [];
   const routineData = typeof getAllRoutineData === 'function' ? getAllRoutineData() : {};
 
   const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(t => t.completed).length;
+
+  // ✅ استخدام العداد التراكمي للمهام المنجزة
+  const completedTasks = typeof getCompletedTasksCount === 'function'
+    ? getCompletedTasksCount()
+    : tasks.filter(t => t.completed).length;
 
   let daysPlanned = 0;
   const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];

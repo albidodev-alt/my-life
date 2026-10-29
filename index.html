@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
+<head><meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 
   <title>My Life</title>
@@ -18,7 +17,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="My Life">
   <meta name="application-name" content="My Life">
-  <meta name="format-detection" content="telephone=no">
+  
+  <!-- ✅ تعديل: منع Autofill بشكل شامل -->
+  <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
 
   <!-- PWA Icons -->
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -52,11 +53,7 @@
         navigator.serviceWorker.register('sw.js')
           .then(function(registration) {
             console.log('✅ SW registered. Scope:', registration.scope);
-
-            // ✅ إجبار التحديث
             registration.update().catch(function(){});
-
-            // ✅ عند توفر تحديث — أبلغ المستخدم
             registration.addEventListener('updatefound', function() {
               const newWorker = registration.installing;
               newWorker.addEventListener('statechange', function() {
@@ -85,8 +82,8 @@
   <link rel="preload" href="fonts/quicksand-v37-latin-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/inter-v20-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
 
-  <!-- Preload Splash Image -->
-  <link rel="preload" href="icons/icon-512.png" as="image">
+  <!-- Preload Splash Image (✅ استخدام النسخة الأصغر) -->
+  <link rel="preload" href="icons/icon-192.png" as="image">
 
   <!-- Preload Critical Files -->
   <link rel="preload" href="js/storage.js" as="script">
@@ -134,14 +131,15 @@
 
 <body>
 
-  <!-- SPLASH SCREEN -->
+  <!-- SPLASH SCREEN (✅ استخدام صورة 192 للتحميل الأسرع) -->
   <div id="splash-screen" role="status" aria-label="Loading My Life">
     <div class="splash-logo">
       <img id="splash-image"
-           src="icons/icon-512.png"
+           src="icons/icon-192.png"
            alt="My Life"
            width="200"
            height="200"
+           fetchpriority="high"
            loading="eager"
            decoding="sync">
     </div>

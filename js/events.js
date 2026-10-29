@@ -294,20 +294,32 @@ function openQuickAddEventModal(dateStr) {
     type: 'text',
     placeholder: typeof t === 'function' ? t('enter_event_title', 'Enter event title...') : 'Enter event title...',
     required: true,
-    maxLength: 120
+    maxLength: 120,
+    inputMode: 'text'
   });
   modal.body.appendChild(titleField.field);
+
+  // ✅ حماية
+  if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(titleField.input, 'text');
+  }
 
   // ===== حقل الوصف (اختياري) =====
   const descField = createModalField({
     id: 'quick-event-desc',
-    label: (typeof t === 'function' ? t('description', 'Description (optional)') : 'Description (optional)'),
+    label: typeof t === 'function' ? t('description', 'Description (optional)') : 'Description (optional)',
     type: 'textarea',
     rows: 2,
     placeholder: typeof t === 'function' ? t('add_description', 'Add a description...') : 'Add a description...',
-    maxLength: 500
+    maxLength: 500,
+    inputMode: 'content'
   });
   modal.body.appendChild(descField.field);
+
+  // ✅ حماية
+  if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(descField.input, 'content');
+  }
 
   // ===== زر الحفظ =====
   function handleSave() {
@@ -1076,9 +1088,15 @@ function openEventModal(editEvent = null) {
     value: isEditing ? editEvent.title : '',
     placeholder: typeof t === 'function' ? t('enter_event_title', 'Enter event title...') : 'Enter event title...',
     required: true,
-    maxLength: 120
+    maxLength: 120,
+    inputMode: 'text'
   });
   modal.body.appendChild(titleField.field);
+
+  // ✅ حماية
+  if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(titleField.input, 'text');
+  }
 
   const dateField = createModalField({
     id: 'events-modal-date-input',
@@ -1096,9 +1114,15 @@ function openEventModal(editEvent = null) {
     rows: 3,
     value: isEditing ? editEvent.description : '',
     placeholder: typeof t === 'function' ? t('add_description', 'Add a description...') : 'Add a description...',
-    maxLength: 500
+    maxLength: 500,
+    inputMode: 'content'
   });
   modal.body.appendChild(descField.field);
+
+  // ✅ حماية
+  if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(descField.input, 'content');
+  }
 
   function handleSave() {
     const newTitle = titleField.input.value.trim();

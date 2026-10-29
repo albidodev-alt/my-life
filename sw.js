@@ -1,9 +1,9 @@
 // ========================================
-// MY LIFE - SERVICE WORKER v2.0.1
-// (Fixed: Response.clone() race condition)
+// MY LIFE - SERVICE WORKER v2.2
+// (Updated: Cache Version + Better Error Handling)
 // ========================================
 
-const CACHE_VERSION = 'v2.0.1';
+const CACHE_VERSION = 'v2.2';
 const CACHE_NAME = `my-life-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 
@@ -123,7 +123,7 @@ function backgroundCachePut(cacheName, request, response) {
 // ========================================
 self.addEventListener('install', function (event) {
   console.log(`[SW ${CACHE_VERSION}] Installing...`);
-  self.skipWaiting();
+  self.skipWaiting(); // تفعيل فوري للإصدار الجديد
 
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -154,6 +154,7 @@ self.addEventListener('activate', function (event) {
       .then(function (cacheNames) {
         return Promise.all(
           cacheNames.map(function (cacheName) {
+            // حذف أي كاش قديم لا يطابق الإصدار الحالي
             if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
               console.log(`[SW ${CACHE_VERSION}] Deleting old cache:`, cacheName);
               return caches.delete(cacheName);
@@ -163,7 +164,7 @@ self.addEventListener('activate', function (event) {
       })
       .then(function () {
         console.log(`[SW ${CACHE_VERSION}] Activation complete!`);
-        return self.clients.claim();
+        return self.clients.claim(); // السيطرة على الصفحات المفتوحة فوراً
       })
   );
 });
@@ -267,6 +268,7 @@ self.addEventListener('fetch', function (event) {
         return cache.match(event.request)
           .then(function (cachedResponse) {
             if (cachedResponse) {
+              // تحديث الكاش في الخلفية (Stale-While-Revalidate)
               fetch(event.request)
                 .then(function (networkResponse) {
                   if (networkResponse && networkResponse.status === 200) {
@@ -376,4 +378,4 @@ self.addEventListener('message', function (event) {
   }
 });
 
-console.log(`✅ Service Worker ${CACHE_VERSION} loaded successfully! (clone fix applied)`);
+console.log(`✅ Service Worker ${CACHE_VERSION} loaded successfully! (v2.2)`);

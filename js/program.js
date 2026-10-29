@@ -556,6 +556,10 @@ function openProgramBuilder() {
   });
   modal.body.appendChild(nameField.field);
 
+    if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(nameField.input, 'text');
+  }
+
   const descField = createModalField({
     id: 'program-builder-desc',
     label: tr('description', 'Description'),
@@ -565,6 +569,10 @@ function openProgramBuilder() {
   });
   modal.body.appendChild(descField.field);
 
+    if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(descField.input, 'content');
+  }
+
   const goalField = createModalField({
     id: 'program-builder-goal',
     label: tr('goal', 'Goal'),
@@ -572,6 +580,10 @@ function openProgramBuilder() {
     placeholder: tr('goal_placeholder', 'e.g. Understand the fundamentals...')
   });
   modal.body.appendChild(goalField.field);
+
+    if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(goalField.input, 'text');
+  }
 
   // ===== Resources Section =====
   const resourcesLabel = document.createElement("label");
@@ -1077,6 +1089,7 @@ function renderSteps(container, program) {
       errorMessage: tr('invalid_step_name', 'Step name must be 1-100 characters'),
       confirmLabel: tr('add', 'Add'),
       cancelLabel: tr('cancel', 'Cancel'),
+            inputMode: 'text',
       onConfirm: (name) => {
         const result = addStep(program.id, name);
         if (result) {

@@ -1,12 +1,8 @@
 // ========================================
-// MY LIFE HUB - ACHIEVEMENTS v3.4
-// (Lucide Icons + Shared Configs from task.js + Clean Emoji Removal)
+// MY LIFE HUB - ACHIEVEMENTS v4.0
+// (Total count + Last 20 display + Delete syncs counter)
 // ========================================
 
-// ========================================
-// ✅ خريطة الألوان والأيقونات حسب الصعوبة
-// (Fallback إذا لم يكن DIFFICULTY_CONFIG متاحاً)
-// ========================================
 const ACHIEVEMENT_DIFFICULTY_MAP = {
   easy: {
     label: 'Easy',
@@ -34,11 +30,7 @@ const ACHIEVEMENT_DIFFICULTY_MAP = {
   }
 };
 
-// ========================================
-// الحصول على بيانات الصعوبة
-// ========================================
 function getAchievementDifficultyConfig(difficulty) {
-  // ✅ محاولة استخدام DIFFICULTY_CONFIG من task.js إن وُجد
   if (typeof window.DIFFICULTY_CONFIG !== 'undefined') {
     const key = difficulty || 'Easy';
     const cfg = window.DIFFICULTY_CONFIG[key];
@@ -54,7 +46,6 @@ function getAchievementDifficultyConfig(difficulty) {
     }
   }
 
-  // Fallback
   const key = (difficulty || 'Easy').toLowerCase();
   return ACHIEVEMENT_DIFFICULTY_MAP[key] || ACHIEVEMENT_DIFFICULTY_MAP.easy;
 }
@@ -68,7 +59,7 @@ function renderCompleted() {
 
   app.replaceChildren();
 
-  // ===== الإحصائيات =====
+  // ✅ استخدام getAchievementStats() للعداد الكلي
   const stats = typeof getAchievementStats === 'function'
     ? getAchievementStats()
     : { totalCompleted: 0, easyCount: 0, mediumCount: 0, hardCount: 0 };
@@ -155,7 +146,6 @@ function renderCompleted() {
   filterLabel.style.cssText = "font-size:14px;font-weight:500;";
   filterDiv.appendChild(filterLabel);
 
-  // ✅ أزرار الفلاتر (بأيقونات Lucide)
   const filterDefs = [
     { value: "all", icon: null, color: null, label: typeof t === 'function' ? t('all', 'All') : 'All' },
     { value: "Easy",   icon: 'circle-check', color: '#4caf84', label: typeof t === 'function' ? t('easy', 'Easy') : 'Easy' },
@@ -212,6 +202,7 @@ function renderAchievementsGrid(filter = "all") {
   const grid = document.getElementById("achievements-grid");
   if (!grid) return;
 
+  // ✅ getCompletedTasksSorted() يعيد آخر 20 فقط
   let tasks = typeof getCompletedTasksSorted === 'function'
     ? getCompletedTasksSorted()
     : [];
@@ -258,7 +249,6 @@ function createAchievementCard(task) {
   card.style.setProperty('--card-bg', config.bgColor);
   card.style.setProperty('--card-border', config.borderColor);
 
-  // ===== الرأس (أيقونة ✓ + زر الحذف) =====
   const header = document.createElement("div");
   header.className = "achievement-card-header";
 
@@ -280,6 +270,7 @@ function createAchievementCard(task) {
         itemName: task.text,
         itemType: 'task',
         onConfirm: () => {
+          // ✅ deleteTask() يُنقص العداد تلقائياً
           if (typeof deleteTask === 'function') {
             deleteTask(task.id);
           }
@@ -292,13 +283,11 @@ function createAchievementCard(task) {
   header.appendChild(checkIcon);
   header.appendChild(deleteBtn);
 
-  // ===== نص المهمة =====
   const title = document.createElement("div");
   title.className = "achievement-card-title";
   title.textContent = task.text;
   title.title = task.text;
 
-  // ===== شارة الصعوبة (بأيقونة Lucide) =====
   const difficultyBadge = document.createElement("div");
   difficultyBadge.className = "achievement-card-badge";
   difficultyBadge.style.color = config.color;
@@ -308,13 +297,11 @@ function createAchievementCard(task) {
     <span>${typeof t === 'function' ? t(config.translationKey, config.label) : config.label}</span>
   `;
 
-  // ===== التصنيف (للـ tooltip) =====
   const categoryKey = task.category ? task.category.toLowerCase() : "";
   const translatedCategory = (typeof t === 'function' && t(categoryKey) !== categoryKey)
     ? t(categoryKey, task.category)
     : task.category;
 
-  // ===== Footer: Badge + Date =====
   const footer = document.createElement("div");
   footer.className = "achievement-card-footer";
 
@@ -329,12 +316,10 @@ function createAchievementCard(task) {
   footer.appendChild(difficultyBadge);
   footer.appendChild(metaEl);
 
-  // ===== ركّب البطاقة =====
   card.appendChild(header);
   card.appendChild(title);
   card.appendChild(footer);
 
-  // ✅ فتح نافذة التفاصيل عند الضغط على البطاقة
   card.addEventListener("click", function (e) {
     if (e.target.closest(".achievement-card-delete")) return;
     openAchievementDetails(task);
@@ -359,7 +344,6 @@ function openAchievementDetails(task) {
     size: 'small'
   });
 
-  // ===== عنوان المهمة =====
   const titleEl = document.createElement("div");
   titleEl.style.cssText = `
     font-family: var(--font-handwritten);
@@ -376,7 +360,6 @@ function openAchievementDetails(task) {
   titleEl.textContent = task.text;
   modal.body.appendChild(titleEl);
 
-  // ===== صف المعلومات =====
   const infoList = document.createElement("div");
   infoList.style.cssText = `
     display: flex;
@@ -385,7 +368,6 @@ function openAchievementDetails(task) {
     margin-bottom: 20px;
   `;
 
-  // ===== الصعوبة =====
   const difficultyRow = document.createElement("div");
   difficultyRow.style.cssText = `
     display: flex;
@@ -409,7 +391,6 @@ function openAchievementDetails(task) {
   `;
   infoList.appendChild(difficultyRow);
 
-  // ===== التصنيف =====
   const categoryRow = document.createElement("div");
   categoryRow.style.cssText = `
     display: flex;
@@ -432,7 +413,6 @@ function openAchievementDetails(task) {
   `;
   infoList.appendChild(categoryRow);
 
-  // ===== تاريخ الإكمال =====
   if (task.completionDate) {
     const dateRow = document.createElement("div");
     dateRow.style.cssText = `
@@ -459,7 +439,6 @@ function openAchievementDetails(task) {
 
   modal.body.appendChild(infoList);
 
-  // ===== الأزرار =====
   const actions = createModalActions([
     {
       label: typeof t === 'function' ? t('close', 'Close') : 'Close',
@@ -494,12 +473,8 @@ function openAchievementDetails(task) {
 }
 
 // ========================================
-// ✅ دوال مساعدة (للاستخدام الخارجي)
+// دوال مساعدة
 // ========================================
-
-/**
- * إعادة عرض صفحة الإنجازات (للتوافق مع الأزرار القديمة)
- */
 function refreshAchievements() {
   renderCompleted();
 }
@@ -512,4 +487,4 @@ window.renderAchievementsGrid = renderAchievementsGrid;
 window.openAchievementDetails = openAchievementDetails;
 window.refreshAchievements = refreshAchievements;
 
-console.log("✅ achievements.js v3.4 loaded successfully! (Lucide Icons)");
+console.log("✅ achievements.js v4.0 loaded successfully! (Total count + Last 20 display)");

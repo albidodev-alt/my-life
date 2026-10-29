@@ -28,20 +28,14 @@ const DROPS_LEVELS = [
  * مع fallback للطريقة البطيئة إن لم تكن متاحة
  */
 function getDropsCount() {
-  // ✅ الطريقة السريعة — لا clone
+  // ✅ استخدام العداد التراكمي (لا ينقص إلا بالحذف اليدوي)
   if (typeof getCompletedTasksCount === 'function') {
     return getCompletedTasksCount();
   }
 
-  // ⚠️ Fallback — أبطأ لكن آمن
+  // Fallback
   if (typeof getTasksCopy === 'function') {
     const tasks = getTasksCopy();
-    return tasks.filter(t => t.completed).length;
-  }
-
-  // ⚠️ Fallback أخير
-  if (typeof getAllTasks === 'function') {
-    const tasks = getAllTasks();
     return tasks.filter(t => t.completed).length;
   }
 

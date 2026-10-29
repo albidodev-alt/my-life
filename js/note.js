@@ -638,10 +638,11 @@ function renderNoteEditor(note) {
   titleInput.placeholder = tr('enter_note_title', 'Note title...');
   titleInput.value = note ? (note.title || '') : '';
   titleInput.setAttribute("aria-label", "Note title");
-  titleInput.spellcheck = false;
-  titleInput.autocomplete = "off";
-  titleInput.setAttribute("autocorrect", "off");
-  titleInput.setAttribute("autocapitalize", "sentences");
+
+  // ✅ حماية من Password Managers
+  if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(titleInput, 'text');
+  }
 
   // ✅ إصلاح مشكلة تعديل العنوان
   titleInput.style.webkitUserSelect = 'text';
@@ -666,8 +667,11 @@ function renderNoteEditor(note) {
   contentInput.placeholder = tr('write_note_here', 'Start writing...');
   contentInput.value = note ? (note.content || '') : '';
   contentInput.setAttribute("aria-label", "Note content");
-  contentInput.spellcheck = true;
-  contentInput.autocomplete = "off";
+
+  // ✅ حماية من Password Managers (وضع content يسمح بالتصحيح الإملائي)
+  if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(contentInput, 'content');
+  }
 
   // ✅ إصلاح مشكلة تعديل المحتوى
   contentInput.style.webkitUserSelect = 'text';

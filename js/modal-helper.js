@@ -315,52 +315,90 @@ function createModalActions(actions = []) {
 // ========================================
 
 /**
- * ✅ تطبيق خصائص الحماية على أي حقل نصي
+ * ✅ تطبيق حماية شاملة من Password Managers & Autofill
  * @param {HTMLElement} input - الحقل (input أو textarea)
- * @param {string} mode - الوضع: 'text' | 'name' | 'search' | 'url' | 'content'
+ * @param {string} mode - 'text' | 'name' | 'search' | 'url' | 'content' | 'email' | 'number'
  */
 function _applyInputProtection(input, mode = 'text') {
   if (!input) return;
 
   const isTextarea = input.tagName === 'TEXTAREA';
+  const isSelect = input.tagName === 'SELECT';
 
-  // ===== الأساسيات (كل الحقول) =====
+  // ========================================
+  // 🔒 الطبقة 1: الحماية الأساسية (كل الحقول)
+  // ========================================
   input.setAttribute('autocomplete', 'off');
   input.setAttribute('autocorrect', 'off');
   input.setAttribute('spellcheck', 'false');
   input.setAttribute('data-form-type', 'other');
+  input.setAttribute('data-lpignore', 'true');
+  input.setAttribute('data-1p-ignore', 'true');
+  input.setAttribute('data-bwignore', 'true');
+  input.setAttribute('data-protonpass-ignore', 'true');
+  input.setAttribute('data-dashlane-ignore', 'true');
+  input.setAttribute('data-keeper-ignore', 'true');
+  input.setAttribute('data-nordpass-ignore', 'true');
+  input.setAttribute('data-roboform-skip', 'true');
+  input.setAttribute('data-lastpass-icon', 'false');
+  input.setAttribute('data-lastpass-fill', 'false');
 
-  // ===== Password Managers =====
-  input.setAttribute('data-lpignore', 'true');         // LastPass
-  input.setAttribute('data-1p-ignore', 'true');        // 1Password
-  input.setAttribute('data-bwignore', 'true');         // Bitwarden
-  input.setAttribute('data-protonpass-ignore', 'true'); // ProtonPass
+  // ========================================
+  // 🔒 الطبقة 2: منع Chrome Autofill (الأهم!)
+  // ========================================
+  if (!input.hasAttribute('data-original-name')) {
+    input.setAttribute('data-original-name', input.name || '');
+    input.name = 'field_' + Math.random().toString(36).substring(2, 10);
+  }
 
-  // ===== إعدادات حسب النوع =====
+  // ========================================
+  // 🔒 الطبقة 3: منع Location / Address Autofill
+  // ========================================
+  input.setAttribute('data-address-autofill', 'off');
+  input.setAttribute('x-autocompletetype', 'off');
+  input.setAttribute('autocompletetype', 'off');
+  input.setAttribute('aria-autocomplete', 'none');
+
+  // ========================================
+  // 🔒 الطبقة 4: إعدادات حسب النوع
+  // ========================================
   switch (mode) {
     case 'name':
-      // الأسماء: كل كلمة بحرف كبير
       input.setAttribute('autocapitalize', 'words');
       input.setAttribute('inputmode', 'text');
+      input.setAttribute('data-form-type', 'name');
+      input.setAttribute('aria-label', 'Text input');
       break;
 
     case 'search':
-      // البحث: لا تصحيح، لا تكبير
       input.setAttribute('autocapitalize', 'off');
       input.setAttribute('inputmode', 'search');
+      input.setAttribute('data-form-type', 'search');
       break;
 
     case 'url':
-      // الروابط
       input.setAttribute('autocapitalize', 'off');
       input.setAttribute('inputmode', 'url');
+      input.setAttribute('data-form-type', 'url');
+      break;
+
+    case 'email':
+      input.setAttribute('autocapitalize', 'off');
+      input.setAttribute('inputmode', 'email');
+      input.setAttribute('data-form-type', 'other');
+      break;
+
+    case 'number':
+      input.setAttribute('inputmode', 'numeric');
+      input.setAttribute('autocapitalize', 'off');
+      input.setAttribute('data-form-type', 'other');
       break;
 
     case 'content':
-      // محتوى طويل (ملاحظة، وصف): اسمح بالتصحيح الإملائي
       input.setAttribute('autocorrect', 'on');
       input.setAttribute('spellcheck', 'true');
       input.setAttribute('autocapitalize', 'sentences');
+      input.setAttribute('data-form-type', 'content');
       if (!isTextarea) {
         input.setAttribute('inputmode', 'text');
       }
@@ -368,12 +406,39 @@ function _applyInputProtection(input, mode = 'text') {
 
     case 'text':
     default:
-      // نص عادي: جملة بحرف كبير
       input.setAttribute('autocapitalize', 'sentences');
-      if (!isTextarea) {
+      input.setAttribute('data-form-type', 'other');
+      if (!isTextarea && !isSelect) {
         input.setAttribute('inputmode', 'text');
       }
       break;
+  }
+
+  // ========================================
+  // 🔒 الطبقة 5: تجاوز Chrome Autofill الذكي (Advanced)
+  // ========================================
+  if (!isTextarea && !isSelect && mode !== 'search') {
+    const parent = input.parentNode;
+    if (parent && !parent.querySelector('.autofill-trap')) {
+      const trap1 = document.createElement('input');
+      trap1.type = 'text';
+      trap1.className = 'autofill-trap';
+      trap1.tabIndex = -1;
+      trap1.setAttribute('aria-hidden', 'true');
+      trap1.style.cssText = 'position:absolute;left:-9999px;opacity:0;height:0;width:0;pointer-events:none;';
+      trap1.autocomplete = 'username';
+
+      const trap2 = document.createElement('input');
+      trap2.type = 'password';
+      trap2.className = 'autofill-trap';
+      trap2.tabIndex = -1;
+      trap2.setAttribute('aria-hidden', 'true');
+      trap2.style.cssText = 'position:absolute;left:-9999px;opacity:0;height:0;width:0;pointer-events:none;';
+      trap2.autocomplete = 'new-password';
+
+      parent.insertBefore(trap1, input);
+      parent.insertBefore(trap2, input);
+    }
   }
 
   return input;
