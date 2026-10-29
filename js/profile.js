@@ -1,6 +1,6 @@
 // ========================================
-// MY LIFE HUB - PROFILE v2.7
-// (Performance Optimized + Lazy Load drops.js + Local DOM refs + Theme Support)
+// MY LIFE HUB - PROFILE v2.8
+// (Performance Optimized + Lazy Load drops.js + Local DOM refs + Theme Support + PM Protection)
 // ========================================
 
 // ========================================
@@ -285,8 +285,9 @@ function openHourSystemModal() {
 
   if (typeof debouncedLucide === 'function') debouncedLucide(50);
 }
+
 // ========================================
-// ✅ نافذة اختيار الثيم (Light / Dark فقط)
+// ✅ نافذة اختيار الثيم
 // ========================================
 function openThemeModal() {
   const currentMode = (typeof getThemeMode === 'function') ? getThemeMode() : 'light';
@@ -300,7 +301,6 @@ function openThemeModal() {
   const list = document.createElement('div');
   list.className = 'setting-choice-list';
 
-  // ✅ خياران فقط: فاتح وليلي (بدون تلقائي)
   const themes = [
     { mode: 'light', icon: 'sun', labelEn: 'Light', labelAr: 'فاتح', labelFr: 'Clair' },
     { mode: 'dark', icon: 'moon', labelEn: 'Dark', labelAr: 'ليلي', labelFr: 'Sombre' }
@@ -348,7 +348,6 @@ function openThemeModal() {
             showToast('🎨 ' + displayName, 'success');
           }
 
-          // ✅ تحديث الصف في الإعدادات
           updateProfileSettingRows();
         }
       }, 250);
@@ -393,7 +392,7 @@ function updateProfileSettingRows() {
 }
 
 // ========================================
-// عرض صفحة البروفايل (✅ محسّن للأداء)
+// عرض صفحة البروفايل
 // ========================================
 function renderProfile() {
   const app = document.getElementById("app");
@@ -528,7 +527,7 @@ function renderProfile() {
         <span class="setting-row-arrow" data-lucide="chevron-right"></span>
       </div>
 
-      <!-- ===== الثيم (جديد) ===== -->
+      <!-- ===== الثيم ===== -->
       <div class="profile-setting-row clickable" id="theme-row" role="button" tabindex="0">
         <span class="profile-setting-label">
           <span data-lucide="palette" class="profile-setting-icon"></span>
@@ -605,29 +604,26 @@ function renderProfile() {
   `;
 
   // ========================================
-  // ✅ ربط الأحداث (محسّن: متغيرات DOM محلية)
+  // ✅ تطبيق حماية Password Manager فوراً (بدون setTimeout)
+  // ========================================
+  const nameInput = document.getElementById('profile-name-input');
+  const bioInput = document.getElementById('profile-bio-input');
+
+  if (nameInput && typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(nameInput, 'name');
+  }
+  if (bioInput && typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(bioInput, 'content');
+  }
+
+  // ========================================
+  // ✅ ربط الأحداث
   // ========================================
 
   // 1. زر الرجوع
   document.getElementById('back-btn')?.addEventListener('click', () => renderWeek());
 
-    // ========================================
-  // ✅ حماية حقول البروفايل من Password Managers
-  // ========================================
-  setTimeout(() => {
-    const nameInput = document.getElementById('profile-name-input');
-    const bioInput = document.getElementById('profile-bio-input');
-    
-    if (nameInput && typeof window._applyInputProtection === 'function') {
-      window._applyInputProtection(nameInput, 'name');
-    }
-    if (bioInput && typeof window._applyInputProtection === 'function') {
-      window._applyInputProtection(bioInput, 'content');
-    }
-  }, 0);
-  // ========================================
-  // 2. شريط القطرات (✅ Lazy Load drops.js)
-  // ========================================
+  // 2. شريط القطرات
   document.getElementById('drops-clickable')?.addEventListener('click', async function() {
     try {
       if (typeof renderDropsPage === 'undefined') {
@@ -686,7 +682,7 @@ function renderProfile() {
     });
   }
 
-  // 5. صف الثيم (جديد)
+  // 5. صف الثيم
   const themeRow = document.getElementById('theme-row');
   if (themeRow) {
     themeRow.addEventListener('click', function() {
@@ -758,9 +754,8 @@ function renderProfile() {
   });
 
   // ========================================
-  // 7. حقل الاسم (✅ محسّن: متغيرات DOM محلية)
+  // 7. حقل الاسم
   // ========================================
-  const nameInput = document.getElementById('profile-name-input');
   const nameCounter = document.getElementById('name-counter');
   const nameDisplay = document.getElementById('profile-name-display');
 
@@ -814,9 +809,8 @@ function renderProfile() {
   });
 
   // ========================================
-  // 8. حقل البايو (✅ محسّن: متغيرات DOM محلية)
+  // 8. حقل البايو
   // ========================================
-  const bioInput = document.getElementById('profile-bio-input');
   const bioCounter = document.getElementById('bio-counter');
   const bioDisplay = document.getElementById('profile-bio-display');
 
@@ -868,7 +862,7 @@ function renderProfile() {
   });
 
   // ========================================
-  // 9. مسح البيانات (مع إبطال الكاشات)
+  // 9. مسح البيانات
   // ========================================
   document.getElementById('clear-data-btn')?.addEventListener('click', function() {
     deleteModal({
@@ -932,7 +926,7 @@ function renderProfile() {
   }
 
   // ========================================
-  // 11. Achievements (✅ يستخدم navigateTo للـ Lazy Load)
+  // 11. Achievements
   // ========================================
   document.getElementById('view-achievements-btn')?.addEventListener('click', async function() {
     document.querySelectorAll(".nav-btn, .bottom-nav-btn").forEach(btn => btn.classList.remove("active"));
@@ -995,6 +989,13 @@ function renderProfile() {
   if (typeof debouncedLucide === 'function') debouncedLucide(30);
 
   updateUserHeader();
+
+  // ✅ إعادة تطبيق الحماية بعد كل شيء
+  setTimeout(() => {
+    if (typeof window.protectAllExistingInputs === 'function') {
+      window.protectAllExistingInputs();
+    }
+  }, 100);
 }
 
 // ========================================
@@ -1011,16 +1012,12 @@ function escapeHtmlProfile(text) {
 // ========================================
 // دوال الإحصائيات
 // ========================================
-// ========================================
-// دوال الإحصائيات
-// ========================================
 function getProfileStats() {
   const tasks = typeof getAllTasks === 'function' ? getAllTasks() : [];
   const routineData = typeof getAllRoutineData === 'function' ? getAllRoutineData() : {};
 
   const totalTasks = tasks.length;
 
-  // ✅ استخدام العداد التراكمي للمهام المنجزة
   const completedTasks = typeof getCompletedTasksCount === 'function'
     ? getCompletedTasksCount()
     : tasks.filter(t => t.completed).length;
@@ -1109,4 +1106,4 @@ window.getLanguageDisplayName = getLanguageDisplayName;
 window.getHourSystemDisplayName = getHourSystemDisplayName;
 window.getThemeModeDisplayName = getThemeModeDisplayName;
 
-console.log("✅ Profile.js v2.7 loaded successfully! (Theme Support)");
+console.log("✅ Profile.js v2.8 loaded successfully! (Enhanced PM Protection)");

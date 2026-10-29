@@ -1,6 +1,6 @@
 // ========================================
-// MY LIFE HUB - MAIN v5.0
-// (Retry + Timeout + Loading UI + Mobile Optimized)
+// MY LIFE HUB - MAIN v5.1
+// (Retry + Timeout + Loading UI + Mobile Optimized + Global Password Protection)
 // ========================================
 
 let mainAbortController = null;
@@ -131,7 +131,7 @@ function safeRender(renderFn, fallbackMessage = "Something went wrong") {
 window.safeRender = safeRender;
 
 // ========================================
-// ✅ Loading UI (يظهر أثناء تحميل الصفحات)
+// ✅ Loading UI
 // ========================================
 function showPageLoading(pageName) {
   const app = document.getElementById("app");
@@ -151,7 +151,93 @@ function showPageLoading(pageName) {
 }
 
 // ========================================
-// ✅ Lazy Loading Manager (with Retry + Timeout)
+// ✅ Global Password Manager Protection
+// ========================================
+let globalPMObserver = null;
+
+function setupGlobalPasswordManagerProtection() {
+  if (globalPMObserver) return;
+
+  // ✅ حماية أولية لأي حقول موجودة
+  protectAllExistingInputs();
+
+  // ✅ مراقبة أي حقول جديدة تُضاف
+  globalPMObserver = new MutationObserver((mutations) => {
+    let needsProtection = false;
+    const candidates = [];
+
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === 1) {
+          // العنصر نفسه
+          if (node.matches?.('input:not([type="hidden"]), textarea, select')) {
+            candidates.push(node);
+            needsProtection = true;
+          }
+          // أبناء العنصر
+          const children = node.querySelectorAll?.('input:not([type="hidden"]), textarea, select');
+          if (children && children.length > 0) {
+            children.forEach(c => candidates.push(c));
+            needsProtection = true;
+          }
+        }
+      });
+    });
+
+    if (needsProtection && typeof window._applyInputProtection === 'function') {
+      candidates.forEach(input => {
+        if (input.dataset.pmProtected === 'true') return;
+        input.dataset.pmProtected = 'true';
+
+        let mode = 'text';
+        if (input.tagName === 'TEXTAREA') mode = 'content';
+        else if (input.type === 'email') mode = 'email';
+        else if (input.type === 'url') mode = 'url';
+        else if (input.type === 'search') mode = 'search';
+        else if (input.type === 'date') mode = 'date';
+        else if (input.type === 'number') mode = 'number';
+
+        window._applyInputProtection(input, mode);
+      });
+    }
+  });
+
+  globalPMObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  console.log('✅ Global Password Manager Protection enabled');
+}
+
+function protectAllExistingInputs() {
+  if (typeof window._applyInputProtection !== 'function') return;
+
+  const inputs = document.querySelectorAll(
+    'input:not([type="hidden"]), textarea, select'
+  );
+
+  inputs.forEach(input => {
+    if (input.dataset.pmProtected === 'true') return;
+    input.dataset.pmProtected = 'true';
+
+    let mode = 'text';
+    if (input.tagName === 'TEXTAREA') mode = 'content';
+    else if (input.type === 'email') mode = 'email';
+    else if (input.type === 'url') mode = 'url';
+    else if (input.type === 'search') mode = 'search';
+    else if (input.type === 'date') mode = 'date';
+    else if (input.type === 'number') mode = 'number';
+
+    window._applyInputProtection(input, mode);
+  });
+}
+
+window.setupGlobalPasswordManagerProtection = setupGlobalPasswordManagerProtection;
+window.protectAllExistingInputs = protectAllExistingInputs;
+
+// ========================================
+// ✅ Lazy Loading Manager
 // ========================================
 const moduleCache = {
   day: null,
@@ -173,12 +259,9 @@ const modulePaths = {
   drops: './drops.js'
 };
 
-const MODULE_TIMEOUT_MS = 15000;   // 15 ثانية
-const MODULE_MAX_RETRIES = 2;      // محاولتان إضافيتان
+const MODULE_TIMEOUT_MS = 15000;
+const MODULE_MAX_RETRIES = 2;
 
-/**
- * ✅ تحميل وحدة مع Retry + Timeout
- */
 async function loadModule(moduleName, retries = MODULE_MAX_RETRIES) {
   if (moduleCache[moduleName]) {
     return moduleCache[moduleName];
@@ -196,7 +279,6 @@ async function loadModule(moduleName, retries = MODULE_MAX_RETRIES) {
 
       const loadPromise = import(path);
 
-      // ✅ timeout
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
           reject(new Error(`Module ${moduleName}.js timeout after ${MODULE_TIMEOUT_MS}ms`));
@@ -211,7 +293,6 @@ async function loadModule(moduleName, retries = MODULE_MAX_RETRIES) {
       console.error(`❌ Failed to load ${moduleName}.js (attempt ${attempt + 1}):`, error);
       moduleCache[moduleName] = null;
 
-      // انتظار قبل إعادة المحاولة
       if (attempt < retries) {
         const delay = 1500 * (attempt + 1);
         console.log(`⏳ Retrying ${moduleName}.js in ${delay}ms...`);
@@ -226,7 +307,7 @@ async function loadModule(moduleName, retries = MODULE_MAX_RETRIES) {
 window.loadModule = loadModule;
 
 // ========================================
-// ✅ Page Initializers (with Lazy Loading)
+// ✅ Page Initializers
 // ========================================
 const pageInitializers = {
   routine: async () => {
@@ -289,7 +370,7 @@ const pageInitializers = {
 };
 
 // ========================================
-// ✅ Keyboard Detection (Mobile)
+// ✅ Keyboard Detection
 // ========================================
 function setupKeyboardDetection() {
   if (!window.visualViewport) return;
@@ -389,7 +470,7 @@ function setupVisibilityAwareTimers() {
 }
 
 // ========================================
-// ✅ SW Update Listener (يُظهر إشعار عند توفر تحديث)
+// ✅ SW Update Listener
 // ========================================
 function setupServiceWorkerUpdates() {
   if (!('serviceWorker' in navigator)) return;
@@ -409,6 +490,11 @@ function setupServiceWorkerUpdates() {
 document.addEventListener("DOMContentLoaded", function () {
   perfMark("app-start");
 
+  // ✅ تفعيل الحماية العالمية أولاً
+  if (typeof window.setupGlobalPasswordManagerProtection === 'function') {
+    window.setupGlobalPasswordManagerProtection();
+  }
+
   if (typeof initTranslations === "function") {
     initTranslations().then(function () {
       console.log("✅ Translations ready");
@@ -422,7 +508,7 @@ document.addEventListener("DOMContentLoaded", function () {
   setupBottomNav();
   setupKeyboardDetection();
   setupScrollPerformance();
-  setupServiceWorkerUpdates();  // ✅ جديد
+  setupServiceWorkerUpdates();
 
   const notesFabBtn = document.getElementById("notes-fab-btn");
   if (notesFabBtn) {
@@ -455,7 +541,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // ========================================
-// Navigation (Async + Lazy Loading + Loading UI)
+// Navigation
 // ========================================
 async function navigateTo(page) {
   const app = document.getElementById("app");
@@ -485,7 +571,6 @@ async function navigateTo(page) {
 
   try {
     if (initializer) {
-      // ✅ أظهر شاشة تحميل فقط للصفحات التي تحتاج lazy loading
       const needsLoading = ['task', 'completed', 'notes', 'events', 'program'].includes(page);
       if (needsLoading) {
         showPageLoading(page);
@@ -521,6 +606,13 @@ async function navigateTo(page) {
   perfMeasure(`page-${page}`, `page-${page}-start`, `page-${page}-end`);
 
   debouncedLucide(50);
+
+  // ✅ إعادة تطبيق الحماية بعد كل تغيير صفحة
+  setTimeout(() => {
+    if (typeof window.protectAllExistingInputs === 'function') {
+      window.protectAllExistingInputs();
+    }
+  }, 200);
 }
 
 // ========================================
@@ -738,7 +830,6 @@ function initPWA() {
           }, 2000);
         }
 
-        // ✅ فحص دوري للتحديثات (كل 30 دقيقة)
         setInterval(function () {
           if (navigator.onLine) registration.update();
         }, 30 * 60 * 1000);
@@ -869,12 +960,13 @@ window.getAppState = function () {
     isOnline: navigator.onLine,
     language: cachedLanguage,
     hourSystem: cachedHourSystem,
-    loadedModules: Object.keys(moduleCache).filter(k => moduleCache[k] !== null)
+    loadedModules: Object.keys(moduleCache).filter(k => moduleCache[k] !== null),
+    pmProtectionActive: !!globalPMObserver
   };
 };
 
 // ========================================
-// ✅ Force Update (للاستخدام من UI)
+// ✅ Force Update
 // ========================================
 window.forceAppUpdate = async function () {
   try {
@@ -911,6 +1003,10 @@ window.addEventListener('beforeunload', function () {
     mainAbortController.abort();
     mainAbortController = null;
   }
+  if (globalPMObserver) {
+    globalPMObserver.disconnect();
+    globalPMObserver = null;
+  }
 });
 
 // ========================================
@@ -926,9 +1022,10 @@ window.showInstallButtons = showInstallButtons;
 window.handleInstallClick = handleInstallClick;
 window.loadModule = loadModule;
 
-console.log("📌 Main.js v5.0 loaded successfully!");
+console.log("📌 Main.js v5.1 loaded successfully!");
 console.log("   - Lazy Loading: with retry + timeout");
 console.log("   - Loading UI: spinner for lazy pages");
 console.log("   - SW Update: auto-reload on new version");
 console.log("   - Force Update: window.forceAppUpdate()");
+console.log("   - ✅ Global Password Manager Protection: ACTIVE");
 console.log("   - Try: getAppState() to inspect app state");

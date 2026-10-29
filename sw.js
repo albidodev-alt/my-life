@@ -1,9 +1,9 @@
 // ========================================
-// MY LIFE - SERVICE WORKER v2.2
-// (Updated: Cache Version + Better Error Handling)
+// MY LIFE - SERVICE WORKER v2.3
+// (Updated: Cache Version + PM Fix + Better Error Handling)
 // ========================================
 
-const CACHE_VERSION = 'v2.2';
+const CACHE_VERSION = 'v2.3';
 const CACHE_NAME = `my-life-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 
@@ -80,7 +80,7 @@ const ASSETS_TO_CACHE = [
 ];
 
 // ========================================
-// ✅ تخزين آمن — يستقبل Response جاهزاً (لا يستنسخ)
+// ✅ تخزين آمن
 // ========================================
 async function safeCachePut(cache, request, response) {
   try {
@@ -108,7 +108,7 @@ async function safeCachePut(cache, request, response) {
 }
 
 // ========================================
-// ✅ backgroundCachePut — يستقبل Response (clone جاهز من المستدعي)
+// ✅ backgroundCachePut
 // ========================================
 function backgroundCachePut(cacheName, request, response) {
   caches.open(cacheName).then(function (cache) {
@@ -123,7 +123,7 @@ function backgroundCachePut(cacheName, request, response) {
 // ========================================
 self.addEventListener('install', function (event) {
   console.log(`[SW ${CACHE_VERSION}] Installing...`);
-  self.skipWaiting(); // تفعيل فوري للإصدار الجديد
+  self.skipWaiting();
 
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -154,7 +154,6 @@ self.addEventListener('activate', function (event) {
       .then(function (cacheNames) {
         return Promise.all(
           cacheNames.map(function (cacheName) {
-            // حذف أي كاش قديم لا يطابق الإصدار الحالي
             if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
               console.log(`[SW ${CACHE_VERSION}] Deleting old cache:`, cacheName);
               return caches.delete(cacheName);
@@ -164,7 +163,7 @@ self.addEventListener('activate', function (event) {
       })
       .then(function () {
         console.log(`[SW ${CACHE_VERSION}] Activation complete!`);
-        return self.clients.claim(); // السيطرة على الصفحات المفتوحة فوراً
+        return self.clients.claim();
       })
   );
 });
@@ -268,7 +267,6 @@ self.addEventListener('fetch', function (event) {
         return cache.match(event.request)
           .then(function (cachedResponse) {
             if (cachedResponse) {
-              // تحديث الكاش في الخلفية (Stale-While-Revalidate)
               fetch(event.request)
                 .then(function (networkResponse) {
                   if (networkResponse && networkResponse.status === 200) {
@@ -378,4 +376,4 @@ self.addEventListener('message', function (event) {
   }
 });
 
-console.log(`✅ Service Worker ${CACHE_VERSION} loaded successfully! (v2.2)`);
+console.log(`✅ Service Worker ${CACHE_VERSION} loaded successfully! (v2.3 - PM Fix)`);

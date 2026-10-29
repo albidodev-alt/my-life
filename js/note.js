@@ -1,6 +1,6 @@
 // ========================================
-// MY LIFE HUB - NOTES v3.2
-// (Inline Editor + Save/Back Buttons + Fixed Title Editing + Notes Cache)
+// MY LIFE HUB - NOTES v3.3
+// (Inline Editor + Save/Back Buttons + Fixed Title Editing + Notes Cache + PM Protection)
 // ========================================
 
 const NOTES_STORAGE_KEY = "myLifeHub_notes_v2";
@@ -72,7 +72,6 @@ function safeSetNotes(key, value) {
 // ========================================
 
 function getAllNotes() {
-  // ✅ قراءة من الكاش أولاً
   if (notesCache !== null) return notesCache;
 
   try {
@@ -111,7 +110,6 @@ function saveAllNotes(notes) {
 
   const result = safeSetNotes(NOTES_STORAGE_KEY, JSON.stringify(notes));
 
-  // ✅ تحديث الكاش عند النجاح
   if (result.success) {
     notesCache = notes;
   }
@@ -321,6 +319,11 @@ function renderNotesPageV2() {
   searchInput.placeholder = tr('search_notes', 'Search notes by title or content...');
   searchInput.setAttribute("aria-label", tr('search_notes', 'Search notes'));
   searchInput.autocomplete = "off";
+
+  // ✅ حماية من Password Manager
+  if (typeof window._applyInputProtection === 'function') {
+    window._applyInputProtection(searchInput, 'search');
+  }
 
   searchWrapper.appendChild(searchIcon);
   searchWrapper.appendChild(searchInput);
@@ -596,7 +599,6 @@ function renderNoteEditor(note) {
   const headerRight = document.createElement("div");
   headerRight.className = "note-editor-header-right";
 
-  // ✅ زر الحذف
   const deleteBtn = document.createElement("button");
   deleteBtn.type = "button";
   deleteBtn.className = "note-editor-btn danger";
@@ -605,7 +607,6 @@ function renderNoteEditor(note) {
   deleteBtn.innerHTML = '<span data-lucide="trash-2"></span>';
   deleteBtn.addEventListener("click", () => handleEditorDelete());
 
-  // ✅ زر الحفظ
   const saveBtn = document.createElement("button");
   saveBtn.type = "button";
   saveBtn.className = "note-editor-btn save";
@@ -644,12 +645,10 @@ function renderNoteEditor(note) {
     window._applyInputProtection(titleInput, 'text');
   }
 
-  // ✅ إصلاح مشكلة تعديل العنوان
   titleInput.style.webkitUserSelect = 'text';
   titleInput.style.userSelect = 'text';
   titleInput.style.cursor = 'text';
 
-  // Auto-resize للعنوان
   const autoResizeTitle = () => {
     titleInput.style.height = 'auto';
     titleInput.style.height = Math.min(Math.max(titleInput.scrollHeight, 42), 120) + 'px';
@@ -668,12 +667,11 @@ function renderNoteEditor(note) {
   contentInput.value = note ? (note.content || '') : '';
   contentInput.setAttribute("aria-label", "Note content");
 
-  // ✅ حماية من Password Managers (وضع content يسمح بالتصحيح الإملائي)
+  // ✅ حماية من Password Managers (وضع content)
   if (typeof window._applyInputProtection === 'function') {
     window._applyInputProtection(contentInput, 'content');
   }
 
-  // ✅ إصلاح مشكلة تعديل المحتوى
   contentInput.style.webkitUserSelect = 'text';
   contentInput.style.userSelect = 'text';
   contentInput.style.cursor = 'text';
@@ -703,6 +701,26 @@ function renderNoteEditor(note) {
   editor.appendChild(footer);
 
   app.appendChild(editor);
+
+  // ========================================
+  // ✅ إعادة تطبيق الحماية بعد إضافة المحرر للـ DOM
+  // ========================================
+  setTimeout(() => {
+    const titleEl = document.getElementById('note-editor-title');
+    const contentEl = document.getElementById('note-editor-content');
+
+    if (titleEl && typeof window._applyInputProtection === 'function') {
+      window._applyInputProtection(titleEl, 'text');
+    }
+    if (contentEl && typeof window._applyInputProtection === 'function') {
+      window._applyInputProtection(contentEl, 'content');
+    }
+
+    // ✅ حماية إضافية شاملة
+    if (typeof window.protectAllExistingInputs === 'function') {
+      window.protectAllExistingInputs();
+    }
+  }, 10);
 
   // ========================================
   // ربط الأحداث
@@ -772,7 +790,6 @@ function renderNoteEditor(note) {
     const title = titleInput.value.trim();
     const content = contentInput.value.trim();
 
-    // ✅ إذا كانت فارغة تماماً
     if (!title && !content) {
       if (_noteEditorState.isNew) {
         return false;
@@ -785,7 +802,6 @@ function renderNoteEditor(note) {
       }
     }
 
-    // ✅ إذا لم تكن هناك تغييرات
     if (!checkChanges()) {
       if (!silent) {
         setStatus('saved', tr('saved', 'Saved'));
@@ -845,7 +861,6 @@ function renderNoteEditor(note) {
       clearTimeout(_noteEditorState.autoSaveTimer);
     }
 
-    // ✅ إظهار مؤشر "غير محفوظ" فوراً
     setUnsavedIndicator(true);
 
     _noteEditorState.autoSaveTimer = setTimeout(() => {
@@ -869,7 +884,6 @@ function renderNoteEditor(note) {
 
   // ===== زر الحفظ اليدوي =====
   saveBtn.addEventListener('click', () => {
-    // إلغاء أي حفظ مؤجل
     if (_noteEditorState.autoSaveTimer) {
       clearTimeout(_noteEditorState.autoSaveTimer);
       _noteEditorState.autoSaveTimer = null;
@@ -884,21 +898,18 @@ function renderNoteEditor(note) {
 
   // ===== اختصارات لوحة المفاتيح =====
   const handleKeydown = (e) => {
-    // Ctrl+S أو Cmd+S → حفظ فوري
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
       saveBtn.click();
       return;
     }
 
-    // Escape → رجوع
     if (e.key === 'Escape') {
       e.preventDefault();
       closeNoteEditor();
       return;
     }
 
-    // Tab في العنوان → انتقل للمحتوى
     if (e.key === 'Tab' && !e.shiftKey && e.target === titleInput) {
       e.preventDefault();
       contentInput.focus();
@@ -906,7 +917,6 @@ function renderNoteEditor(note) {
       return;
     }
 
-    // Enter في العنوان → انتقل للمحتوى
     if (e.key === 'Enter' && !e.shiftKey && e.target === titleInput) {
       e.preventDefault();
       contentInput.focus();
@@ -918,7 +928,7 @@ function renderNoteEditor(note) {
   titleInput.addEventListener('keydown', handleKeydown);
   contentInput.addEventListener('keydown', handleKeydown);
 
-  // ✅ عند التركيز على العنوان → اختر النص بالكامل (لسهولة الاستبدال)
+  // ✅ عند التركيز على العنوان → اختر النص بالكامل
   titleInput.addEventListener('focus', function() {
     if (this.value && !this.dataset.hasSelected) {
       this.select();
@@ -967,7 +977,7 @@ function closeNoteEditor() {
   const hasChanges = title !== _noteEditorState.originalTitle ||
                      content !== _noteEditorState.originalContent;
 
-  // 1. ملاحظة جديدة + فارغة تماماً → رجوع بدون حفظ
+  // 1. ملاحظة جديدة + فارغة تماماً
   if (_noteEditorState.isNew && !title && !content) {
     renderNotesPageV2();
     return;
@@ -983,7 +993,7 @@ function closeNoteEditor() {
     return;
   }
 
-  // 3. ملاحظة موجودة + بدون تغييرات → رجوع مباشر
+  // 3. ملاحظة موجودة + بدون تغييرات
   if (!_noteEditorState.isNew && !hasChanges) {
     renderNotesPageV2();
     return;
@@ -1009,7 +1019,6 @@ function closeNoteEditor() {
     return;
   }
 
-  // Fallback
   renderNotesPageV2();
 }
 
@@ -1107,10 +1116,10 @@ window.closeNoteEditor = closeNoteEditor;
 window.resetNoteEditorState = resetNoteEditorState;
 window.handleEditorDelete = handleEditorDelete;
 
-// ✅ دوال الكاش الجديدة
+// ✅ دوال الكاش
 window.invalidateNotesCache = invalidateNotesCache;
 
 // ⚠️ Legacy
 window.openNoteModal = openNoteModal;
 
-console.log("✅ Notes v3.2 loaded successfully! (With Notes Cache + Cross-Tab Sync)");
+console.log("✅ Notes v3.3 loaded successfully! (With PM Protection + Notes Cache + Cross-Tab Sync)");

@@ -1,6 +1,6 @@
 // ========================================
-// MY LIFE HUB - MODAL HELPER v2.0
-// نظام النوافذ الموحدة + Swipe to Close + Anti-Password-Manager Fields
+// MY LIFE HUB - MODAL HELPER v3.0
+// نظام النوافذ الموحدة + Swipe to Close + Anti-Password-Manager Fields (Enhanced)
 // ========================================
 
 /**
@@ -137,6 +137,159 @@ function setupSwipeToClose(modal, overlay, closeFn) {
 }
 
 // ========================================
+// ✅ _applyInputProtection v3.0 - حماية متعددة الطبقات
+// ========================================
+function _applyInputProtection(input, mode = 'text') {
+  if (!input) return null;
+
+  const isTextarea = input.tagName === 'TEXTAREA';
+  const isSelect = input.tagName === 'SELECT';
+  const isDate = input.type === 'date';
+  const isNumber = input.type === 'number';
+  const isEmail = input.type === 'email';
+  const isPassword = input.type === 'password';
+
+  // ========================================
+  // 🔒 الطبقة 1: منع Chrome Autofill
+  // ========================================
+  if (isPassword) {
+    input.setAttribute('autocomplete', 'new-password');
+  } else if (isEmail) {
+    input.setAttribute('autocomplete', 'off');
+  } else {
+    // ✅ القيمة السحرية: one-time-code يمنع Chrome من عرض أيقونة Password Manager
+    input.setAttribute('autocomplete', 'one-time-code');
+  }
+
+  // ========================================
+  // 🔒 الطبقة 2: إخفاء الحقل عن Password Managers
+  // ========================================
+  input.setAttribute('data-lpignore', 'true');
+  input.setAttribute('data-1p-ignore', 'true');
+  input.setAttribute('data-bwignore', 'true');
+  input.setAttribute('data-protonpass-ignore', 'true');
+  input.setAttribute('data-dashlane-ignore', 'true');
+  input.setAttribute('data-keeper-ignore', 'true');
+  input.setAttribute('data-nordpass-ignore', 'true');
+  input.setAttribute('data-roboform-skip', 'true');
+  input.setAttribute('data-lastpass-icon', 'false');
+  input.setAttribute('data-lastpass-fill', 'false');
+
+  // ========================================
+  // 🔒 الطبقة 3: منع Chrome Smart Autofill
+  // ========================================
+  // ✅ name عشوائي في كل مرة
+  if (!input.hasAttribute('data-original-name')) {
+    input.setAttribute('data-original-name', input.name || '');
+  }
+  input.name = 'field_' + Math.random().toString(36).substring(2, 15);
+
+  // ✅ id عشوائي إذا لم يكن موجوداً
+  if (!input.hasAttribute('data-original-id')) {
+    input.setAttribute('data-original-id', input.id || '');
+  }
+  if (!input.id || input.id.startsWith('field_')) {
+    const newId = 'field_' + Math.random().toString(36).substring(2, 10);
+    input.id = newId;
+    // ✅ ربط label بالـ id الجديد
+    const label = input.previousElementSibling;
+    if (label && label.tagName === 'LABEL') {
+      label.setAttribute('for', newId);
+    }
+  }
+
+  // ========================================
+  // 🔒 الطبقة 4: منع Address/Contact Autofill
+  // ========================================
+  input.setAttribute('data-address-autofill', 'off');
+  input.setAttribute('x-autocompletetype', 'off');
+  input.setAttribute('autocompletetype', 'off');
+  input.setAttribute('aria-autocomplete', 'none');
+  input.setAttribute('data-form-type', 'other');
+
+  // ========================================
+  // 🔒 الطبقة 5: خصائص حسب النوع
+  // ========================================
+  if (isTextarea) {
+    input.setAttribute('autocorrect', 'on');
+    input.setAttribute('spellcheck', 'true');
+    input.setAttribute('autocapitalize', 'sentences');
+  } else if (isDate) {
+    input.setAttribute('autocomplete', 'off');
+  } else if (isNumber) {
+    input.setAttribute('inputmode', 'numeric');
+    input.setAttribute('autocapitalize', 'off');
+  } else if (isSelect) {
+    input.setAttribute('autocomplete', 'off');
+  } else {
+    switch (mode) {
+      case 'name':
+        input.setAttribute('autocapitalize', 'words');
+        input.setAttribute('inputmode', 'text');
+        break;
+      case 'email':
+        input.setAttribute('autocapitalize', 'off');
+        input.setAttribute('inputmode', 'email');
+        break;
+      case 'url':
+        input.setAttribute('autocapitalize', 'off');
+        input.setAttribute('inputmode', 'url');
+        break;
+      case 'search':
+        input.setAttribute('autocapitalize', 'off');
+        input.setAttribute('inputmode', 'search');
+        break;
+      case 'content':
+        input.setAttribute('autocorrect', 'on');
+        input.setAttribute('spellcheck', 'true');
+        input.setAttribute('autocapitalize', 'sentences');
+        break;
+      default:
+        input.setAttribute('autocapitalize', 'sentences');
+        input.setAttribute('inputmode', 'text');
+    }
+  }
+
+  // ========================================
+  // 🔒 الطبقة 6: إزالة أي خصائص قد تكشف الحقل
+  // ========================================
+  input.removeAttribute('form');
+
+  return input;
+}
+
+/**
+ * ✅ إعادة تطبيق الحماية على جميع الحقول داخل عنصر معين
+ */
+function _reapplyProtection(rootElement) {
+  if (!rootElement) return;
+
+  const inputs = rootElement.querySelectorAll(
+    'input:not([type="hidden"]), textarea, select'
+  );
+
+  inputs.forEach(input => {
+    // تحديد mode المناسب
+    let mode = 'text';
+    if (input.tagName === 'TEXTAREA') {
+      mode = 'content';
+    } else if (input.type === 'email') {
+      mode = 'email';
+    } else if (input.type === 'url') {
+      mode = 'url';
+    } else if (input.type === 'search') {
+      mode = 'search';
+    } else if (input.type === 'date') {
+      mode = 'date';
+    } else if (input.type === 'number') {
+      mode = 'number';
+    }
+
+    _applyInputProtection(input, mode);
+  });
+}
+
+// ========================================
 // إنشاء نافذة منبثقة موحدة
 // ========================================
 function createModal(options = {}) {
@@ -260,6 +413,40 @@ function createModal(options = {}) {
 
   if (typeof debouncedLucide === 'function') debouncedLucide(30);
 
+  // ✅ إعادة تطبيق الحماية على الحقول الموجودة داخل content في البداية
+  setTimeout(() => {
+    _reapplyProtection(modal);
+  }, 30);
+
+  // ✅ إعادة تطبيق الحماية مرة أخرى بعد أي إضافة جديدة
+  setTimeout(() => {
+    _reapplyProtection(modal);
+  }, 150);
+
+  // ✅ مراقبة أي حقول جديدة تُضاف للمودال لاحقاً
+  const modalObserver = new MutationObserver((mutations) => {
+    let needsReapply = false;
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === 1) {
+          if (node.matches?.('input:not([type="hidden"]), textarea, select')) {
+            needsReapply = true;
+          } else if (node.querySelector?.('input:not([type="hidden"]), textarea, select')) {
+            needsReapply = true;
+          }
+        }
+      });
+    });
+    if (needsReapply) {
+      _reapplyProtection(modal);
+    }
+  });
+
+  modalObserver.observe(modal, {
+    childList: true,
+    subtree: true
+  });
+
   setTimeout(() => {
     const firstFocusable = modal.querySelector(
       'input:not([type="hidden"]), textarea, select, button:not(.modal-base-close)'
@@ -280,6 +467,7 @@ function createModal(options = {}) {
         body.replaceChildren(newContent);
       }
       if (typeof debouncedLucide === 'function') debouncedLucide(30);
+      setTimeout(() => _reapplyProtection(modal), 30);
     },
     setTitle: (newTitle) => {
       titleEl.innerHTML = newTitle;
@@ -310,140 +498,6 @@ function createModalActions(actions = []) {
   return wrapper;
 }
 
-// ========================================
-// ✅ دوال مساعدة لحماية الحقول من Password Managers
-// ========================================
-
-/**
- * ✅ تطبيق حماية شاملة من Password Managers & Autofill
- * @param {HTMLElement} input - الحقل (input أو textarea)
- * @param {string} mode - 'text' | 'name' | 'search' | 'url' | 'content' | 'email' | 'number'
- */
-function _applyInputProtection(input, mode = 'text') {
-  if (!input) return;
-
-  const isTextarea = input.tagName === 'TEXTAREA';
-  const isSelect = input.tagName === 'SELECT';
-
-  // ========================================
-  // 🔒 الطبقة 1: الحماية الأساسية (كل الحقول)
-  // ========================================
-  input.setAttribute('autocomplete', 'off');
-  input.setAttribute('autocorrect', 'off');
-  input.setAttribute('spellcheck', 'false');
-  input.setAttribute('data-form-type', 'other');
-  input.setAttribute('data-lpignore', 'true');
-  input.setAttribute('data-1p-ignore', 'true');
-  input.setAttribute('data-bwignore', 'true');
-  input.setAttribute('data-protonpass-ignore', 'true');
-  input.setAttribute('data-dashlane-ignore', 'true');
-  input.setAttribute('data-keeper-ignore', 'true');
-  input.setAttribute('data-nordpass-ignore', 'true');
-  input.setAttribute('data-roboform-skip', 'true');
-  input.setAttribute('data-lastpass-icon', 'false');
-  input.setAttribute('data-lastpass-fill', 'false');
-
-  // ========================================
-  // 🔒 الطبقة 2: منع Chrome Autofill (الأهم!)
-  // ========================================
-  if (!input.hasAttribute('data-original-name')) {
-    input.setAttribute('data-original-name', input.name || '');
-    input.name = 'field_' + Math.random().toString(36).substring(2, 10);
-  }
-
-  // ========================================
-  // 🔒 الطبقة 3: منع Location / Address Autofill
-  // ========================================
-  input.setAttribute('data-address-autofill', 'off');
-  input.setAttribute('x-autocompletetype', 'off');
-  input.setAttribute('autocompletetype', 'off');
-  input.setAttribute('aria-autocomplete', 'none');
-
-  // ========================================
-  // 🔒 الطبقة 4: إعدادات حسب النوع
-  // ========================================
-  switch (mode) {
-    case 'name':
-      input.setAttribute('autocapitalize', 'words');
-      input.setAttribute('inputmode', 'text');
-      input.setAttribute('data-form-type', 'name');
-      input.setAttribute('aria-label', 'Text input');
-      break;
-
-    case 'search':
-      input.setAttribute('autocapitalize', 'off');
-      input.setAttribute('inputmode', 'search');
-      input.setAttribute('data-form-type', 'search');
-      break;
-
-    case 'url':
-      input.setAttribute('autocapitalize', 'off');
-      input.setAttribute('inputmode', 'url');
-      input.setAttribute('data-form-type', 'url');
-      break;
-
-    case 'email':
-      input.setAttribute('autocapitalize', 'off');
-      input.setAttribute('inputmode', 'email');
-      input.setAttribute('data-form-type', 'other');
-      break;
-
-    case 'number':
-      input.setAttribute('inputmode', 'numeric');
-      input.setAttribute('autocapitalize', 'off');
-      input.setAttribute('data-form-type', 'other');
-      break;
-
-    case 'content':
-      input.setAttribute('autocorrect', 'on');
-      input.setAttribute('spellcheck', 'true');
-      input.setAttribute('autocapitalize', 'sentences');
-      input.setAttribute('data-form-type', 'content');
-      if (!isTextarea) {
-        input.setAttribute('inputmode', 'text');
-      }
-      break;
-
-    case 'text':
-    default:
-      input.setAttribute('autocapitalize', 'sentences');
-      input.setAttribute('data-form-type', 'other');
-      if (!isTextarea && !isSelect) {
-        input.setAttribute('inputmode', 'text');
-      }
-      break;
-  }
-
-  // ========================================
-  // 🔒 الطبقة 5: تجاوز Chrome Autofill الذكي (Advanced)
-  // ========================================
-  if (!isTextarea && !isSelect && mode !== 'search') {
-    const parent = input.parentNode;
-    if (parent && !parent.querySelector('.autofill-trap')) {
-      const trap1 = document.createElement('input');
-      trap1.type = 'text';
-      trap1.className = 'autofill-trap';
-      trap1.tabIndex = -1;
-      trap1.setAttribute('aria-hidden', 'true');
-      trap1.style.cssText = 'position:absolute;left:-9999px;opacity:0;height:0;width:0;pointer-events:none;';
-      trap1.autocomplete = 'username';
-
-      const trap2 = document.createElement('input');
-      trap2.type = 'password';
-      trap2.className = 'autofill-trap';
-      trap2.tabIndex = -1;
-      trap2.setAttribute('aria-hidden', 'true');
-      trap2.style.cssText = 'position:absolute;left:-9999px;opacity:0;height:0;width:0;pointer-events:none;';
-      trap2.autocomplete = 'new-password';
-
-      parent.insertBefore(trap1, input);
-      parent.insertBefore(trap2, input);
-    }
-  }
-
-  return input;
-}
-
 /**
  * إنشاء حقل إدخال
  */
@@ -459,9 +513,8 @@ function createModalField(options = {}) {
     rows = 4,
     maxLength = null,
     helper = '',
-    // ✅ خيارات جديدة للحماية
-    inputMode = 'text',        // 'text' | 'name' | 'search' | 'url' | 'content'
-    inputAttributes = {}       // لإضافة أي خصائص إضافية
+    inputMode = 'text',
+    inputAttributes = {}
   } = options;
 
   const field = document.createElement('div');
@@ -506,16 +559,16 @@ function createModalField(options = {}) {
   if (required) input.required = true;
 
   // ========================================
-  // ✅ تطبيق الحماية (فقط للنصوص والـ textarea)
+  // ✅ تطبيق الحماية
   // ========================================
   if (type === 'text' || type === 'textarea') {
     _applyInputProtection(input, inputMode);
-  } else if (type === 'date') {
-    // ✅ حقول التاريخ: منع password manager فقط
+  } else if (type === 'date' || type === 'number') {
+    _applyInputProtection(input, type);
+  } else if (type === 'email') {
+    _applyInputProtection(input, 'email');
+  } else {
     input.setAttribute('autocomplete', 'off');
-    input.setAttribute('data-form-type', 'other');
-    input.setAttribute('data-lpignore', 'true');
-    input.setAttribute('data-1p-ignore', 'true');
   }
 
   // ✅ خصائص إضافية مخصصة
@@ -623,7 +676,6 @@ function promptModal(options = {}) {
     errorMessage = 'Invalid input',
     onConfirm = () => {},
     onCancel = null,
-    // ✅ جديد
     inputMode = 'text'
   } = options;
 
@@ -652,7 +704,7 @@ function promptModal(options = {}) {
     value: defaultValue,
     placeholder: placeholder,
     maxLength: maxLength,
-    inputMode: inputMode  // ✅ تمرير الوضع
+    inputMode: inputMode
   });
 
   modal.body.appendChild(field.field);
@@ -1001,6 +1053,7 @@ window.promptModal = promptModal;
 window.infoModal = infoModal;
 window.deleteModal = deleteModal;
 window.setupSwipeToClose = setupSwipeToClose;
-window._applyInputProtection = _applyInputProtection;  // ✅ جديد
+window._applyInputProtection = _applyInputProtection;
+window._reapplyProtection = _reapplyProtection;
 
-console.log("✅ Modal Helper v2.0 loaded successfully! (Anti-Password-Manager enabled)");
+console.log("✅ Modal Helper v3.0 loaded successfully! (Enhanced Anti-Password-Manager)");
